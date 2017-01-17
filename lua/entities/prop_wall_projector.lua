@@ -36,17 +36,18 @@ function ENT:Draw()
 
 	self:DrawModel()
 	
-	local _bridge_trace = util.TraceLine( {
+	local bridge_trace = util.TraceLine( {
 		start = self:GetPos(),
 		endpos = self:LocalToWorld(Vector(10000, 0, 0)),
 		filter = function( ent ) if ( ent == self or ent:GetClass() == "player" or ent:GetClass() == "prop_physics" ) then return false end end
 	} )
 	
 	local bridge_draw_width = 35
-	local totalDistance = self:GetPos():Distance(_bridge_trace.HitPos)
+	local totalDistance = self:GetPos():Distance(bridge_trace.HitPos)
 	
 	local mat_bridge = Material("effects/projected_wall")
 	local mat_bridge_border = Material("effects/bluelaser1")
+	local mat_sprite = Material("sprites/gmdm_pickups/light")
 	
 	if (totalDistance != self.hard_light_bridge_update) then
 		self.hard_light_bridge_update = totalDistance
@@ -60,8 +61,6 @@ function ENT:Draw()
 	render.DrawBeam(self:LocalToWorld(Vector(0, bridge_draw_width, 0)), self:LocalToWorld(Vector(totalDistance, bridge_draw_width, 0)), border_width, 0, 1, Color(100, 200, 255) )
 	render.DrawBeam(self:LocalToWorld(Vector(0, -bridge_draw_width, 0)), self:LocalToWorld(Vector(totalDistance, -bridge_draw_width, 0)), border_width, 0, 1, Color(100, 200, 255) )
 
-	//render.SetMaterial(mat_bridge)
-	//render.DrawBox(self:LocalToWorld(Vector(totalDistance / 2, 0, 0)), self:LocalToWorldAngles(Angle(0, 0, 0)), -Vector(totalDistance / 2, bridge_draw_width, 0), Vector(totalDistance / 2, bridge_draw_width, 0), Color(255, 255, 255, 255), true)
 end
 
 function ENT:Think()
@@ -88,21 +87,19 @@ function ENT:Think()
 			for k, v in pairs(self.hard_light_bridges_ents) do
 				if (v:IsValid()) then v:Remove() end
 			end
-
-			local plateIndex = 1 //math.Min(8, math.ceil(totalDistance / plate_length))
+			
 			local addingDist = 0
 			
-			while (totalDistance > 0) do
+			while (totalDistance > addingDist) do
 				
 				local ent = ents.Create("prop_physics")
 				ent:SetModel("models/wall_projector_bridge/wall.mdl")
-				ent:SetPos(self:LocalToWorld(Vector(addingDist, 0, 0)))
+				ent:SetPos(self:LocalToWorld(Vector(addingDist, 0, -1)))
 				ent:SetAngles(self:LocalToWorldAngles(Angle(0, 0, 0)))
 				ent:Spawn()
-				//ent:SetColor(Color(0, 0, 0, 0))
-				//ent:SetRenderMode( RENDERMODE_TRANSALPHA )
+				
 				ent:DrawShadow(false)
-				ent:SetParent(self)
+				//ent:SetMoveParent(self)
 
 				local physEnt = ent:GetPhysicsObject()
 				physEnt:SetMaterial("item")
@@ -110,17 +107,14 @@ function ENT:Think()
 				
 				table.insert(self.hard_light_bridges_ents, table.Count(self.hard_light_bridges_ents) + 1, ent)
 
-				plateIndex = 1//math.Min(8, math.ceil(totalDistance / plate_length))
-				addingDist = addingDist + plate_length * plateIndex
-				totalDistance = totalDistance - plate_length * plateIndex
+				addingDist = addingDist + plate_length
 				
 			end
 		end
 		
-		
 		for k, v in pairs(self.hard_light_bridges_ents) do
 			if (v:IsValid()) then
-			
+				v:RemoveAllDecals()
 			end
 		end
 		
