@@ -10,7 +10,7 @@ ENT.AdminSpawnable 	= false
 ENT.Category		= "Aperture Science"
 ENT.AutomaticFrameAdvance = true 
 
-local tractor_beam_objects_move_speed = 200
+local tractor_beam_objects_move_speed = 150
 
 function ENT:SpawnFunction( ply, tr, ClassName )
 
@@ -39,7 +39,7 @@ function ENT:Initialize()
 		
 		self.tractorBeamFields = { }
 	end // SERVER
-	
+
 	if CLIENT  then
 		self.particleEmitter = ParticleEmitter(self:GetPos())
 		self.particleEffectTime = 0
@@ -130,135 +130,135 @@ function ENT:Think()
 
 	self:NextThink(CurTime() + 0.1)
 
-	if SERVER then
+if SERVER then
+	
+	local plate_length = 428.5
 		
-		local plate_length = 428.5
+	local effectdata = EffectData()
+	effectdata:SetOrigin(self:LocalToWorld(Vector(0, 0, 10)))
+	effectdata:SetNormal(self:GetUp())
+
+	local tractorBeamTrace = util.TraceLine( {
+		start = self:GetPos(),
+		endpos = self:LocalToWorld(Vector(10000, 0, 0)),
+		filter = function( ent ) if ( ent == self or ent:GetClass() == "player" or ent:GetClass() == "prop_physics" ) then return false end end
+	} )
+	
+	local totalDistance = self:GetPos():Distance(tractorBeamTrace.HitPos)
+	
+	local tractorBeamEntities = { }
+	local funnel_width = 60
+	local tractorBeamHullFinder = util.TraceHull( {
+		start = self:GetPos(),
+		endpos = self:LocalToWorld(Vector(totalDistance, 0, 0)),
+		ignoreworld = true,
+		filter = function( ent ) 
+			if (ent == self) then return false end
 			
-		local effectdata = EffectData()
-		effectdata:SetOrigin(self:LocalToWorld(Vector(0, 0, 10)))
-		effectdata:SetNormal(self:GetUp())
 
-		local tractorBeamTrace = util.TraceLine( {
-			start = self:GetPos(),
-			endpos = self:LocalToWorld(Vector(10000, 0, 0)),
-			filter = function( ent ) if ( ent == self or ent:GetClass() == "player" or ent:GetClass() == "prop_physics" ) then return false end end
-		} )
-		
-		local totalDistance = self:GetPos():Distance(tractorBeamTrace.HitPos)
-		
-		local tractorBeamEntities = { }
-		local funnel_width = 60
-		local tractorBeamHullFinder = util.TraceHull( {
-			start = self:GetPos(),
-			endpos = self:LocalToWorld(Vector(totalDistance, 0, 0)),
-			ignoreworld = true,
-			filter = function( ent ) 
-				if (ent == self) then return false end
+			if (not ent.ApertureScienceStuffIgnore 
+				and (ent:IsPlayer() or ent:IsNPC() or ent:GetPhysicsObject())) then 
 				
-
-				if (not ent.ApertureScienceStuffIgnore 
-					and (ent:IsPlayer() or ent:IsNPC() or ent:GetPhysicsObject())) then 
-					
-					table.insert(tractorBeamEntities, table.Count(tractorBeamEntities) + 1, ent)
-					return false 
-				end
-			end,
-			mins = -Vector( funnel_width, funnel_width, funnel_width ),
-			maxs = Vector( funnel_width, funnel_width, funnel_width ),
-			mask = MASK_SHOT_HULL
-		} )
+				table.insert(tractorBeamEntities, table.Count(tractorBeamEntities) + 1, ent)
+				return false 
+			end
+		end,
+		mins = -Vector( funnel_width, funnel_width, funnel_width ),
+		maxs = Vector( funnel_width, funnel_width, funnel_width ),
+		mask = MASK_SHOT_HULL
+	} )
+	
+	--[[ 
+		Handling entities in field 
+	]]
+	
+	for k, v in pairs(tractorBeamEntities) do
+		if (not v:IsValid()) then break end
 		
+		local WTL = self:WorldToLocal(v:GetPos())
+		local min, max = v:WorldSpaceAABB()
+		local entRadius = min:Distance(max)
+		
+		WTL = Vector(WTL.x, 0, 0)
+		
+		local LTW = self:LocalToWorld(WTL)
+		local tractorBeamMovingSpeed = tractor_beam_objects_move_speed * math.min(1, (totalDistance - (WTL.x + 50)) / 50)
+		
+		if (v:IsPlayer() or v:IsNPC()) then
+			if (v:IsPlayer()) then
+
+				local forward, back, right, left, up, down
+				
+				if (v:KeyDown(IN_FORWARD)) then forward = 1 else forward = 0 end
+				if (v:KeyDown(IN_BACK)) then back = 1 else back = 0 end
+				if (v:KeyDown(IN_MOVERIGHT)) then right = 1 else right = 0 end
+				if (v:KeyDown(IN_MOVELEFT)) then left = 1 else left = 0 end
+				if (v:KeyDown(IN_JUMP)) then up = 1 else up = 0 end
+				if (v:KeyDown(IN_DUCK)) then down = 1 else down = 0 end
+
+				local ply_moving = Vector(forward - back, left - right, up - down) * 100
+				ply_moving:Rotate(v:EyeAngles())
+				
+				local ply_moving_cutted_local = self:WorldToLocal(self:GetPos() + ply_moving)
+				ply_moving_cutted_local = Vector(0, ply_moving_cutted_local.y, ply_moving_cutted_local.z)
+				local ply_moving = self:LocalToWorld(ply_moving_cutted_local) - self:GetPos()
+				
+				v:SetVelocity(self:GetForward() * tractorBeamMovingSpeed + (LTW - v:GetPos() + ply_moving) * 2 - v:GetVelocity())
+			else
+				v:SetVelocity(self:GetForward() * tractor_beam_objects_move_speed + (LTW - v:GetPos()) * 2 - v:GetVelocity())
+			end
+		elseif (v:GetPhysicsObject()) then
+			local vPhysObject = v:GetPhysicsObject()
+			vPhysObject:SetVelocity(self:GetForward() * tractor_beam_objects_move_speed + (LTW -v:LocalToWorld(vPhysObject:GetMassCenter())) - v:GetVelocity() / 10)
+			vPhysObject:EnableGravity(false)
+		end
+	end
+	
+	--[[ 
+		Handling changes position or angles 
+	]]
+	
+	if (self.tractorBeamUpdate.lastPos != self:GetPos() or self.tractorBeamUpdate.lastAngle != self:GetAngles()) then
+		self.tractorBeamUpdate.lastPos = self:GetPos()
+		self.tractorBeamUpdate.lastAngle = self:GetAngles()
+
 		--[[ 
-			Handling entities in field 
+			Spawning field effect 
 		]]
 		
-		for k, v in pairs(tractorBeamEntities) do
-			if (not v:IsValid()) then break end
-			
-			local WTL = self:WorldToLocal(v:GetPos())
-			local min, max = v:WorldSpaceAABB()
-			local entRadius = min:Distance(max)
-			
-			WTL = Vector(WTL.x, 0, 0)
-			
-			local LTW = self:LocalToWorld(WTL)
-			local tractorBeamMovingSpeed = tractor_beam_objects_move_speed * math.min(1, (totalDistance - (WTL.x + 50)) / 50)
-			
-			if (v:IsPlayer() or v:IsNPC()) then
-				if (v:IsPlayer()) then
-
-					local forward, back, right, left, up, down
-					
-					if (v:KeyDown(IN_FORWARD)) then forward = 1 else forward = 0 end
-					if (v:KeyDown(IN_BACK)) then back = 1 else back = 0 end
-					if (v:KeyDown(IN_MOVERIGHT)) then right = 1 else right = 0 end
-					if (v:KeyDown(IN_MOVELEFT)) then left = 1 else left = 0 end
-					if (v:KeyDown(IN_JUMP)) then up = 1 else up = 0 end
-					if (v:KeyDown(IN_DUCK)) then down = 1 else down = 0 end
-
-					local ply_moving = Vector(forward - back, left - right, up - down) * 100
-					ply_moving:Rotate(v:EyeAngles())
-					
-					local ply_moving_cutted_local = self:WorldToLocal(self:GetPos() + ply_moving)
-					ply_moving_cutted_local = Vector(0, ply_moving_cutted_local.y, ply_moving_cutted_local.z)
-					local ply_moving = self:LocalToWorld(ply_moving_cutted_local) - self:GetPos()
-					
-					v:SetVelocity(self:GetForward() * tractorBeamMovingSpeed + (LTW - v:GetPos() + ply_moving) * 2 - v:GetVelocity())
-				else
-					v:SetVelocity(self:GetForward() * tractor_beam_objects_move_speed + (LTW - v:GetPos()) * 2 - v:GetVelocity())
-				end
-			elseif (v:GetPhysicsObject()) then
-				local vPhysObject = v:GetPhysicsObject()
-				vPhysObject:SetVelocity(self:GetForward() * tractor_beam_objects_move_speed + (LTW -v:LocalToWorld(vPhysObject:GetMassCenter())) - v:GetVelocity() / 10)
-				vPhysObject:EnableGravity(false)
-			end
+		for k, v in pairs(self.tractorBeamFields) do
+			if (v:IsValid()) then v:Remove() end
 		end
 		
-		--[[ 
-			Handling changes position or angles 
-		]]
+		local addingDist = 0
 		
-		if (self.tractorBeamUpdate.lastPos != self:GetPos() or self.tractorBeamUpdate.lastAngle != self:GetAngles()) then
-			self.tractorBeamUpdate.lastPos = self:GetPos()
-			self.tractorBeamUpdate.lastAngle = self:GetAngles()
+		while (totalDistance > addingDist) do
+		
+			local ent = ents.Create("prop_physics")
+			ent:SetModel("models/hunter/blocks/cube025x025x025.mdl")
+			ent:SetPos(self:LocalToWorld(Vector(addingDist, 0, -1)))
+			ent:SetAngles(self:LocalToWorldAngles(Angle(90, 0, 0)))
+			ent:Spawn()
+			ent.ApertureScienceStuffIgnore = true
+			
+			ent:DrawShadow(false)
+			ent:SetModel("models/tractor_beam_field/tractor_beam_field.mdl")
+			
+			local physEnt = ent:GetPhysicsObject()
+			physEnt:EnableMotion(false)
+			physEnt:EnableCollisions(false)
+			table.insert(self.tractorBeamFields, table.Count(self.tractorBeamFields) + 1, ent)
 
-			--[[ 
-				Spawning field effect 
-			]]
+			addingDist = addingDist + plate_length
 			
-			for k, v in pairs(self.tractorBeamFields) do
-				if (v:IsValid()) then v:Remove() end
-			end
-			
-			local addingDist = 0
-			
-			while (totalDistance > addingDist) do
-			
-				local ent = ents.Create("prop_physics")
-				ent:SetModel("models/hunter/blocks/cube025x025x025.mdl")
-				ent:SetPos(self:LocalToWorld(Vector(addingDist, 0, -1)))
-				ent:SetAngles(self:LocalToWorldAngles(Angle(90, 0, 0)))
-				ent:Spawn()
-				ent.ApertureScienceStuffIgnore = true
-				
-				ent:DrawShadow(false)
-				ent:SetModel("models/tractor_beam_field/tractor_beam_field.mdl")
-				
-				local physEnt = ent:GetPhysicsObject()
-				physEnt:EnableMotion(false)
-				physEnt:EnableCollisions(false)
-				table.insert(self.tractorBeamFields, table.Count(self.tractorBeamFields) + 1, ent)
-
-				addingDist = addingDist + plate_length
-				
-			end
 		end
-	
-	end // SERVER
+	end
 
-	if CLIENT then
-	
-	end // CLIENT
+end // SERVER
+
+if CLIENT then
+
+end // CLIENT
 
 	return true
 end
@@ -273,5 +273,6 @@ if SERVER then
 			if (v:IsValid()) then v:Remove() end
 		end
 	end
-end
+
+end // SERVER
 
