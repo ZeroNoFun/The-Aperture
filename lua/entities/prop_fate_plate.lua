@@ -80,7 +80,7 @@ function ENT:Think()
 			if (trace.Entity:IsPlayer()) then
 				trace.Entity:SetVelocity( ( self.AFP_LandingPoint - self:GetPos() ) / 4 + Vector( 0, 0, self.AFP_LaunchHight ) - trace.Entity:GetVelocity() )
 			else
-				trace.Entity:GetPhysicsObject():SetVelocity( ( self.AFP_LandingPoint - self:GetPos() ) / 4 + Vector( 0, 0, self.AFP_LaunchHight * 2 ) - trace.Entity:GetVelocity() )
+				trace.Entity:GetPhysicsObject():SetVelocity( ( self.AFP_LandingPoint - trace.Entity:GetPos() ) / 4 + Vector( 0, 0, self.AFP_LaunchHight * 2 ) )
 			end
 			
 		end

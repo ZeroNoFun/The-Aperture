@@ -44,9 +44,7 @@ function ENT:Initialize()
 		self.particleEmitter = ParticleEmitter(self:GetPos())
 		self.particleEffectTime = 0
 	end // CLIENT
-	
-	APERTURESCIENCE:PlaySequence( self, "tractor_beam_rotation" )
-	
+		
 	self.tractorBeamUpdate = { }
 end
 
@@ -82,7 +80,7 @@ function ENT:Draw()
 		Tractor beam particle effect 
 	]]
 	local effectWidth = 60
-	local mult = 1.2
+	local mult = 2.5
 	
 	if (CurTime() > self.particleEffectTime) then
 		self.particleEffectTime = CurTime() + 0.1
