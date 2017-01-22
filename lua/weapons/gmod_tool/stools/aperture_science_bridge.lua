@@ -4,9 +4,9 @@ TOOL.Name = "Hard Light Bridge"
 if ( CLIENT ) then
 
 	language.Add( "bridge", "Hard Light Bridge" )
-	language.Add( "Tool.bridge.name", "Hard Light Bridge" )
-	language.Add( "Tool.bridge.desc", "Creates Hard Light Bridge" )
-	language.Add( "Tool.bridge.0", "Left click to use" )
+	language.Add( "tool.bridge.name", "Hard Light Bridge" )
+	language.Add( "tool.bridge.desc", "Creates Hard Light Bridge" )
+	language.Add( "tool.bridge.0", "Left click to use" )
 	
 end //CLIENT
 

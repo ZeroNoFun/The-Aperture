@@ -9,7 +9,7 @@ cleanup.Register( "aperture_faith_plate" )
 
 if CLIENT then
 
-	language.Add("faith_plate", "Aerial Faith Plate")
+	//language.Add("faith_plate", "Aerial Faith Plate")
 	language.Add("tool.faith_plate.name", "Aerial Faith Plate")
 	language.Add("Tool.faith_plate.desc", "Creates Aerial Faith Plate")
 	language.Add("Tool.faith_plate.0", "Left click to place")
@@ -22,7 +22,7 @@ if SERVER then
 		
 		if ( trace.Entity && trace.Entity:IsPlayer() ) then return false end
 		
-		if ( self.AFP_PlacePoint ) then
+		if ( self.GASL_Cooldown ) then
 			
 			local model = self:GetClientInfo( "model" )
 			
@@ -37,7 +37,7 @@ if SERVER then
 			ent:SetAngles( ent:LocalToWorldAngles( Angle( 0, 0, 0 ) ) )
 			ent:Spawn()
 			
-			self.AFP_LastEnt = ent
+			self.AFP_Cooldown = ent
 
 			undo.Create( "Aerial Faith Plate" )
 				undo.AddEntity( ent )
@@ -46,14 +46,14 @@ if SERVER then
 			
 		else
 			
-			if ( !self.AFP_LastEnt ) then return false end
+			if ( !self.AFP_Cooldown ) then return false end
 			
-			self.AFP_LastEnt.AFP_LandingPoint = trace.HitPos			
-			self.AFP_LastEnt.AFP_LaunchHight = 1000
+			self.AFP_Cooldown.AFP_LandingPoint = trace.HitPos			
+			self.AFP_Cooldown.AFP_LaunchHight = 1000
 			
 		end
 
-		self.AFP_PlacePoint = !self.AFP_PlacePoint
+		self.GASL_Cooldown = !self.GASL_Cooldown
 		
 		return true
 	end
@@ -76,8 +76,8 @@ end
 
 function TOOL:Holster()
 
-	self.AFP_PlacePoint = true
-	self.AFP_LastEnt = NULL
+	self.GASL_Cooldown = true
+	self.AFP_Cooldown = NULL
 
 end
 

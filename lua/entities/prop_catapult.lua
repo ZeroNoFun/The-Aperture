@@ -34,7 +34,7 @@ function ENT:Initialize()
 		self:SetMoveType( MOVETYPE_VPHYSICS )
 		self:SetSolid( SOLID_VPHYSICS )
 		
-		self.AFP_Cooldown = 0
+		self.GASL_Cooldown = 0
 		
 	end // SERVER
 
@@ -56,7 +56,6 @@ function ENT:Think()
 
 	if ( SERVER ) then
 	
-		//print(self.AFP_LandingPoint)
 		if ( !self.AFP_LandingPoint ) then return end
 		
 		local BoxSize = 50
@@ -71,11 +70,11 @@ function ENT:Think()
 			mask = MASK_SHOT_HULL
 		} )
 		
-		if ( trace.Entity:IsValid() && self.AFP_Cooldown == 0 ) then
+		if ( trace.Entity:IsValid() && self.GASL_Cooldown == 0 ) then
 			
 			APERTURESCIENCE:PlaySequence( self, "straightup" )
 			
-			self.AFP_Cooldown = 10
+			self.GASL_Cooldown = 10
 			
 			if (trace.Entity:IsPlayer()) then
 				trace.Entity:SetVelocity( ( self.AFP_LandingPoint - self:GetPos() ) / 4 + Vector( 0, 0, self.AFP_LaunchHight ) - trace.Entity:GetVelocity() )
@@ -85,7 +84,7 @@ function ENT:Think()
 			
 		end
 		
-		if ( self.AFP_Cooldown > 0 ) then self.AFP_Cooldown = self.AFP_Cooldown - 1 end
+		if ( self.GASL_Cooldown > 0 ) then self.GASL_Cooldown = self.GASL_Cooldown - 1 end
 		
 	end // SERVER
 

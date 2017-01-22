@@ -1,5 +1,4 @@
-UnlitGeneric
-
+VertexlitGeneric
 {
 $basetexture "effects/tractor_beam_core1"
 
@@ -9,11 +8,13 @@ $surfaceprop glass
 "%keywords" Portal2
 $translucent 1
 $additive 1
-$color "[1 1 1]" 
+$selfillum 1
+$model 1
+$color2 "{100 200 255}" 
 $vertexalpha 1
 $vertexcolor 1
 $nocull 1 
-$scrollrate 0
+$scrollrate 1
 Proxies
 {
 TractorBeam

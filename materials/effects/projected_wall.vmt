@@ -3,20 +3,21 @@
 $basetexture "effects/projected_wall"
 $detail1 "effects/projected_wall_draw"
 $detail1scale 1
+$selfillum 1
 $DETAIL1BLENDMODE 1
-$detail2 "effects/projected_wall_noise"
-$detail2scale 1
-$detail2blendmode 0
+$detail "effects/projected_wall_noise"
+$detailscale 1
+$detailblendmode 9
 $surfaceprop glass
 "%keywords" Portal2
 //$translucent 1
 $additive 1
+$color2 "{0 210 255}" 
 $vertexalpha 0
 $vertexcolor 0
-$nocull 1
 $detailscroll1 "[0 2]"
 $detailscroll2 "[0 2]"
-$detail2componentscale "[1 1]"
+$detailcomponentscale "[1 1]"
 $basescroll "[2 2]"
 $basescale "[2 1]"
 "!srgb?$outputintensity" .75
@@ -48,7 +49,7 @@ sinemin 0.99
 sinemax 1.01
 sineperiod 0.125
 timeoffset 0
-resultVar "$detail2componentscale[0]"
+resultVar "$detailcomponentscale[0]"
 }
 Sine 
 {
@@ -72,8 +73,8 @@ resultVar $detail1texturetransform
 TextureTransform
 {
 translateVar $detailscroll2
-scaleVar $detail2componentscale
-resultVar $detail2texturetransform
+scaleVar $detailcomponentscale
+resultVar $detailtexturetransform
 }
 TextureTransform
 {
