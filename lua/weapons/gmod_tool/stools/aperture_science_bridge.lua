@@ -1,51 +1,45 @@
-TOOL.Category = "Aperture science"
+TOOL.Category = "Aperture Science"
 TOOL.Name = "Hard Light Bridge"
 
 if ( CLIENT ) then
 
-	language.Add( "bridge", "Hard Light Bridge" )
-	language.Add( "tool.bridge.name", "Hard Light Bridge" )
-	language.Add( "tool.bridge.desc", "Creates Hard Light Bridge" )
-	language.Add( "tool.bridge.0", "Left click to use" )
+	language.Add( "aperture_science_bridge", "Hard Light Bridge" )
+	language.Add( "tool.aperture_science_bridge.name", "Hard Light Bridge" )
+	language.Add( "tool.aperture_science_bridge.desc", "Creates Hard Light Bridge" )
+	language.Add( "tool.aperture_science_bridge.0", "Left click to use" )
 	
-end //CLIENT
+end
 
-if SERVER then
+function TOOL:LeftClick( trace )
 
-	function TOOL:LeftClick( trace )
+	-- Ignore if place target is Alive
+	if ( trace.Entity && trace.Entity:IsPlayer() ) then return false end
 	
-		if trace.Entity:IsNPC() then return end
-		
-		ent = ents.Create( "prop_wall_projector" )
-		ent:SetPos( trace.HitPos )
-		ent:SetAngles( trace.HitNormal:Angle() )
-		ent:SetMoveType( MOVETYPE_NONE )
-		ent:Spawn()
-
-		undo.Create( "Hard Light Bridge" )
-			undo.AddEntity( ent )
-			undo.SetPlayer( self:GetOwner() )
-		undo.Finish()
-		
-		return true
-	end
-
-	function TOOL:RightClick( trace )
+	if ( CLIENT ) then return true end
 	
-	end
-	 
-end // SERVER
+	ent = ents.Create( "prop_wall_projector" )
+	ent:SetPos( trace.HitPos )
+	ent:SetAngles( trace.HitNormal:Angle() )
+	ent:SetMoveType( MOVETYPE_NONE )
+	ent:Spawn()
+
+	undo.Create( "Hard Light Bridge" )
+		undo.AddEntity( ent )
+		undo.SetPlayer( self:GetOwner() )
+	undo.Finish()
+	
+	return true
+	
+end
+
+function TOOL:RightClick( trace )
+
+end
 
 local ConVarsDefault = TOOL:BuildConVarList()
 
 function TOOL.BuildCPanel( CPanel )
 
-	CPanel:AddControl( "Header", { Description = "#tool.hoverball.help" } )
-
-	//CPanel:AddControl( "PropSelect", { Label = "#tool.hoverball.model", ConVar = "hoverball_model", Models = list.Get( "FaithPanelModels" ), Height = 0 } )
-
-end
-
-function TOOL:DrawToolScreen( width, height )
+	CPanel:AddControl( "Name", { Text = "#tool.aperture_science_bridge.name", Description = "#tool.aperture_science_bridge.desc" } )
 
 end

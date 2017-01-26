@@ -9,8 +9,9 @@ $surfaceprop glass
 $translucent 1
 $additive 1
 $selfillum 1
+$selfillummask "effects/tractor_beam_core_wipe"
 $model 1
-$color2 "{100 200 255}" 
+//$color2 "{100 200 255}" 
 $vertexalpha 1
 $vertexcolor 1
 $nocull 1 

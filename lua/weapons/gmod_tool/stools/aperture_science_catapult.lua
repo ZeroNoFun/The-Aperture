@@ -1,85 +1,82 @@
-TOOL.Category = "Aperture science"
+TOOL.Category = "Aperture Science"
 TOOL.Name = "Aerial Faith Plate"
 TOOL.Command = nil
 TOOL.ConfigName = ""
 
 TOOL.ClientConVar[ "model" ] = "models/props/faith_plate.mdl"
 
-cleanup.Register( "aperture_faith_plate" )
+cleanup.Register( "aperture_science_catapult" )
 
-if CLIENT then
+if ( CLIENT ) then
 
-	//language.Add("faith_plate", "Aerial Faith Plate")
-	language.Add("tool.faith_plate.name", "Aerial Faith Plate")
-	language.Add("Tool.faith_plate.desc", "Creates Aerial Faith Plate")
-	language.Add("Tool.faith_plate.0", "Left click to place")
+	language.Add( "aperture_science_catapult", "Aerial Faith Plate" )
+	language.Add( "tool.aperture_science_catapult.name", "Aerial Faith Plate" )
+	language.Add( "tool.aperture_science_catapult.desc", "Creates Aerial Faith Plate" )
+	language.Add( "tool.aperture_science_catapult.0", "Left click to place" )
 	
-end // CLIENT
+end
 
-if SERVER then
+function TOOL:LeftClick( trace )
+	
+	-- Ignore if place target is Alive
+	if ( trace.Entity && trace.Entity:IsPlayer() ) then return false end
 
-	function TOOL:LeftClick( trace )
+	if ( CLIENT ) then return true end
+
+	if ( self.GASL_MakePoint && !self.GASL_Catapult:IsValid() ) then
+	
+		self.GASL_MakePoint = false
+		self.GASL_Catapult = NULL
 		
-		if ( trace.Entity && trace.Entity:IsPlayer() ) then return false end
+		return false
 		
-		if ( self.GASL_Cooldown ) then
-			
-			local model = self:GetClientInfo( "model" )
-			
-			if ( !util.IsValidModel( model ) ) then return false end
-			
-			local ent = ents.Create( "prop_fate_plate" )
-			if ( !IsValid( ent ) ) then return false end
-			
-			ent:SetPos( trace.HitPos + trace.HitNormal * 5 )
-			ent:SetModel( model )
-			ent:SetAngles( trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
-			ent:SetAngles( ent:LocalToWorldAngles( Angle( 0, 0, 0 ) ) )
-			ent:Spawn()
-			
-			self.AFP_Cooldown = ent
-
-			undo.Create( "Aerial Faith Plate" )
-				undo.AddEntity( ent )
-				undo.SetPlayer( self:GetOwner() )
-			undo.Finish()
-			
-		else
-			
-			if ( !self.AFP_Cooldown ) then return false end
-			
-			self.AFP_Cooldown.AFP_LandingPoint = trace.HitPos			
-			self.AFP_Cooldown.AFP_LaunchHight = 1000
-			
-		end
-
-		self.GASL_Cooldown = !self.GASL_Cooldown
+	end
+	
+	if ( !self.GASL_MakePoint ) then
 		
-		return true
+		local model = self:GetClientInfo( "model" )
+		
+		if ( !util.IsValidModel( model ) ) then return false end
+		
+		local ent = ents.Create( "prop_catapult" )
+		if ( !IsValid( ent ) ) then return false end
+		
+		ent:SetPos( trace.HitPos + trace.HitNormal * 5 )
+		ent:SetAngles( trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
+		ent:SetAngles( ent:LocalToWorldAngles( Angle( 0, 0, 0 ) ) )
+		ent:Spawn()
+		ent:SetModel( model )
+
+		self.GASL_Catapult = ent
+
+		undo.Create( "Aerial Faith Plate" )
+			undo.AddEntity( ent )
+			undo.SetPlayer( self:GetOwner() )
+		undo.Finish()
+		
+	else
+	
+		self.GASL_Catapult:SetLandPoint( trace.HitPos )
+		self.GASL_Catapult:SetLaunchHeight( trace.HitPos:Distance( self.GASL_Catapult:GetPos() ) / 4 )
+		
 	end
 
-	function TOOL:RightClick( trace )
+	self.GASL_MakePoint = !self.GASL_MakePoint
 	
+	return true
 	
-	
-	end
-	 
-end // SERVER
+end
+
+function TOOL:RightClick( trace )
+
+end
 
 function TOOL.BuildCPanel( CPanel )
 
-	CPanel:AddControl( "Name", { Text = "#tool.faith_plate.name", Description = "#tool.faith_plate.desc" } )
-	CPanel:AddControl( "PropSelect", { Label = "#tool.faith_plate.model", ConVar = "faith_plate_model", Models = list.Get( "FaithPanelModels" ), Height = 0 } )
+	CPanel:AddControl( "Name", { Text = "#tool.aperture_science_catapult.name", Description = "#tool.aperture_science_catapult.desc" } )
+	CPanel:AddControl( "PropSelect", { Label = "#tool.aperture_science_catapult.model", ConVar = "aperture_science_catapult_model", Models = list.Get( "CatapultModels" ), Height = 1 } )
 
 end
 
-
-function TOOL:Holster()
-
-	self.GASL_Cooldown = true
-	self.AFP_Cooldown = NULL
-
-end
-
-list.Set( "FaithPanelModels", "models/props/faith_plate.mdl", {} )
-list.Set( "FaithPanelModels", "models/props/faith_plate_128.mdl", {} )
+list.Set( "CatapultModels", "models/props/faith_plate.mdl", {} )
+list.Set( "CatapultModels", "models/props/faith_plate_128.mdl", {} )

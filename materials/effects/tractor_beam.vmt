@@ -4,7 +4,8 @@ $basetexture "effects/tractor_beam_core"
 $detail "effects/tractor_beam_core2"
 $detailscale 1
 $selfillum 1
-$DETAILBLENDMODE 1
+$selfillummask "effects/tractor_beam_core"
+$DETAILBLENDMODE 0
 $detail2 "effects/tractor_beam_core1"
 $detail2scale 1
 $detail2blendmode 0
@@ -12,11 +13,11 @@ $surfaceprop glass
 "%keywords" Portal2
 $translucent 1
 $additive 1
-$color2 "{0 150 255}" 
+//$color2 "{0 150 255}" 
 $vertexalpha 1
 $vertexcolor 1
 $nocull 1 
-$scrollrate 0.4
+$scrollrate 0.6
 $detailscrollfactor -0.1
 $detail2scrollfactor 1.15
 $detailscrollrate 0
