@@ -1,27 +1,31 @@
 AddCSLuaFile( )
 
-ENT.Base 			= "base_entity"
+ENT.Base 			= "gasl_base_ent"
 
 ENT.Editable		= true
 ENT.PrintName		= "Hard Light Bridge"
 ENT.RenderGroup 	= RENDERGROUP_BOTH
+ENT.AutomaticFrameAdvance = true
 
 function ENT:Initialize()
 
+	self.BaseClass.Initialize( self )
+	
 	if ( SERVER ) then
 		self:SetModel( "models/props/wall_emitter.mdl" )
 		self:PhysicsInit( SOLID_VPHYSICS )
 		self:SetMoveType( MOVETYPE_VPHYSICS )
 		self:SetSolid( SOLID_VPHYSICS )
 		self:GetPhysicsObject():EnableMotion( false )
-		self.wallProjectorWalls = { }
+		
+		self.GASL_EntInfo = { model = "models/wall_projector_bridge/wall.mdl", length = 50.393715, color = Color( 255, 255, 255 ) }
 	end
 
 	if ( CLIENT ) then
+
 		
 	end
 	
-	self.GASL_Walls = { }
 end
 
 
@@ -50,9 +54,9 @@ function ENT:Draw()
 	
 	local totalDistance = self:GetPos():Distance( trace.HitPos )
 		
-	if ( self.GASL_Walls.lastPos != self:GetPos() or self.GASL_Walls.lastAngle != self:GetAngles() ) then
-		self.GASL_Walls.lastPos = self:GetPos()
-		self.GASL_Walls.lastAngle = self:GetAngles()
+	if ( self.GASL_BridgeUpdate.lastPos != self:GetPos() or self.GASL_BridgeUpdate.lastAngle != self:GetAngles() ) then
+		self.GASL_BridgeUpdate.lastPos = self:GetPos()
+		self.GASL_BridgeUpdate.lastAngle = self:GetAngles()
 		
 		local min, max = self:GetRenderBounds() 
 		
@@ -67,67 +71,33 @@ end
 
 function ENT:Think()
 	
-	self:NextThink( CurTime() + 1 )
+	self:NextThink( CurTime() + 0.1 )
 
 	if SERVER then
+	
+		self:MakeBridges( )
 		
 		-- Handling changes position or angles
-		if ( self.GASL_Walls.lastPos != self:GetPos() or self.GASL_Walls.lastAngle != self:GetAngles() ) then
-			self.GASL_Walls.lastPos = self:GetPos()
-			self.GASL_Walls.lastAngle = self:GetAngles()
-			
-			self:BridgeUpdate()
+		if ( self.GASL_BridgeUpdate.lastPos != self:GetPos() or self.GASL_BridgeUpdate.lastAngle != self:GetAngles() ) then
+			self.GASL_BridgeUpdate.lastPos = self:GetPos()
+			self.GASL_BridgeUpdate.lastAngle = self:GetAngles()
 		end
 		
-		for k, v in pairs( self.wallProjectorWalls ) do
-			if ( v:IsValid() ) then
-				v:RemoveAllDecals()
-			end
+		for k, v in pairs( self.GASL_EntitiesEffects ) do
+		for k2, v2 in pairs( v ) do
+			
+			if ( v2:IsValid() ) then v2:RemoveAllDecals() end
+				
 		end
-	end // SERVER
+		end
+		
+	end
 
 	if CLIENT then
 		
-	end // CLIENT
+	end
 	
 	return true
-end
-
-function ENT:BridgeUpdate()
-
-	local PlateLength = 50.393715
-	
-	local trace = util.TraceLine( {
-		start = self:GetPos(),
-		endpos = self:LocalToWorld( Vector( 10000, 0, 0 ) ),
-		filter = function( ent ) if ( ent == self or ent:GetClass() == "player" or ent:GetClass() == "prop_physics" ) then return false end end
-	} )
-	
-	local totalDistance = self:GetPos():Distance( trace.HitPos )
-
-	-- Removing all prev walls
-	for k, v in pairs( self.wallProjectorWalls ) do
-		if ( v:IsValid() ) then v:Remove() end
-	end
-	
-	local addingDist = 0
-	
-	while ( totalDistance > addingDist ) do
-		
-		local ent = ents.Create( "prop_physics" )
-		ent:SetModel( "models/wall_projector_bridge/wall.mdl" )
-		ent:SetPos( self:LocalToWorld( Vector( addingDist, 0, -1 ) ) )
-		ent:SetAngles( self:LocalToWorldAngles( Angle( 0, 0, 0 ) ) )
-		ent:Spawn()
-		ent:DrawShadow( false )
-
-		local physEnt = ent:GetPhysicsObject( )
-		physEnt:SetMaterial( "item" )
-		physEnt:EnableMotion( false )
-		
-		table.insert( self.wallProjectorWalls, table.Count( self.wallProjectorWalls ) + 1, ent )
-		addingDist = addingDist + PlateLength
-	end
 end
 
 if ( SERVER ) then
@@ -152,10 +122,8 @@ if ( SERVER ) then
 
 	-- Removing wall props
 	function ENT:OnRemove()
-	
-		for k, v in pairs( self.wallProjectorWalls ) do
-			if ( v:IsValid() ) then v:Remove() end
-		end
+		
+		self:RemoveBridges()
 		
 	end
 end

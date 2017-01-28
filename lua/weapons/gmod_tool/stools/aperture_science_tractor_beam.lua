@@ -28,8 +28,8 @@ function TOOL:LeftClick( trace )
 	local key_enable = self:GetClientNumber( "keyenable" )
 	local key_reverse = self:GetClientNumber( "keyreverse" )
 	local toggle = self:GetClientNumber( "toggle" )
-
-	local tractor_beam = MakeTractorBeam( ply, trace.HitNormal:Angle(), trace.HitPos + trace.HitNormal * 30, toggle, key_enable, key_reverse )
+	
+	local tractor_beam = MakeTractorBeam( ply, trace.HitNormal:Angle(), trace.HitPos + trace.HitNormal * 31, toggle, key_enable, key_reverse )
 	
 	return true
 	
@@ -50,7 +50,14 @@ if ( SERVER ) then
 		tractor_beam.NumReverseDown = numpad.OnDown( pl, key_reverse, "aperture_science_tractor_beam_reverse_back", tractor_beam, 1 )
 		tractor_beam.NumReverseUp = numpad.OnUp( pl, key_reverse, "aperture_science_tractor_beam_reverse_forward", tractor_beam, 1 )
 		
-		tractor_beam:SetToggle( toggle )
+		local toggleB
+		if ( toggle == 1 ) then
+			toggleB = true
+		else
+			toggleB = false
+		end
+
+		tractor_beam:SetToggle( toggleB )
 		
 		undo.Create( "Excursion Funnel" )
 			undo.AddEntity( tractor_beam )

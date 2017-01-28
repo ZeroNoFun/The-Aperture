@@ -1,10 +1,11 @@
 AddCSLuaFile( )
 
-ENT.Base 			= "base_entity"
+ENT.Base 			= "gasl_base_ent"
 
 ENT.Editable		= true
 ENT.PrintName		= "Excursion Funnel"
 ENT.RenderGroup 	= RENDERGROUP_BOTH
+ENT.AutomaticFrameAdvance = true
 
 function ENT:SetupDataTables()
 
@@ -20,15 +21,20 @@ function ENT:Initialize()
 	self.GASL_tractor_beam_color1 = Color( 0, 150, 255 )
 	self.GASL_tractor_beam_color2 = Color( 255, 150, 0 )
 
+	self.BaseClass.Initialize( self )
+	
 	if ( SERVER ) then
 
 		self:SetModel( "models/props/tractor_beam_emitter.mdl" )
 		self:PhysicsInit( SOLID_VPHYSICS )
 		self:SetMoveType( MOVETYPE_VPHYSICS )
 		self:SetSolid( SOLID_VPHYSICS )
+		self:GetPhysicsObject():EnableMotion( false )
 		
 		self.GASL_TractorBeamLeavedEntities = { }
 		self.GASL_TractorBeamFields = { }
+		
+		self.GASL_EntInfo = { model = "models/tractor_beam_field/tractor_beam_field.mdl", length = 428.5, color = Color( 255, 255, 255 ), angle = Angle( 90, 0, 0 ), parent = true }
 		
 	end
 
@@ -38,9 +44,22 @@ function ENT:Initialize()
 		self.GASL_ParticleEffectTime = 0
 		self.GASL_RotationStep = 0
 		
+		APERTURESCIENCE:PlaySequence( self, "tractor_beam_idle", 1.0 )
+		
 	end
 	
-	self.GASL_TractorBeamUpdate = 0
+	self:UpdateLabel()
+end
+
+function ENT:UpdateLabel()
+
+	local enabled, reverse
+	if ( self:GetEnable() ) then enabled = 1 else enabled = 0 end
+	if ( self:GetReverse() ) then reverse = 1 else reverse = 0 end
+	
+	self:SetOverlayText( string.format( "Enabled: %i\nReversed: %i", enabled, reverse ) )
+
+
 end
 
 function ENT:Draw()
@@ -58,8 +77,9 @@ function ENT:Draw()
 	local totalDistance = self:GetPos():Distance( tractorBeamTrace.HitPos )
 
 	-- Handling changes position or angles 
-	if ( self.GASL_TractorBeamUpdate != totalDistance ) then
-		self.GASL_TractorBeamUpdate = totalDistance
+	if ( self.GASL_BridgeUpdate.lastPos != self:GetPos() or self.GASL_BridgeUpdate.lastAngle != self:GetAngles() ) then
+		self.GASL_BridgeUpdate.lastPos = self:GetPos()
+		self.GASL_BridgeUpdate.lastAngle = self:GetAngles()
 		
 		local min, max = self:GetRenderBounds() 
 		min = Vector()
@@ -85,19 +105,6 @@ function ENT:Draw()
 		dir = 1
 	end
 	
-	local RotationMult = 0.75
-	local Rotation = self.GASL_RotationStep * RotationMult
-	self.GASL_RotationStep = self.GASL_RotationStep + dir
-
-	if ( Rotation < -360 ) then self.GASL_RotationStep = 0 end
-	if ( Rotation > 360 ) then self.GASL_RotationStep = 0 end
-	
-	self:ManipulateBoneAngles( 1, Angle( Rotation, 0, 0 ) )
-	self:ManipulateBoneAngles( 2, Angle( Rotation, 0, 0 ) )
-	self:ManipulateBoneAngles( 3, Angle( Rotation, 0, 0 ) )
-	self:ManipulateBoneAngles( 4, Angle( Rotation, 0, 0 ) )
-	self:ManipulateBoneAngles( 5, Angle( Rotation * 2, 0, 0 ) )
-
 	-- Tractor beam particle effect 
 	local ParticleEffectWidth = 40
 	local RotationMultiplier = 2.5
@@ -119,7 +126,7 @@ function ENT:Draw()
 				p:SetEndAlpha( 255 )
 				p:SetStartSize( math.random( 10, 20 ) )
 				p:SetEndSize( 0 )
-				p:SetVelocity( self:GetForward() * 100 * dir + VectorRand() * 5 )
+				p:SetVelocity( self:GetForward() * self.GASL_tractor_beam_objects_move_speed * dir + VectorRand() * 5 )
 				p:SetGravity( VectorRand() * 5 )
 				p:SetColor( color.r, color.g, color.b )
 				p:SetCollide( true )
@@ -159,53 +166,57 @@ function ENT:Think()
 	self:NextThink( CurTime() )
 
 	if ( SERVER ) then
+	
+		self.BaseClass.Think( self )
 		
 		-- Skip this tick if exursion funnel is disabled and removing effect if possible
 		if ( !self:GetEnable() ) then
 			
-			if ( self.GASL_TractorBeamUpdate != 0 ) then
-			
-				self.GASL_TractorBeamUpdate = 0
+			if ( self.GASL_BridgeUpdate.lastPos == self:GetPos() or self.GASL_BridgeUpdate.lastAngle == self:GetAngles() ) then
+				self.GASL_BridgeUpdate.lastPos = { }
 				
-				-- Removing preview field effect
-				self:TractorBeamEffectRemove( )
-				
+				-- Removing effects
+				self:ClearAllData( )
+				self:SetupTrails( )
+
 			end
 
 			return
 		end
-		
+				
 		local TractorBeamEntities = { }
 		local FunnelWidth = 60
 		
-		local tractorBeamTrace = util.TraceLine( {
-			start = self:GetPos(),
-			endpos = self:LocalToWorld( Vector( 10000, 0, 0) ),
-			filter = function( ent ) if ( ent == self or ent:GetClass() == "player" or ent:GetClass() == "prop_physics" ) then return false end end
-		} )
+		local passagesPoints = self:GetAllPortalPassages( self:GetPos(), self:GetAngles() )
+
+		//PrintTable( passagesPoints )
 		
-		local totalDistance = self:GetPos():Distance( tractorBeamTrace.HitPos )
-		
-		local tractorBeamHullFinder = util.TraceHull( {
-			start = self:GetPos(),
-			endpos = self:LocalToWorld( Vector( totalDistance, 0, 0 ) ),
-			ignoreworld = true,
-			filter = function( ent ) 
+		for k, v in pairs( passagesPoints ) do
 			
-				if ( ent == self ) then return false end
+			local tractorBeamHullFinder = util.TraceHull( {
+				start = v.startpos,
+				endpos = v.endpos,
+				ignoreworld = true,
+				filter = function( ent ) 
 				
-				if ( not ent.GASL_Ignore and ( ent:IsPlayer() or ent:IsNPC() or ent:GetPhysicsObject() ) ) then 
+					if ( ent == self ) then return false end
 					
-					table.insert( TractorBeamEntities, ent:EntIndex(), ent )
-					
-					return false
-					
-				end
-			end,
-			mins = -Vector( FunnelWidth, FunnelWidth, FunnelWidth ),
-			maxs = Vector( FunnelWidth, FunnelWidth, FunnelWidth ),
-			mask = MASK_SHOT_HULL
-		} )
+					if ( !ent.GASL_Ignore and ( ent:IsPlayer() or ent:IsNPC() or ent:GetPhysicsObject() ) ) then 
+						
+						table.insert( TractorBeamEntities, ent:EntIndex(), ent )
+						ent.GASL_TravelingInBeamDir = ( v.endpos - v.startpos ):GetNormalized()
+						ent.GASL_TravelingInBeamPos = v.startpos
+						
+						return false
+						
+					end
+				end,
+				mins = -Vector( FunnelWidth, FunnelWidth, FunnelWidth ),
+				maxs = Vector( FunnelWidth, FunnelWidth, FunnelWidth ),
+				mask = MASK_SHOT_HULL
+			} )
+			
+		end
 		
 		local dir
 		if( self:GetReverse() ) then
@@ -223,7 +234,6 @@ function ENT:Think()
 			self.GASL_TractorBeamLeavedEntities[ k ] = nil
 			
 			local centerPos = Vector()
-			
 			if ( v:GetPhysicsObject() ) then
 			
 				local vPhysObject = v:GetPhysicsObject()
@@ -233,20 +243,22 @@ function ENT:Think()
 				centerPos = v:GetPos()
 			end
 			
-			local WTL = self:WorldToLocal( centerPos )
+			-- getting 2d dir to closest point to tractor beam
+			local WTL = WorldToLocal( centerPos, Angle(), v.GASL_TravelingInBeamPos, v.GASL_TravelingInBeamDir:Angle() )
+			
 			local min, max = v:WorldSpaceAABB()
 			local entRadius = min:Distance( max ) / 3
 			
 			WTL = Vector( WTL.x, 0, 0 )
 			
-			local LTW = self:LocalToWorld( WTL )
-			local tractorBeamMovingSpeed = self.GASL_tractor_beam_objects_move_speed * math.min( 1, ( totalDistance - ( WTL.x + entRadius ) ) / entRadius ) * dir
+			local LTW = LocalToWorld( WTL, Angle(), v.GASL_TravelingInBeamPos, v.GASL_TravelingInBeamDir:Angle() )
+			local tractorBeamMovingSpeed = self.GASL_tractor_beam_objects_move_speed * dir
 
-			if( self:GetReverse() ) then
-				tractorBeamMovingSpeed = self.GASL_tractor_beam_objects_move_speed * math.min( 1, ( WTL.x - entRadius ) / entRadius ) * dir
-			else
-				tractorBeamMovingSpeed = self.GASL_tractor_beam_objects_move_speed * math.min( 1, ( totalDistance - ( WTL.x + entRadius ) ) / entRadius ) * dir
-			end
+			-- if( self:GetReverse() ) then
+				-- tractorBeamMovingSpeed = self.GASL_tractor_beam_objects_move_speed * math.min( 1, ( WTL.x - entRadius ) / entRadius ) * dir
+			-- else
+				-- tractorBeamMovingSpeed = self.GASL_tractor_beam_objects_move_speed * math.min( 1, ( totalDistance - ( WTL.x + entRadius ) ) / entRadius ) * dir
+			-- end
 			
 			if ( !v.GASL_TractorBeamEnter ) then
 				
@@ -260,7 +272,7 @@ function ENT:Think()
 						
 					end
 					
-				elseif ( v:GetPhysicsObject() ) then
+				elseif ( v:GetPhysicsObject():IsValid() ) then
 				
 					local vPhysObject = v:GetPhysicsObject()
 					vPhysObject:EnableGravity( false )
@@ -280,20 +292,16 @@ function ENT:Think()
 					if ( v:KeyDown( IN_BACK ) ) then back = 1 else back = 0 end
 					if ( v:KeyDown( IN_MOVERIGHT ) ) then right = 1 else right = 0 end
 					if ( v:KeyDown( IN_MOVELEFT ) ) then left = 1 else left = 0 end
-					if ( v:KeyDown( IN_JUMP ) ) then up = 1 else up = 0 end
-					if ( v:KeyDown( IN_DUCK ) ) then down = 1 else down = 0 end
 					
 					-- Slowdown player in the funnel when they moving
 					if ( v:KeyDown( IN_FORWARD ) 
 						|| v:KeyDown( IN_BACK ) 
 						|| v:KeyDown( IN_MOVERIGHT ) 
-						|| v:KeyDown( IN_MOVELEFT ) 
-						|| v:KeyDown( IN_JUMP ) 
-						|| v:KeyDown( IN_DUCK ) ) then
+						|| v:KeyDown( IN_MOVELEFT ) ) then
 						tractorBeamMovingSpeed = 0
 					end
 
-					local ply_moving = Vector( forward - back, left - right, up - down ) * 100
+					local ply_moving = Vector( forward - back, left - right, 0 ) * 100
 					ply_moving:Rotate( v:EyeAngles() )
 					
 					local ply_moving_cutted_local = self:WorldToLocal( self:GetPos() + ply_moving )
@@ -302,34 +310,55 @@ function ENT:Think()
 					
 					local vPhysObject = v:GetPhysicsObject()
 					
-					v:SetVelocity( self:GetForward() * tractorBeamMovingSpeed + ( LTW - centerPos + ply_moving ) * 2 - v:GetVelocity() )
+					v:SetVelocity( v.GASL_TravelingInBeamDir * tractorBeamMovingSpeed + ( LTW - centerPos + ply_moving ) * 2 - v:GetVelocity() )
 				else
-					v:SetVelocity( self:GetForward() * tractorBeamMovingSpeed + ( LTW - centerPos ) * 2 - v:GetVelocity() )
+					v:SetVelocity( v.GASL_TravelingInBeamDir * tractorBeamMovingSpeed + ( LTW - centerPos ) * 2 - v:GetVelocity() )
 				end
 				
-			elseif ( v:GetPhysicsObject() ) then
+			elseif ( v:GetPhysicsObject():IsValid() ) then
 				local vPhysObject = v:GetPhysicsObject()
-				vPhysObject:SetVelocity( self:GetForward() * tractorBeamMovingSpeed + ( LTW - ( centerPos + vPhysObject:GetMassCenter() ) ) - v:GetVelocity() / 10 )
+				vPhysObject:SetVelocity( v.GASL_TravelingInBeamDir * tractorBeamMovingSpeed + ( LTW - ( centerPos + vPhysObject:GetMassCenter() ) ) - v:GetVelocity() / 10 )
 			end
 			
 		end
 		
 		self:CheckForLeave()
 		
-		self.GASL_TractorBeamLeavedEntities = TractorBeamEntities
-				
-		-- Handling if effect need change
-		if ( self.GASL_TractorBeamUpdate != totalDistance ) then
+		self.GASL_TractorBeamLeavedEntities = TractorBeamEntities		
 		
-			self.GASL_TractorBeamUpdate = totalDistance
-			
-			self:TractorBeamEffect( totalDistance )
+		local color
+		local angle = 0
+		local adding = 0
 		
+		if( self:GetReverse() ) then
+			color = self.GASL_tractor_beam_color2
+			angle = -1
+			adding = self.GASL_EntInfo.length
+		else
+			color = self.GASL_tractor_beam_color1
+			angle = 1
+			adding = 0
 		end
+		
+		self.GASL_EntInfo.angleoffset = Angle( angle * 90, 0, 0 )
+		self.GASL_EntInfo.posoffset = Vector( adding, 0, 0 )
+		self.GASL_EntInfo.color = color
+		
+		self:MakeBridges( )
+		
+		-- Handling changes position or angles
+		if ( self.GASL_BridgeUpdate.lastPos != self:GetPos() or self.GASL_BridgeUpdate.lastAngle != self:GetAngles() ) then
+			self.GASL_BridgeUpdate.lastPos = self:GetPos()
+			self.GASL_BridgeUpdate.lastAngle = self:GetAngles()
+			
+		end
+		
 	end
 
 
 	if ( CLIENT ) then
+	
+		self.BaseClass.Think( self )
 
 	end
 
@@ -369,15 +398,19 @@ function ENT:SetupTrails( )
 	if ( self.GASL_Trail3 && self.GASL_Trail3:IsValid() ) then self.GASL_Trail3:Remove() end
 	
 	local color
-	if( self:GetReverse() ) then
-		color = self.GASL_tractor_beam_color2
-	else
-		color = self.GASL_tractor_beam_color1
-	end
+	if ( self:GetEnable() ) then
 	
-	self.GASL_Trail1 = util.SpriteTrail( self, 1, color, false, TrailWidth, TrailWidthEnd, 1, 1 / ( TrailWidth + TrailWidthEnd ) * 0.5, "trails/laser.vmt" ) 
-	self.GASL_Trail2 = util.SpriteTrail( self, 3, color, false, TrailWidth, TrailWidthEnd, 1, 1 / ( TrailWidth + TrailWidthEnd ) * 0.5, "trails/laser.vmt" ) 
-	self.GASL_Trail3 = util.SpriteTrail( self, 4, color, false, TrailWidth, TrailWidthEnd, 1, 1 / ( TrailWidth + TrailWidthEnd ) * 0.5, "trails/laser.vmt" ) 
+		if ( self:GetReverse( ) ) then
+			color = self.GASL_tractor_beam_color2
+		else
+			color = self.GASL_tractor_beam_color1
+		end
+		
+		self.GASL_Trail1 = util.SpriteTrail( self, 1, color, false, TrailWidth, TrailWidthEnd, 1, 1 / ( TrailWidth + TrailWidthEnd ) * 0.5, "trails/laser.vmt" ) 
+		self.GASL_Trail2 = util.SpriteTrail( self, 3, color, false, TrailWidth, TrailWidthEnd, 1, 1 / ( TrailWidth + TrailWidthEnd ) * 0.5, "trails/laser.vmt" ) 
+		self.GASL_Trail3 = util.SpriteTrail( self, 4, color, false, TrailWidth, TrailWidthEnd, 1, 1 / ( TrailWidth + TrailWidthEnd ) * 0.5, "trails/laser.vmt" ) 
+		
+	end
 
 end
 
@@ -455,14 +488,24 @@ function ENT:ToggleEnable( bDown )
 	end
 	
 	if ( self:GetEnable( ) ) then
+	
 		self:EmitSound( "GASL.TractorBeamStart" )
 		self:EmitSound( "GASL.TractorBeamLoop" )
+
+		if ( self:GetReverse() ) then
+			APERTURESCIENCE:PlaySequence( self, "tractor_beam_turning_reverse", 1.5 )
+		else
+			APERTURESCIENCE:PlaySequence( self, "tractor_beam_turning", 1.5 )
+		end
+		
 	else
-	
-		self:CheckForLeave()
 		
 		self:StopSound( "GASL.TractorBeamLoop" )
 		self:EmitSound( "GASL.TractorBeamEnd" )
+
+		APERTURESCIENCE:PlaySequence( self, "tractor_beam_idle", 1.0 )
+	
+		self:CheckForLeave()
 		
 	end
 	
@@ -480,7 +523,17 @@ function ENT:ToggleReverse( bDown )
 		self:SetReverse( bDown )
 	end
 	
-	if ( self:GetEnable() ) then self.GASL_TractorBeamUpdate = 0 end
+	if ( self:GetEnable() ) then
+	
+		if ( self:GetReverse() ) then
+			APERTURESCIENCE:PlaySequence( self, "tractor_beam_turning_reverse", 2.0 )
+		else
+			APERTURESCIENCE:PlaySequence( self, "tractor_beam_turning", 2.0 )
+		end
+		
+		self:ClearAllData( )
+		
+	end
 	
 end
 
@@ -517,7 +570,7 @@ if ( SERVER ) then
 
 		if ( !IsValid( ent ) ) then return false end
 
-		if ( keydown ) then ent:ToggleReverse( false ) ent.GASL_TractorBeamUpdate = 0 end
+		if ( keydown ) then ent:ToggleReverse( false ) ent.GASL_BridgeUpdate.lastPos = { } end
 		return true
 
 	end )

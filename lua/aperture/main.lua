@@ -9,6 +9,7 @@ AddCSLuaFile( )
 APERTURESCIENCE = { }
 
 include( "aperture/sounds/tractor_beam_sounds.lua" )
+include( "aperture/sounds/catapult_sounds.lua" )
 
 function APERTURESCIENCE:PlaySequence( self, seq, rate )
 
@@ -24,15 +25,17 @@ function APERTURESCIENCE:PlaySequence( self, seq, rate )
 	
 end
 
-function APERTURESCIENCE:CalcBezierCurvePoint( startpos, middlepos, endpos )
+function APERTURESCIENCE:CalcBezierCurvePoint( startpos, middlepos, endpos, segmentsCount )
 
 	local points = { }
+	local totalLength = 0
 	
 	table.insert( points, table.Count( points ) + 1, startpos )
 
-	for inx = 1, 10 do
+	local prevPos = startpos
+	for inx = 1, segmentsCount do
 
-		local i = inx / 10
+		local i = inx / segmentsCount
 		
 		local NX = math.pow( 1 - i, 2 ) * startpos.x + 2 * i * ( 1 - i ) * middlepos.x + math.pow( i, 2 ) * endpos.x
 		local NY = math.pow( 1 - i, 2 ) * startpos.y + 2 * i * ( 1 - i ) * middlepos.y + math.pow( i, 2 ) * endpos.y
@@ -40,50 +43,75 @@ function APERTURESCIENCE:CalcBezierCurvePoint( startpos, middlepos, endpos )
 		
 		table.insert( points, table.Count( points ) + 1, Vector( NX, NY, NZ ) )
 		
+		totalLength = totalLength + Vector( NX, NY, NZ ):Distance( prevPos )
+		prevPos = Vector( NX, NY, NZ )
+		
 	end
 	
-	return points
+	return points, totalLength
 	
 end
 
-hook.Add( "PostDrawOpaqueRenderables", "GASL_HUDRender", function()
+function APERTURESCIENCE:CalcParabolCurve(  )
 
-	for k, ply in pairs( player.GetAll() ) do
-		
-		if ( ply:GetActiveWeapon() && ply:GetActiveWeapon():GetClass() == "gmod_tool" && ply:GetTool( "aperture_science_catapult" ).Mode == "aperture_science_catapult" ) then
-			
+	
+
+end
+
+hook.Add( "PreDrawHUD", "GASL_HUDRender", function()
+
+	cam.Start3D()
+	
+		local ply = LocalPlayer()
+	
+		if ( ply:GetActiveWeapon() && ply:GetActiveWeapon():GetClass() == "gmod_tool" 
+			&& ply:GetTool() && ply:GetTool().Mode && ply:GetTool().Mode == "aperture_science_catapult" ) then
+
 			for i, catapult in pairs( ents.FindByClass( "prop_catapult" ) ) do
 				
 				local tool = ply:GetTool( "aperture_science_catapult" )
 				
-				-- Draw trajectory if Player aim on Faith Plate or if it allready selected
-				if ( tool.Selected && tool.Selected == catapult || ply:GetEyeTrace().HitPos:Distance( catapult:GetPos() ) < 100 ) then
+				-- Draw trajectory if player holding air faith plate tool
+				if ( catapult:GetLandPoint() == Vector() || catapult:GetLaunchHeight() == 0 ) then continue end
 				
-					if ( catapult:GetLandPoint() == Vector() || catapult:GetLaunchHeight() == 0 ) then continue end
-					
-					local startpos = catapult:GetPos()
-					local middlepos = ( catapult:GetLandPoint() + catapult:GetPos() ) / 2 + Vector( 0, 0, catapult:GetLaunchHeight() )
-					local endpos = catapult:GetLandPoint()
-					local points = APERTURESCIENCE:CalcBezierCurvePoint( startpos, middlepos, endpos )
-					
-					render.SetMaterial( Material( "cable/xbeam" ) )
-					render.StartBeam( table.Count( points ) )
-					
-					for inx, point in pairs( points ) do
-						
-						render.AddBeam( point, 10, 1, Color( 255, 255, 255 ) ) 
-						
-					end
-					
-					render.EndBeam() 
-					
-					render.SetMaterial( Material( "effects/select_dot" ) )
-					render.DrawQuadEasy( points[ table.Count( points ) ], Vector( 0, 0, 1 ), 32, 32, Color( 255, 255, 255, 200 ), ( CurTime() * 50 ) % 360 )
+				local startpos = Vector( )
 
+				if ( tool.GASL_MakePoint && tool.GASL_Catapult == catapult ) then 
+					startpos = LocalPlayer():GetEyeTrace().HitPos
+				else
+					startpos = catapult:GetPos()
 				end
+				
+				local endpos = catapult:GetLandPoint()
+				local height = catapult:GetLaunchHeight()
+				local middlepos = ( startpos + endpos ) / 2
+				local points, length = APERTURESCIENCE:CalcBezierCurvePoint( startpos, middlepos + Vector( 0, 0, height * 2 ), endpos, 10 )
+				local prevBeamPos = points[ 1 ]
+
+				-- Drawing land target
+				render.SetMaterial( Material( "effects/wheel_ring" ) )
+				render.DrawQuadEasy( catapult:GetPos(), catapult:GetUp(), 200, 200, Color( 255, 255, 255 ), 0 )
+				
+				-- Drawing land target
+				render.SetMaterial( Material( "signage/mgf_overlay_bullseye" ) )
+				render.DrawQuadEasy( endpos, Vector( 0, 0, 1 ), 80, 80, Color( 255, 255, 255 ), 0 )
+
+				-- Drawing trajectory
+				render.SetMaterial( Material( "effects/trajectory_path" ) )
+				for inx, point in pairs( points ) do
+				
+					render.DrawBeam( prevBeamPos, point, 120, 0, 1, Color( 255, 255, 255 ) )
+					prevBeamPos = point
+					
+				end
+				
+				-- Drawing height point
+				render.SetMaterial( Material( "sprites/sent_ball" ) )
+				render.DrawSprite( middlepos + Vector( 0, 0, height ), 32, 32, Color( 255, 255, 0 ) ) 
 			end
 		end
-	end
+		
+	cam.End3D()
 end )
 
-hook.Remove( "PostDrawOpaqueRenderables", "GASL_HUDRender" )
+hook.Remove( "PostDrawHUD", "GASL_HUDRender" )
