@@ -22,7 +22,7 @@ function TOOL:LeftClick( trace )
 	local pos = WorldToLocal( trace.HitPos, Angle( ), Vector( ), trace.HitNormal:Angle() + Angle( 90, 0, 0 ) ) 
 	pos = Vector( math.Round( pos.x / Rad ) * Rad, math.Round( pos.y / Rad ) * Rad, pos.z )
 	pos = LocalToWorld( pos, Angle( ), Vector( ), trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
-	print( pos )
+	
 	ent:SetPos( pos )
 	ent:SetAngles( trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
 	ent:SetMoveType( MOVETYPE_NONE )

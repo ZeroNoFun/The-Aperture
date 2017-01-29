@@ -201,7 +201,7 @@ function ENT:Think()
 				
 					if ( ent == self ) then return false end
 					
-					if ( !ent.GASL_Ignore and ( ent:IsPlayer() or ent:IsNPC() or ent:GetPhysicsObject() ) ) then 
+					if ( !ent.GASL_Ignore and ( ent:IsPlayer() or ent:IsNPC() or ent:GetPhysicsObject():IsValid() ) ) then 
 						
 						table.insert( TractorBeamEntities, ent:EntIndex(), ent )
 						ent.GASL_TravelingInBeamDir = ( v.endpos - v.startpos ):GetNormalized()
@@ -234,7 +234,7 @@ function ENT:Think()
 			self.GASL_TractorBeamLeavedEntities[ k ] = nil
 			
 			local centerPos = Vector()
-			if ( v:GetPhysicsObject() ) then
+			if ( v:GetPhysicsObject():IsValid() ) then
 			
 				local vPhysObject = v:GetPhysicsObject()
 				centerPos = v:LocalToWorld( vPhysObject:GetMassCenter() )
