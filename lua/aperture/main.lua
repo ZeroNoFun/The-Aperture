@@ -8,6 +8,12 @@ AddCSLuaFile( )
 
 APERTURESCIENCE = { }
 
+-- Gel
+APERTURESCIENCE.GEL_BOX_SIZE = 47
+APERTURESCIENCE.GEL_BOUNCE_COLOR = Color( 0, 200, 255 )
+APERTURESCIENCE.GEL_SPEED_COLOR = Color( 255, 100, 0 )
+
+include( "aperture/sounds/gel_sounds.lua" )
 include( "aperture/sounds/tractor_beam_sounds.lua" )
 include( "aperture/sounds/catapult_sounds.lua" )
 
@@ -64,7 +70,7 @@ hook.Add( "PreDrawHUD", "GASL_HUDRender", function()
 	
 		local ply = LocalPlayer()
 	
-		if ( ply:GetActiveWeapon() && ply:GetActiveWeapon():GetClass() == "gmod_tool" 
+		if ( ply:GetActiveWeapon():IsValid() && ply:GetActiveWeapon():GetClass() == "gmod_tool" 
 			&& ply:GetTool() && ply:GetTool().Mode && ply:GetTool().Mode == "aperture_science_catapult" ) then
 
 			for i, catapult in pairs( ents.FindByClass( "prop_catapult" ) ) do
@@ -114,4 +120,73 @@ hook.Add( "PreDrawHUD", "GASL_HUDRender", function()
 	cam.End3D()
 end )
 
-hook.Remove( "PostDrawHUD", "GASL_HUDRender" )
+function APERTURESCIENCE:CheckForGel( startpos, dir )
+	
+	local trace = util.TraceLine( {
+		start = startpos,
+		endpos = startpos + dir,
+		ignoreworld = true,
+		filter = function( ent ) if ( ent:GetClass() == "ent_gel_paint" ) then return true end end
+	} )
+	
+	return trace
+	
+end
+
+hook.Add( "Think", "GASL_HandlingGel", function()
+
+	if ( CLIENT ) then return end
+	
+	for i, ply in pairs( player.GetAll() ) do
+		
+		local gel = { }
+		if ( ply:IsOnGround() ) then
+			gel = APERTURESCIENCE:CheckForGel( ply:GetPos(), Vector( 0, 0, -100 ) ).Entity
+		else
+			gel = APERTURESCIENCE:CheckForGel( ply:GetPos(), ply:GetVelocity() / 20 ).Entity
+		end
+		
+		-- skip if gel doesn't found
+		if ( !gel:IsValid() ) then continue end
+		
+		-- if player hit repulsion gel
+		if ( gel:GetGelType() == 1 && !ply:KeyDown( IN_DUCK ) ) then
+		
+			local plyVelocity = ply:GetVelocity()
+			
+			-- skip if player stand on the ground
+			if ( ply:IsOnGround() && !ply:KeyDown( IN_JUMP ) && ply:GetVelocity():Length() < 500 ) then continue end
+			
+			local WTL = WorldToLocal( gel:GetPos() + plyVelocity, Angle( ), gel:GetPos(), gel:GetAngles() )
+			
+			WTL = Vector( 0, 0, math.max( -WTL.z, 300 ) * 2 )
+			local LTW = LocalToWorld( WTL, Angle( ), gel:GetPos(), gel:GetAngles() ) - gel:GetPos()
+			
+			ply:SetVelocity( LTW )
+			ply:EmitSound( "GASL.GelBounce" )
+
+		end
+		
+		-- if player hit propulsion gel
+		if ( gel:GetGelType() == 2 ) then
+		
+			local plyVelocity = ply:GetVelocity()
+			
+			if ( !ply.GASL_GelPlayerVelocity ) then ply.GASL_GelPlayerVelocity = Vector( ) end
+			
+			if ( plyVelocity:Length() > ply.GASL_GelPlayerVelocity:Length() ) then ply.GASL_GelPlayerVelocity = ply.GASL_GelPlayerVelocity + plyVelocity / 10 end
+			
+			if ( ply:KeyDown( IN_FORWARD ) ) then
+				ply.GASL_GelPlayerVelocity = ply.GASL_GelPlayerVelocity + Vector( ply:GetForward().x, ply:GetForward().y, 0 ) * 30
+				
+			end
+
+			ply:SetVelocity( Vector( ply.GASL_GelPlayerVelocity.x, ply.GASL_GelPlayerVelocity.y, 0 ) / 2 )
+			
+			ply.GASL_GelPlayerVelocity = ply.GASL_GelPlayerVelocity / 2
+			
+		end
+		
+	end
+
+end )

@@ -188,8 +188,6 @@ function ENT:Think()
 		local FunnelWidth = 60
 		
 		local passagesPoints = self:GetAllPortalPassages( self:GetPos(), self:GetAngles() )
-
-		//PrintTable( passagesPoints )
 		
 		for k, v in pairs( passagesPoints ) do
 			
@@ -243,7 +241,7 @@ function ENT:Think()
 				centerPos = v:GetPos()
 			end
 			
-			-- getting 2d dir to closest point to tractor beam
+			-- Getting 2d dir to closest point to tractor beam
 			local WTL = WorldToLocal( centerPos, Angle(), v.GASL_TravelingInBeamPos, v.GASL_TravelingInBeamDir:Angle() )
 			
 			local min, max = v:WorldSpaceAABB()
@@ -260,6 +258,7 @@ function ENT:Think()
 				-- tractorBeamMovingSpeed = self.GASL_tractor_beam_objects_move_speed * math.min( 1, ( totalDistance - ( WTL.x + entRadius ) ) / entRadius ) * dir
 			-- end
 			
+			-- Handling entering into Funnel
 			if ( !v.GASL_TractorBeamEnter ) then
 				
 				v.GASL_TractorBeamEnter = true
@@ -301,12 +300,13 @@ function ENT:Think()
 						tractorBeamMovingSpeed = 0
 					end
 
+					-- removing player forward/back funnel moving possibilities
 					local ply_moving = Vector( forward - back, left - right, 0 ) * 100
 					ply_moving:Rotate( v:EyeAngles() )
 					
-					local ply_moving_cutted_local = self:WorldToLocal( self:GetPos() + ply_moving )
+					local ply_moving_cutted_local = WorldToLocal( v.GASL_TravelingInBeamPos + ply_moving, Angle( ), v.GASL_TravelingInBeamPos, v.GASL_TravelingInBeamDir:Angle() )
 					ply_moving_cutted_local = Vector( 0, ply_moving_cutted_local.y, ply_moving_cutted_local.z )
-					local ply_moving = self:LocalToWorld( ply_moving_cutted_local ) - self:GetPos()
+					local ply_moving = LocalToWorld( ply_moving_cutted_local, Angle( ), v.GASL_TravelingInBeamPos, v.GASL_TravelingInBeamDir:Angle() ) - v.GASL_TravelingInBeamPos
 					
 					local vPhysObject = v:GetPhysicsObject()
 					

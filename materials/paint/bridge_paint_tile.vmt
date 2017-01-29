@@ -3,7 +3,7 @@ VertexLitGeneric
 $basetexture "paint/bridge_paint_tile"
 $detail "paint/bridge_paint_selfillum"
 $detailblendmode 5
-$detailscale 1
+$detailscale 0
 $bumpmap "paint/bridge_paint_normal"
 $envmap "paint/paint_envmap_hdr"
 $vertexcolor 1

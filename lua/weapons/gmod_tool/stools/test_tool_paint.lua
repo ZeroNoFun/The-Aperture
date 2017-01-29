@@ -12,28 +12,48 @@ end
 
 function TOOL:LeftClick( trace )
 
-
 	if ( CLIENT ) then return true end
-
-	local Rad = 47
 	
-	local ent = ents.Create( "ent_gel_paint" )
-	
-	local pos = WorldToLocal( trace.HitPos, Angle( ), Vector( ), trace.HitNormal:Angle() + Angle( 90, 0, 0 ) ) 
-	pos = Vector( math.Round( pos.x / Rad ) * Rad, math.Round( pos.y / Rad ) * Rad, pos.z )
-	pos = LocalToWorld( pos, Angle( ), Vector( ), trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
-	
-	ent:SetPos( pos )
-	ent:SetAngles( trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
+	local ent = ents.Create( "ent_gel_puddle" )
+	ent:SetPos( trace.HitPos + trace.HitNormal * 100 )
 	ent:SetMoveType( MOVETYPE_NONE )
 	ent:Spawn()
+	ent:GetPhysicsObject():EnableCollisions( false )
+	ent:GetPhysicsObject():Wake()
+	ent:GetPhysicsObject():SetVelocity( Vector( 0, 0, -100 ) )
+	
+	ent.GASL_GelSplatRadius = 80
+	ent.GASL_GelType = 1
 
+	local color = Color( 0, 0, 0 )
+	if ( ent.GASL_GelType == 1 ) then color = APERTURESCIENCE.GEL_BOUNCE_COLOR end
+	if ( ent.GASL_GelType == 2 ) then color = APERTURESCIENCE.GEL_SPEED_COLOR end
+	ent:SetColor( color )
+	
 	return true
 	
 end
 
 function TOOL:RightClick( trace )
 
+	if ( CLIENT ) then return true end
+	
+	local ent = ents.Create( "ent_gel_puddle" )
+	ent:SetPos( trace.HitPos + trace.HitNormal * 100 )
+	ent:SetMoveType( MOVETYPE_NONE )
+	ent:Spawn()
+	ent:GetPhysicsObject():Wake()
+	ent:GetPhysicsObject():SetVelocity( Vector( 0, 0, -100 ) )
+	
+	ent.GASL_GelSplatRadius = 80
+	ent.GASL_GelType = 2
+	
+	local color = Color( 0, 0, 0 )
+	if ( ent.GASL_GelType == 1 ) then color = APERTURESCIENCE.GEL_BOUNCE_COLOR end
+	if ( ent.GASL_GelType == 2 ) then color = APERTURESCIENCE.GEL_SPEED_COLOR end
+	ent:SetColor( color )
+
+	return true
 end
 
 local ConVarsDefault = TOOL:BuildConVarList()

@@ -1,0 +1,13 @@
+UnlitGeneric
+{
+$basetexture "paint/paint_corner"
+$envmap "paint/paint_envmap_hdr"
+$vertexcolor 1
+$translucent 1
+$envmaptint "[ .08 .08 .08]"
+$surfaceprop glass
+"%keywords" Portal2
+$nocull 1 
+$selfillumfresnel 1
+$decal 1
+}
