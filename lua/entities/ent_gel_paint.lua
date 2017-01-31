@@ -18,13 +18,13 @@ function ENT:Initialize()
 	if ( SERVER ) then
 
 		self:SetModel( "models/hunter/plates/plate1x1.mdl" )
-		self:PhysicsInit( SOLID_VPHYSICS )
+		self:PhysicsInit( SOLID_NONE )
 		self:SetMoveType( MOVETYPE_NONE )
-		self:SetSolid( SOLID_VPHYSICS )
-		self:GetPhysicsObject():EnableCollisions( false )
+		self:SetSolid( SOLID_BSP )
 		self:DrawShadow( false )
 		self:SetCollisionGroup( COLLISION_GROUP_WORLD )
-		
+		self.GASL_Untouchable = true
+		self:SetPersistent( true )
 	end
 
 	if ( CLIENT ) then
@@ -32,7 +32,9 @@ function ENT:Initialize()
 		self.GASL_Link = { left = NULL, right = NULL, forward = NULL, back = NULL }
 		
 	end
-	
+
+	self:SetSubMaterial( 0, "models/debug/debugwhite" )
+
 end
 
 function ENT:UpdateGel()
@@ -104,65 +106,59 @@ function ENT:UpdateGel()
 		
 	end
 	
+	self:SetColor( APERTURESCIENCE:GetColorByGelType( self:GetGelType() ) )
+		
 end
 
 function ENT:Draw()
-	
-	local left = false
-	local right = false
-	local forward = false
-	local back = false
 
-	if ( self:GetPLeft() ) then left = true end
-	if ( self:GetPRight() ) then right = true end
-	if ( self:GetPForward() ) then forward = true end
-	if ( self:GetPBack() ) then back = true end
-	
-	local material = "paint/paint_single"
-	local angle = 0
-	
-	if ( left ) then material = "paint/paint_end" angle = 90 end
-	if ( right ) then material = "paint/paint_end" angle = -90 end
-	if ( forward ) then material = "paint/paint_end" angle = 0 end
-	if ( back ) then material = "paint/paint_end" angle = 180 end
-
-	if ( forward && left ) then material = "paint/paint_corner" angle = 90 end
-	if ( back && right ) then material = "paint/paint_corner" angle = -90 end
-	if ( left && back ) then material = "paint/paint_corner" angle = 180 end
-	if ( right && forward ) then material = "paint/paint_corner" angle = 0 end
-	
-	if ( left && right ) then material = "paint/paint_tile" angle = 90 end
-	if ( forward && back ) then material = "paint/paint_tile" angle = 0 end
-	
-	if ( forward && back && left ) then material = "paint/paint_side" angle = 180 end
-	if ( forward && back && right ) then material = "paint/paint_side" angle = 0 end
-	if ( left && right && forward ) then material = "paint/paint_side" angle = 90 end
-	if ( left && right && back ) then material = "paint/paint_side" angle = -90 end
-
-	if ( left && right && forward && back ) then material = "paint/paint_fill" angle = 0 end
-	//print( left, right, forward, back, angle )
-
-	local color = Color( 0, 0, 0 )
-	
-	if ( self:GetGelType() == 1 ) then color = APERTURESCIENCE.GEL_BOUNCE_COLOR end
-	if ( self:GetGelType() == 2 ) then color = APERTURESCIENCE.GEL_SPEED_COLOR end
-	
-	render.SetMaterial( Material( material ) )
-	render.DrawQuadEasy( self:GetPos(), self:GetUp(), APERTURESCIENCE.GEL_BOX_SIZE + 1, APERTURESCIENCE.GEL_BOX_SIZE + 1, color, angle )
-	
-end
-
-function ENT:Think()
-
-	if ( SERVER ) then
-	
-	end 
-
-	if ( CLIENT ) then
+	if ( APERTURESCIENCE.GEL_QUALITY == 0 ) then
 		
-	end 
+		self:DrawModel()
+		
+	end
 	
-	return true
+	if ( APERTURESCIENCE.GEL_QUALITY == 1 ) then
+		
+		local left = false
+		local right = false
+		local forward = false
+		local back = false
+
+		if ( self:GetPLeft() ) then left = true end
+		if ( self:GetPRight() ) then right = true end
+		if ( self:GetPForward() ) then forward = true end
+		if ( self:GetPBack() ) then back = true end
+		
+		local material = "paint/paint_single"
+		local angle = 0
+		
+		if ( left ) then material = "paint/paint_end" angle = 90 end
+		if ( right ) then material = "paint/paint_end" angle = -90 end
+		if ( forward ) then material = "paint/paint_end" angle = 0 end
+		if ( back ) then material = "paint/paint_end" angle = 180 end
+
+		if ( forward && left ) then material = "paint/paint_corner" angle = 90 end
+		if ( back && right ) then material = "paint/paint_corner" angle = -90 end
+		if ( left && back ) then material = "paint/paint_corner" angle = 180 end
+		if ( right && forward ) then material = "paint/paint_corner" angle = 0 end
+		
+		if ( left && right ) then material = "paint/paint_tile" angle = 90 end
+		if ( forward && back ) then material = "paint/paint_tile" angle = 0 end
+		
+		if ( forward && back && left ) then material = "paint/paint_side" angle = 180 end
+		if ( forward && back && right ) then material = "paint/paint_side" angle = 0 end
+		if ( left && right && forward ) then material = "paint/paint_side" angle = 90 end
+		if ( left && right && back ) then material = "paint/paint_side" angle = -90 end
+
+		if ( left && right && forward && back ) then material = "paint/paint_fill" angle = 0 end
+
+		local color = APERTURESCIENCE:GetColorByGelType( self:GetGelType() )
+		
+		render.SetMaterial( Material( material ) )
+		render.DrawQuadEasy( self:GetPos(), self:GetUp(), APERTURESCIENCE.GEL_BOX_SIZE + 1, APERTURESCIENCE.GEL_BOX_SIZE + 1, color, angle )
+		
+	end
 	
 end
 

@@ -20,7 +20,7 @@ function TOOL:LeftClick( trace )
 	ent:Spawn()
 	ent:GetPhysicsObject():EnableCollisions( false )
 	ent:GetPhysicsObject():Wake()
-	ent:GetPhysicsObject():SetVelocity( Vector( 0, 0, -100 ) )
+	ent:GetPhysicsObject():SetVelocity( -trace.HitNormal * 500 )
 	
 	ent.GASL_GelSplatRadius = 80
 	ent.GASL_GelType = 1
@@ -43,7 +43,7 @@ function TOOL:RightClick( trace )
 	ent:SetMoveType( MOVETYPE_NONE )
 	ent:Spawn()
 	ent:GetPhysicsObject():Wake()
-	ent:GetPhysicsObject():SetVelocity( Vector( 0, 0, -100 ) )
+	ent:GetPhysicsObject():SetVelocity( -trace.HitNormal * 500 )
 	
 	ent.GASL_GelSplatRadius = 80
 	ent.GASL_GelType = 2

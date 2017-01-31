@@ -4,7 +4,11 @@ ENT.Type 			= "anim"
 ENT.Base 			= "base_entity"
 ENT.RenderGroup 	= RENDERGROUP_BOTH
 
-local GASL_PaintRadius = 47.1
+function ENT:SetupDataTables()
+
+	self:NetworkVar( "Int", 0, "GelRadius" )
+	
+end
 
 function ENT:Initialize()
 
@@ -13,17 +17,21 @@ function ENT:Initialize()
 		self:SetModel( "models/XQM/Rails/gumball_1.mdl" )
 		self:PhysicsInit( SOLID_VPHYSICS )
 		self:SetMoveType( MOVETYPE_VPHYSICS )
-		self:SetSolid( SOLID_NONE )
+		self:SetSolid( SOLID_OBB )
 		self:SetRenderMode( RENDERMODE_TRANSALPHA )
-		self:SetCollisionGroup( COLLISION_GROUP_WORLD )
+		self:SetCollisionGroup( COLLISION_GROUP_IN_VEHICLE )
 
 		self:SetMaterial( "models/shiny" )
 		
 		self.GASL_GelType = 0
-		self.GASL_GelSplatRadius = 0
+		self.GASL_GelRandomizeSize = 0
+		self.GASL_GelAmount = 0
+		
 	end
 
 	if ( CLIENT ) then
+		
+		self.GASL_SizeChanged = false
 		
 	end
 	
@@ -32,7 +40,7 @@ end
 function ENT:Convert2Grid( pos, angle, rad )
 
 	local WTL = WorldToLocal( pos, Angle( ), Vector( ), angle ) 
-	WTL = Vector( math.Round( WTL.x / rad ) * rad, math.Round( WTL.y / rad ) * rad, pos.z )
+	WTL = Vector( math.Round( WTL.x / rad ) * rad, math.Round( WTL.y / rad ) * rad, WTL.z )
 	pos = LocalToWorld( WTL, Angle( ), Vector( ), angle )
 	
 	return pos
@@ -46,12 +54,11 @@ function ENT:PaintGel( pos, normal, rad )
 	local effectdata = EffectData()
 	effectdata:SetOrigin( pos )
 	effectdata:SetNormal( normal )
+	effectdata:SetRadius( self:GetGelRadius() )
 	effectdata:SetColor( self.GASL_GelType )
 	
 	self:EmitSound( "GASL.GelSplat" )
 	util.Effect( "gel_splat_effect", effectdata )
-	self:SetColor( Color( 0, 0, 0, 0 ) )
-	self:GetPhysicsObject():EnableMotion( false )
 	
 	for x = -maxseg, maxseg do
 	for y = -maxseg, maxseg do
@@ -65,10 +72,26 @@ function ENT:PaintGel( pos, normal, rad )
 		if ( location:Distance( pos ) > rad ) then continue end
 		
 		if ( !gelTrace.Entity:IsValid() ) then
-		
-			local trace = util.QuickTrace( location + normal * 5, -normal * 10, ents.FindByClass( "ent_gel_puddle" ) )
+			
+			-- Skip if gel type is water
+			if ( self.GASL_GelType == 4 ) then continue end
+			
+			local trace = util.TraceLine( {
+				start = location + normal * 5,
+				endpos = location - normal * 10,
+				filter = function( ent )
+					if ( ent:GetClass() == "ent_gel_paint" || ent:GetClass() == "ent_gel_puddle" || ent:GetClass() == "prop_gel_dropper" ) then return false end
+				end
+			} )
+			
+			-- Skip if tracer doesn't hit anything or it in the world
+			if ( !trace.Hit || !util.IsInWorld( trace.HitPos ) ) then continue end
 			
 			local gridPos = self:Convert2Grid( trace.HitPos, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), APERTURESCIENCE.GEL_BOX_SIZE )
+			
+			-- Skip if grided position is outside of the world
+			if ( !util.IsInWorld( gridPos ) ) then continue end
+			
 			local ent = ents.Create( "ent_gel_paint" )
 			ent:SetPos( gridPos )
 			ent:SetAngles( trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
@@ -79,8 +102,14 @@ function ENT:PaintGel( pos, normal, rad )
 			ent:UpdateGel()
 
 		else
-			gelTrace.Entity:SetGelType( self.GASL_GelType )
+			if ( self.GASL_GelType == 4 ) then
+				gelTrace.Entity:SetGelType( 0 )
+			else
+				gelTrace.Entity:SetGelType( self.GASL_GelType )
+			end
+
 			gelTrace.Entity:UpdateGel()
+			if ( self.GASL_GelType == 4 ) then gelTrace.Entity:Remove() end
 		end
 		
 	end
@@ -98,39 +127,64 @@ function ENT:Think()
 
 	self:NextThink( CurTime() + 0.1 )
 	
-	if ( CLIENT ) then return true end
-
-	local trace = util.TraceLine( {
-		start = self:GetPos(),
-		endpos = self:GetPos() + self:GetVelocity() / 10,
-		ignoreworld = true,
-		filter = function( ent )
-			if ( ent:GetClass() == "prop_portal" ) then return true end
-			if ( ent:GetClass() == "ent_gel_paint" || ent:GetClass() == "ent_gel_puddle" ) then return false end
+	if ( CLIENT ) then
+	
+		-- Changing Size
+		if ( !self.GASL_SizeChanged ) then
+		
+			self.GASL_SizeChanged = true
+			
+			local scale = Vector( 1, 1, 1 ) * ( self:GetGelRadius() / 100 )
+			local mat = Matrix()
+			mat:Scale( scale )
+			self:EnableMatrix( "RenderMultiply", mat )
+			
 		end
-	} )
+		
+	end
 	
-	local traceEnt = trace.Entity
-	
-	if ( !traceEnt:IsValid() || traceEnt:IsValid() && traceEnt:GetClass() != "prop_portal" ) then
-		trace = util.TraceLine( {
+	if ( SERVER ) then
+
+		local trace = util.TraceLine( {
 			start = self:GetPos(),
 			endpos = self:GetPos() + self:GetVelocity() / 10,
+			ignoreworld = true,
 			filter = function( ent )
+				if ( ent:GetClass() == "prop_portal" ) then return true end
 				if ( ent:GetClass() == "ent_gel_paint" || ent:GetClass() == "ent_gel_puddle" ) then return false end
 			end
 		} )
-	end
-	
-	traceEnt = trace.Entity
-	
-	if ( trace.Hit && ( !traceEnt:IsValid() || traceEnt:IsValid() && traceEnt:GetClass() != "prop_portal" ) ) then
-	
-		self:PaintGel( trace.HitPos, trace.HitNormal, self.GASL_GelSplatRadius )
-		timer.Simple( 1, function() if ( self:IsValid() ) then self:Remove() end end )
-		self:NextThink( CurTime() + 2 )
+		
+		local traceEnt = trace.Entity
+		
+		if ( !traceEnt:IsValid() || traceEnt:IsValid() && ( traceEnt:GetClass() != "prop_portal" || traceEnt:GetClass() == "prop_portal" && !traceEnt:GetNWBool( "Potal:Other" ) ) ) then
+			trace = util.TraceLine( {
+				start = self:GetPos(),
+				endpos = self:GetPos() + self:GetVelocity() / 10,
+				filter = function( ent )
+					if ( ent:GetClass() == "ent_gel_paint" || ent:GetClass() == "ent_gel_puddle" || ent:GetClass() == "prop_gel_dropper" ) then return false end
+				end
+			} )
+		end
+		
+		traceEnt = trace.Entity
+		
+		if ( trace.Hit && ( !traceEnt:IsValid() || traceEnt:IsValid() && traceEnt:GetClass() != "prop_portal" ) ) then
+		
+			self:PaintGel( trace.HitPos, trace.HitNormal, self:GetGelRadius() )
+			timer.Simple( self:GetVelocity():Length() / 6000, function()
+				if ( self:IsValid() ) then
+					self:SetColor( Color( 0, 0, 0, 0 ) )
+					self:GetPhysicsObject():EnableMotion( false )
+				end
+			end )
+			timer.Simple( 1, function() if ( self:IsValid() ) then self:Remove() end end )
+			self:NextThink( CurTime() + 2 )
+			
+		end
+		
 	end
 	
 	return true
-	
+
 end

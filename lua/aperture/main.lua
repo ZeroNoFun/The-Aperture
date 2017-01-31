@@ -9,9 +9,14 @@ AddCSLuaFile( )
 APERTURESCIENCE = { }
 
 -- Gel
+APERTURESCIENCE.GEL_QUALITY = 1
 APERTURESCIENCE.GEL_BOX_SIZE = 47
-APERTURESCIENCE.GEL_BOUNCE_COLOR = Color( 0, 200, 255 )
+APERTURESCIENCE.GEL_MAXSIZE = 150
+APERTURESCIENCE.GEL_MINSIZE = 40
+APERTURESCIENCE.GEL_BOUNCE_COLOR = Color( 0, 100, 255 )
 APERTURESCIENCE.GEL_SPEED_COLOR = Color( 255, 100, 0 )
+APERTURESCIENCE.GEL_PORTAL_COLOR = Color( 180, 190, 200 )
+APERTURESCIENCE.GEL_WATER_COLOR = Color( 200, 230, 255 )
 
 include( "aperture/sounds/gel_sounds.lua" )
 include( "aperture/sounds/tractor_beam_sounds.lua" )
@@ -28,6 +33,18 @@ function APERTURESCIENCE:PlaySequence( self, seq, rate )
 	self:SetSequence( sequence )
 	
 	return self:SequenceDuration( sequence )
+	
+end
+
+function APERTURESCIENCE:GetColorByGelType( gelType )
+
+	local color = Color( 0, 0, 0 )
+	if ( gelType == 1 ) then color = APERTURESCIENCE.GEL_BOUNCE_COLOR end
+	if ( gelType == 2 ) then color = APERTURESCIENCE.GEL_SPEED_COLOR end
+	if ( gelType == 3 ) then color = APERTURESCIENCE.GEL_PORTAL_COLOR end
+	if ( gelType == 4 ) then color = APERTURESCIENCE.GEL_WATER_COLOR end
+	
+	return color
 	
 end
 
@@ -138,12 +155,18 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 	if ( CLIENT ) then return end
 	
 	for i, ply in pairs( player.GetAll() ) do
-		
+				
 		local gel = { }
 		if ( ply:IsOnGround() ) then
 			gel = APERTURESCIENCE:CheckForGel( ply:GetPos(), Vector( 0, 0, -100 ) ).Entity
 		else
-			gel = APERTURESCIENCE:CheckForGel( ply:GetPos(), ply:GetVelocity() / 20 ).Entity
+			local dir = ply:GetVelocity() / 20
+			
+			if ( dir:Length() < 30 ) then
+				dir = dir:GetNormalized() * 30
+			end
+			
+			gel = APERTURESCIENCE:CheckForGel( ply:GetPos(), dir ).Entity
 		end
 		
 		-- skip if gel doesn't found
@@ -155,14 +178,14 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 			local plyVelocity = ply:GetVelocity()
 			
 			-- skip if player stand on the ground
-			if ( ply:IsOnGround() && !ply:KeyDown( IN_JUMP ) && ply:GetVelocity():Length() < 500 ) then continue end
+			if ( ply:IsOnGround() && !ply:KeyDown( IN_JUMP ) ) then continue end
 			
 			local WTL = WorldToLocal( gel:GetPos() + plyVelocity, Angle( ), gel:GetPos(), gel:GetAngles() )
-			
-			WTL = Vector( 0, 0, math.max( -WTL.z, 300 ) * 2 )
+			WTL = Vector( 0, 0, math.max( -WTL.z, 400 ) * 2 )
 			local LTW = LocalToWorld( WTL, Angle( ), gel:GetPos(), gel:GetAngles() ) - gel:GetPos()
+			LTW.z = math.max( 200, LTW.z / 2 )
 			
-			ply:SetVelocity( LTW )
+			ply:SetVelocity( LTW - Vector( 0, 0, ply:GetVelocity().z ) )
 			ply:EmitSound( "GASL.GelBounce" )
 
 		end
@@ -190,3 +213,8 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 	end
 
 end )
+
+local function PlayerPickup( ply, ent )
+	if ( ent.GASL_Untouchable ) then return false end
+end
+hook.Add( "PhysgunPickup", "Allow Player Pickup", PlayerPickup )

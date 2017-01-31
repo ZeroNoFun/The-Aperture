@@ -347,7 +347,9 @@ function ENT:BridgeBuild( trace, bridgeBuildPos, bridgeBuildAng, passages )
 		ent:SetAngles( bridgeBuildAng )
 		ent:Spawn()
 		ent:SetColor( self.GASL_EntInfo.color )
+		ent:SetPersistent( true )
 		ent.GASL_Ignore = true
+		ent.GASL_Untouchable = true
 		
 		if ( self.GASL_EntInfo.posoffset ) then
 			ent:SetPos( ent:LocalToWorld( self.GASL_EntInfo.posoffset ) )
