@@ -114,6 +114,57 @@ function ENT:PaintGel( pos, normal, rad )
 		
 	end
 	end
+	
+	local findResult = ents.FindInSphere( pos, rad )
+	
+	for k, v in pairs( findResult ) do
+	
+		if ( APERTURESCIENCE:IsValidEntity( v ) && !v:IsPlayer() && v:GetPhysicsObject():IsValid()
+			&& ( !APERTURESCIENCE.GELLED_ENTITIES[ v ] || v.GASL_GelType && v.GASL_GelType != self.GASL_GelType ) ) then
+			
+			-- Reseting physics material
+			if ( v.GASL_PrevPhysMaterial ) then
+				self:GetPhysicsObject():SetMaterial( v.GASL_PrevPhysMaterial )
+				v.GASL_PrevPhysMaterial = nil
+			end
+			
+			if ( self.GASL_GelType != 4 ) then
+				
+				v.GASL_GelledType = self.GASL_GelType
+				
+				local color = APERTURESCIENCE:GetColorByGelType( self.GASL_GelType )
+				
+				if ( self.GASL_GelType == 1 ) then
+					v:SetSubMaterial( 0, "paint/prop_paint_blue" )
+				end
+				if ( self.GASL_GelType == 2 ) then
+					v:SetSubMaterial( 0, "paint/prop_paint_orange" )
+				end
+				
+				if ( !v.GASL_PrevPhysMaterial ) then
+				
+					if ( self.GASL_GelType == 1 ) then
+						v.GASL_PrevPhysMaterial = self:GetPhysicsObject():GetMaterial()
+						v:GetPhysicsObject():SetMaterial( "metal_bouncy" )
+						APERTURESCIENCE.GELLED_ENTITIES[ v ] = v
+					end
+
+					if ( self.GASL_GelType == 2 ) then
+						v.GASL_PrevPhysMaterial = self:GetPhysicsObject():GetMaterial()
+						v:GetPhysicsObject():SetMaterial( "gmod_ice" )
+					end
+					
+				end
+				
+			else
+				APERTURESCIENCE.GELLED_ENTITIES[ v ] = nil
+				v:SetSubMaterial( 0, "" )
+				v.GASL_GelledType = nil
+			end
+			
+		end
+		
+	end
 
 end
 
@@ -147,7 +198,7 @@ function ENT:Think()
 
 		local trace = util.TraceLine( {
 			start = self:GetPos(),
-			endpos = self:GetPos() + self:GetVelocity() / 10,
+			endpos = self:GetPos() + self:GetVelocity() / 5,
 			ignoreworld = true,
 			filter = function( ent )
 				if ( ent:GetClass() == "prop_portal" ) then return true end
@@ -157,10 +208,11 @@ function ENT:Think()
 		
 		local traceEnt = trace.Entity
 		
-		if ( !traceEnt:IsValid() || traceEnt:IsValid() && ( traceEnt:GetClass() != "prop_portal" || traceEnt:GetClass() == "prop_portal" && !traceEnt:GetNWBool( "Potal:Other" ) ) ) then
+		if ( !traceEnt:IsValid() || traceEnt:IsValid() 
+			&& ( traceEnt:GetClass() != "prop_portal" || traceEnt:GetClass() == "prop_portal" && !traceEnt:GetNWBool( "Potal:Other" ) ) ) then
 			trace = util.TraceLine( {
 				start = self:GetPos(),
-				endpos = self:GetPos() + self:GetVelocity() / 10,
+				endpos = self:GetPos() + self:GetVelocity() / 5,
 				filter = function( ent )
 					if ( ent:GetClass() == "ent_gel_paint" || ent:GetClass() == "ent_gel_puddle" || ent:GetClass() == "prop_gel_dropper" ) then return false end
 				end
@@ -172,12 +224,8 @@ function ENT:Think()
 		if ( trace.Hit && ( !traceEnt:IsValid() || traceEnt:IsValid() && traceEnt:GetClass() != "prop_portal" ) ) then
 		
 			self:PaintGel( trace.HitPos, trace.HitNormal, self:GetGelRadius() )
-			timer.Simple( self:GetVelocity():Length() / 6000, function()
-				if ( self:IsValid() ) then
-					self:SetColor( Color( 0, 0, 0, 0 ) )
-					self:GetPhysicsObject():EnableMotion( false )
-				end
-			end )
+			self:SetColor( Color( 0, 0, 0, 0 ) )
+			self:GetPhysicsObject():EnableMotion( false )
 			timer.Simple( 1, function() if ( self:IsValid() ) then self:Remove() end end )
 			self:NextThink( CurTime() + 2 )
 			
