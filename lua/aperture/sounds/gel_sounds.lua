@@ -27,7 +27,18 @@ APERTURESCIENCE.GelSplat =
 	volume	= 1.0,
 	pitch	= 100,
 }
-sound.Add( APERTURESCIENCE.GelSplat )
+sound.Add( APERTURESCIENCE.GelSplatBig )
+
+APERTURESCIENCE.GelSplatBig =
+{
+	channel	= CHAN_WEAPON,
+	name	= "GASL.GelSplatBig",
+	level	= 75,
+	sound	= "physics\paint\phys_paint_bomb_01.wav",
+	volume	= 1.0,
+	pitch	= 100,
+}
+sound.Add( APERTURESCIENCE.GelSplatBig )
 
 APERTURESCIENCE.GelBounce =
 {
