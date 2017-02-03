@@ -38,7 +38,7 @@ function TOOL:LeftClick( trace )
 	local toggle = self:GetClientNumber( "toggle" )
 	local gelType = self:GetClientNumber( "gel_type" )
 	
-	local gelRad = math.max( APERTURESCIENCE.GEL_MINSIZE, math.min( APERTURESCIENCE.GEL_MAXSIZE, self:GetClientNumber( "gel_radius" ) ) )
+	local gelRad = self:GetClientNumber( "gel_radius" )
 	local gelRandomizeSize = self:GetClientNumber( "gel_randomize_size" )
 	local gelAmount = self:GetClientNumber( "gel_amount" )
 	local gelLaunchSpeed = self:GetClientNumber( "gel_launch_speed" )
@@ -63,9 +63,9 @@ if ( SERVER ) then
 		paint_dropper.NumEnableUp = numpad.OnUp( pl, key_enable, "aperture_science_paint_dropper_disable", paint_dropper, 1 )
 		
 		paint_dropper:SetGelType( gelType )
-		paint_dropper.GASL_GelRadius = gelRad
+		paint_dropper:SetGelRadius( gelRad )
+		paint_dropper:SetGelRandomizeSize( gelRandomizeSize )
 		paint_dropper.GASL_GelAmount = gelAmount
-		paint_dropper.GASL_GelRandomizeSize = gelRandomizeSize
 		paint_dropper.GASL_GelLaunchSpeed = gelLaunchSpeed
 
 		local toggleB
@@ -74,7 +74,6 @@ if ( SERVER ) then
 		else
 			toggleB = false
 		end
-
 		paint_dropper:SetToggle( toggleB )
 		
 		undo.Create( "Gel Dropper" )

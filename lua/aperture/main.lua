@@ -19,9 +19,17 @@ APERTURESCIENCE.GEL_PORTAL_COLOR = Color( 180, 190, 200 )
 APERTURESCIENCE.GEL_WATER_COLOR = Color( 200, 230, 255 )
 APERTURESCIENCE.GELLED_ENTITIES = { }
 
+-- Fizzle
+APERTURESCIENCE.DISSOLVE_SPEED = 150
+APERTURESCIENCE.DISSOLVE_ENTITIES = { }
+
 include( "aperture/sounds/gel_sounds.lua" )
 include( "aperture/sounds/tractor_beam_sounds.lua" )
 include( "aperture/sounds/catapult_sounds.lua" )
+include( "aperture/sounds/wall_projector_sounds.lua" )
+include( "aperture/sounds/monster_box_sounds.lua" )
+include( "aperture/sounds/fizzler_sounds.lua" )
+include( "aperture/sounds/laser_sounds.lua" )
 
 function APERTURESCIENCE:PlaySequence( self, seq, rate )
 
@@ -45,6 +53,9 @@ function APERTURESCIENCE:IsValidEntity( ent )
 		&& ent:GetClass() != "prop_gel_dropper"
 		&& ent:GetClass() != "prop_tractor_beam"
 		&& ent:GetClass() != "prop_wall_projector"
+		&& ent:GetClass() != "ent_laser_field"
+		&& ent:GetClass() != "ent_fizzler"
+		&& ent:GetClass() != "env_portal_laser"
 		&& ent:GetClass() != "prop_catapult" ) then 
 		return true
 	end
@@ -127,9 +138,9 @@ hook.Add( "PreDrawHUD", "GASL_HUDRender", function()
 				local points, length = APERTURESCIENCE:CalcBezierCurvePoint( startpos, middlepos + Vector( 0, 0, height * 2 ), endpos, 10 )
 				local prevBeamPos = points[ 1 ]
 
-				-- Drawing land target
-				render.SetMaterial( Material( "effects/wheel_ring" ) )
-				render.DrawQuadEasy( catapult:GetPos(), catapult:GetUp(), 200, 200, Color( 255, 255, 255 ), 0 )
+				-- -- Drawing Rotation
+				-- render.SetMaterial( Material( "effects/wheel_ring" ) )
+				-- render.DrawQuadEasy( catapult:GetPos(), catapult:GetUp(), 200, 200, Color( 255, 255, 255 ), 0 )
 				
 				-- Drawing land target
 				render.SetMaterial( Material( "signage/mgf_overlay_bullseye" ) )
@@ -166,9 +177,57 @@ function APERTURESCIENCE:CheckForGel( startpos, dir )
 	
 end
 
-hook.Add( "Think", "GASL_HandlingGel", function()
+function APERTURESCIENCE:IK_Leg_two_dof( parentAngle, startPos, endPos, dofLength1, dofLength2 )
+	
+	local distStartEnd = startPos:Distance( endPos )
+	local rad2deg = 180 / math.pi
+	
+	// Getting Angles
 
-	if ( CLIENT ) then return end
+	// Dof 1
+	local a = math.pow( distStartEnd, 2 ) + math.pow( dofLength1, 2 ) - math.pow( dofLength2, 2 )
+	local aa = a / ( 2 * distStartEnd * dofLength1 )
+	aa = math.max( -1, math.min( 1, aa ) )
+	
+	local firstDofAng = math.acos( aa ) * rad2deg
+	
+	local WTLP, WTLA = WorldToLocal( Vector(), ( endPos - startPos ):Angle(), startPos, parentAngle )
+	WTLA1 = Angle( WTLA.pitch - firstDofAng, WTLA.yaw, 0 )
+	local LTWP, LTWA1 = LocalToWorld( Vector(), WTLA1, startPos, parentAngle )
+
+	local firstDofPos = startPos + LTWA1:Forward() * dofLength1
+	
+	// Dof 2
+	local b = math.pow( dofLength1, 2 ) + math.pow( dofLength2, 2 ) - math.pow( distStartEnd, 2 )
+	local bb = b / ( 2 * dofLength1 * dofLength2 )
+	bb = math.max( -1, math.min( 1, bb ) )
+	
+	local secondDofAng = math.acos( bb ) * rad2deg
+	
+	WTLA2 = Angle( WTLA.pitch - firstDofAng - secondDofAng + 180, WTLA.yaw, 0 )
+	local LTWP, LTWA2 = LocalToWorld( Vector( 0, 0, 0 ), WTLA2, startPos, parentAngle )
+
+	local secondDofPos = firstDofPos + LTWA2:Forward() * dofLength2
+	
+	local debugBoxSize = Vector( 3, 3, 3 )
+	
+	// Debug render
+	if ( CLIENT ) then
+		render.SetMaterial(Material("models/wireframe"))
+		render.DrawBox(firstDofPos, LTWA1, -debugBoxSize, debugBoxSize, Color(255, 255, 255), 0) 
+		render.DrawBox(secondDofPos, LTWA2, -debugBoxSize, debugBoxSize, Color(255, 255, 255), 0) 
+		
+		render.DrawBox((startPos + firstDofPos) / 2, LTWA1, -Vector(dofLength1 / 2, 2, 2), Vector(dofLength1 / 2, 2, 2), Color(255, 255, 255), 0) 
+		render.DrawBox((firstDofPos + secondDofPos) / 2, LTWA2, -Vector(dofLength2 / 2, 2, 2), Vector(dofLength2 / 2, 2, 2), Color(255, 255, 255), 0) 
+	end
+	
+	return firstDofPos, WTLA1, LTWA1, secondDofPos, WTLA2, LTWA2
+	
+end
+
+if ( CLIENT ) then return end
+
+hook.Add( "Think", "GASL_HandlingGel", function()
 	
 	for i, ply in pairs( player.GetAll() ) do
 		
@@ -254,7 +313,7 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 			if ( ply:IsOnGround() && !ply:KeyDown( IN_JUMP ) ) then continue end
 			
 			local WTL = WorldToLocal( gel:GetPos() + plyVelocity, Angle( ), gel:GetPos(), gel:GetAngles() )
-			WTL = Vector( 0, 0, math.max( -WTL.z, 400 ) * 2 )
+			WTL = Vector( 0, 0, math.max( -WTL.z * 2, 800 ) )
 			local LTW = LocalToWorld( WTL, Angle( ), gel:GetPos(), gel:GetAngles() ) - gel:GetPos()
 			LTW.z = math.max( 200, LTW.z / 2 )
 			
@@ -276,7 +335,7 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 				ply.GASL_GelPlayerVelocity = ply.GASL_GelPlayerVelocity + Vector( ply:GetForward().x, ply:GetForward().y, 0 ) * 30
 			end
 
-			ply:SetVelocity( Vector( ply.GASL_GelPlayerVelocity.x, ply.GASL_GelPlayerVelocity.y, 0 ) / 2 )
+			ply:SetVelocity( Vector( ply.GASL_GelPlayerVelocity.x, ply.GASL_GelPlayerVelocity.y, 0 ) / 2 * math.max( 1, ply:Ping() / 10 ) )
 			ply.GASL_GelPlayerVelocity = ply.GASL_GelPlayerVelocity / 2
 			
 		end
@@ -297,10 +356,10 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 			local vPhys = v:GetPhysicsObject()
 			local dir = vPhys:GetVelocity() / 50
 			
-			if ( dir:Length() < 50 ) then
+			if ( dir:Length() < 40 ) then
 			
 				if ( dir == Vector() ) then dir = Vector( 0, 0, -1 ) end
-				dir = dir:GetNormalized() * 50
+				dir = dir:GetNormalized() * 40
 				
 			end
 			
@@ -325,10 +384,71 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 			
 		end
 	end
+	
+	-- Handling dissolved entities
+	for k, v in pairs( APERTURESCIENCE.DISSOLVE_ENTITIES ) do
+	
+		-- skip if entity doesn't exist
+		if ( !v:IsValid() ) then
+			APERTURESCIENCE.DISSOLVE_ENTITIES[ k ] = nil
+			continue
+		end
+		
+		if ( !v.GASL_Dissolve ) then v.GASL_Dissolve = 0 end
+		v.GASL_Dissolve = v.GASL_Dissolve + 1
+		
+		-- turning entity into black and then fadeout alpha
+		local colorBlack = ( math.max( 0, APERTURESCIENCE.DISSOLVE_SPEED - v.GASL_Dissolve * 1.75 ) / APERTURESCIENCE.DISSOLVE_SPEED ) * 255
+		
+		local alpha = math.max( 0, v.GASL_Dissolve - APERTURESCIENCE.DISSOLVE_SPEED / 1.1 ) / ( APERTURESCIENCE.DISSOLVE_SPEED - APERTURESCIENCE.DISSOLVE_SPEED / 1.1 )
+		alpha = 255 - alpha * 255
+		v:SetColor( Color( colorBlack, colorBlack, colorBlack, alpha ) )
+		
+		if ( alpha < 255 ) then v:SetRenderMode( RENDERMODE_TRANSALPHA ) end
+
+		if ( v.GASL_Dissolve >= APERTURESCIENCE.DISSOLVE_SPEED ) then
+		
+			APERTURESCIENCE.DISSOLVE_ENTITIES[ k ] = nil
+			v:Remove()
+			
+		end
+		
+	end
 
 end )
 
-local function PlayerPickup( ply, ent )
+hook.Add( "PhysgunPickup", "GASL_DisablePhysgunPickup", function( ply, ent )
 	if ( ent.GASL_Untouchable ) then return false end
-end
-hook.Add( "PhysgunPickup", "Allow Player Pickup", PlayerPickup )
+end )
+
+hook.Add( "KeyPress", "GASL_HandlePlayerJump", function( ply, key )
+
+	if ( key != IN_JUMP || !ply:IsOnGround() ) then return end
+	
+	local trace = { start = ply:GetPos(), endpos = ply:GetPos() - Vector( 0, 0, 100 ), filter = ply }
+	local ent = util.TraceEntity( trace, ply ).Entity
+	
+	if ( !ent:IsValid() ) then
+		ent = APERTURESCIENCE:CheckForGel( ply:GetPos(), Vector( 0, 0, -100 ) ).Entity
+	end
+	-- Skip if it's not bridge or gel
+	if ( !ent:IsValid() || ent:IsValid() 
+		&& ( ent:GetModel() != "models/wall_projector_bridge/wall.mdl"
+		&& ent:GetClass() != "ent_gel_paint" ) ) then return end
+		
+	if ( ent:GetModel() == "models/wall_projector_bridge/wall.mdl" ) then
+		ent:EmitSound( "GASL.WallProjectorFootsteps" )
+	elseif ( ent:GetClass() == "ent_gel_paint" ) then
+	
+		ent:EmitSound( "GASL.GelFootsteps" )
+		
+		if ( ent:GetGelType() == 1 ) then
+			
+			ply:SetVelocity( Vector( 0, 0, 400 ) )
+			ply:EmitSound( "GASL.GelBounce" )
+			
+		end
+		
+	end
+	
+end )

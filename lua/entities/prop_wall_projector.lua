@@ -4,40 +4,36 @@ ENT.Base 			= "gasl_base_ent"
 
 ENT.Editable		= true
 ENT.PrintName		= "Hard Light Bridge"
+ENT.Category		= "Aperture Science"
+ENT.Spawnable		= true
 ENT.RenderGroup 	= RENDERGROUP_BOTH
 ENT.AutomaticFrameAdvance = true
 
-function ENT:Initialize()
+function ENT:SpawnFunction( ply, trace, ClassName )
 
-	self.BaseClass.Initialize( self )
+	if ( !trace.Hit ) then return end
 	
-	if ( SERVER ) then
-		self:SetModel( "models/props/wall_emitter.mdl" )
-		self:PhysicsInit( SOLID_VPHYSICS )
-		self:SetMoveType( MOVETYPE_VPHYSICS )
-		self:SetSolid( SOLID_VPHYSICS )
-		self:GetPhysicsObject():EnableMotion( false )
-		
-		self.GASL_EntInfo = { model = "models/wall_projector_bridge/wall.mdl", length = 50.393715, color = Color( 255, 255, 255 ) }
-	end
+	local ent = ents.Create( ClassName )
+	ent:SetPos( trace.HitPos )
+	ent:SetAngles( trace.HitNormal:Angle() )
+	ent:Spawn()
 
-	if ( CLIENT ) then
+	return ent
 
-		
-	end
-	
 end
 
+function ENT:SetupDataTables()
 
-function ENT:UpdateLabel()
-
-	self:SetOverlayText( string.format( "Speed: %i\nResistance: %.2f", self:GetSpeed(), self:GetAirResistance() ) )
-
+	self:NetworkVar( "Bool", 0, "Enable" )
+	self:NetworkVar( "Bool", 1, "Toggle" )
+	
 end
 
 function ENT:Draw()
 
 	self:DrawModel()
+	
+	if ( !self:GetEnable() ) then return end
 
 	local BridgeDrawWidth = 35
 	local BorderBeamWidth = 10
@@ -59,8 +55,7 @@ function ENT:Draw()
 		self.GASL_BridgeUpdate.lastAngle = self:GetAngles()
 		
 		local min, max = self:GetRenderBounds() 
-		
-		self:SetRenderBounds( min, max, Vector( totalDistance, 0, 0 ) )
+		self:SetRenderBounds( min, max + Vector( totalDistance, 0, 0 ) )
 	end
 
 	render.SetMaterial( MatBridgeBorder )
@@ -69,12 +64,48 @@ function ENT:Draw()
 
 end
 
+function ENT:UpdateLabel()
+
+	self:SetOverlayText( string.format( "Speed: %i\nResistance: %.2f", self:GetSpeed(), self:GetAirResistance() ) )
+
+end
+
+-- no more client side
+if ( CLIENT ) then return end
+
+function ENT:Initialize()
+
+	self.BaseClass.Initialize( self )
+	
+	if ( SERVER ) then
+	
+		self:SetModel( "models/props/wall_emitter.mdl" )
+		self:PhysicsInit( SOLID_VPHYSICS )
+		self:SetMoveType( MOVETYPE_VPHYSICS )
+		self:SetSolid( SOLID_VPHYSICS )
+		self:GetPhysicsObject():EnableMotion( false )
+		
+		self.GASL_EntInfo = { model = "models/wall_projector_bridge/wall.mdl", length = 200.393692, color = Color( 255, 255, 255 ) }
+
+		if ( !WireAddon ) then return end
+		self.Inputs = Wire_CreateInputs( self, { "Enable" } )
+		
+	end
+
+	if ( CLIENT ) then
+
+		
+	end
+	
+end
+
+
 function ENT:Think()
 	
 	self:NextThink( CurTime() + 0.1 )
 
-	if SERVER then
-	
+	if ( self:GetEnable() ) then
+		
 		self:MakeBridges( )
 		
 		-- Handling changes position or angles
@@ -91,39 +122,56 @@ function ENT:Think()
 		end
 		end
 		
+	elseif ( self.GASL_BridgeUpdate.lastPos || self.GASL_BridgeUpdate.lastAngle ) then
+		self.GASL_BridgeUpdate.lastPos = nil
+		self.GASL_BridgeUpdate.lastAngle = nil
+		self:RemoveBridges()
 	end
 
-	if CLIENT then
-		
-	end
-	
 	return true
 end
 
-if ( SERVER ) then
+function ENT:TriggerInput( iname, value )
+	if ( !WireAddon ) then return end
 	
-	numpad.Register( "aperture_science_catapult_enable", function( pl, ent, keydown, idx )
+	if ( iname == "Enable" ) then self:ToggleEnable( tobool( value ) ) end
+	
+end
 
-		if ( !IsValid( ent ) ) then return false end
+function ENT:ToggleEnable( bDown )
 
-		if ( keydown ) then end
-		return true
-
-	end )
-
-	numpad.Register( "aperture_science_catapult_disable", function( pl, ent, keydown )
-
-		if ( !IsValid( ent ) ) then return false end
-
-		if ( keydown ) then end
-		return true
-
-	end )
-
-	-- Removing wall props
-	function ENT:OnRemove()
+	if ( self:GetToggle( ) ) then
+	
+		if ( !bDown ) then return end
 		
-		self:RemoveBridges()
-		
+		self:SetEnable( !self:GetEnable( ) )
+	else
+		self:SetEnable( bDown )
 	end
+	
+end
+
+numpad.Register( "aperture_science_wall_projector_enable", function( pl, ent, keydown, idx )
+
+	if ( !IsValid( ent ) ) then return false end
+
+	if ( keydown ) then ent:ToggleEnable( true ) end
+	return true
+
+end )
+
+numpad.Register( "aperture_science_wall_projector_disable", function( pl, ent, keydown )
+
+	if ( !IsValid( ent ) ) then return false end
+
+	if ( keydown ) then ent:ToggleEnable( false ) end
+	return true
+
+end )
+
+-- Removing wall props
+function ENT:OnRemove()
+	
+	self:RemoveBridges()
+	
 end

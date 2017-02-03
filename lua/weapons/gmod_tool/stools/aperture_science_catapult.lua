@@ -4,6 +4,8 @@ TOOL.Command = nil
 TOOL.ConfigName = ""
 
 TOOL.ClientConVar[ "model" ] = "models/props/faith_plate.mdl"
+TOOL.ClientConVar[ "keyenable" ] = "42"
+TOOL.ClientConVar[ "toggle" ] = "0"
 
 cleanup.Register( "aperture_science_catapult" )
 
@@ -25,8 +27,8 @@ function TOOL:LeftClick( trace )
 	if ( trace.Entity && trace.Entity:IsPlayer() ) then return false end
 
 	if ( CLIENT ) then return true end
-
-	if ( self.GASL_MakePoint && !self.GASL_Catapult:IsValid() ) then
+	
+	if ( self.GASL_MakePoint && ( !self.GASL_Catapult || self.GASL_Catapult && !self.GASL_Catapult:IsValid() ) ) then
 	
 		self.GASL_MakePoint = false
 		self.GASL_Catapult = NULL
@@ -42,25 +44,13 @@ function TOOL:LeftClick( trace )
 	
 	if ( !self.GASL_MakePoint ) then
 		
+		local ply = self:GetOwner()
 		local model = self:GetClientInfo( "model" )
+		local toggle = self:GetClientNumber( "toggle" )
+		local keyenable = self:GetClientNumber( "keyenable" )
 		
-		if ( !util.IsValidModel( model ) ) then return false end
-		
-		local ent = ents.Create( "prop_catapult" )
-		if ( !IsValid( ent ) ) then return false end
-		
-		ent:SetPos( trace.HitPos + trace.HitNormal * 5 )
-		ent:SetAngles( trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
-		ent:SetAngles( ent:LocalToWorldAngles( Angle( 0, 0, 0 ) ) )
-		ent:Spawn()
-		ent:SetModel( model )
-
-		self.GASL_Catapult = ent
-
-		undo.Create( "Aerial Faith Plate" )
-			undo.AddEntity( ent )
-			undo.SetPlayer( self:GetOwner() )
-		undo.Finish()
+		local catapult = MakeCatapult( ply, model, trace.HitPos + trace.HitNormal * 5, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), toggle, keyenable )
+		self.GASL_Catapult = catapult
 		
 	else
 	
@@ -72,6 +62,32 @@ function TOOL:LeftClick( trace )
 	self.GASL_MakePoint = !self.GASL_MakePoint
 	
 	return true
+	
+end
+
+function MakeCatapult( pl, model, pos, ang, toggle, key_enable )
+	
+	if ( !util.IsValidModel( model ) ) then return false end
+	
+	local catapult = ents.Create( "prop_catapult" )
+	if ( !IsValid( catapult ) ) then return false end
+	
+	catapult:SetPos( pos )
+	catapult:SetAngles( ang )
+	catapult:Spawn()
+	catapult:SetModel( model )
+	catapult:SetSkin( 1 )
+	
+	catapult.NumEnableDown = numpad.OnDown( pl, key_enable, "aperture_science_catapult_enable", catapult, 1 )
+	catapult.NumEnableUp = numpad.OnUp( pl, key_enable, "aperture_science_catapult_disable", catapult, 1 )
+	catapult:SetToggle( toggle )
+
+	undo.Create( "Aerial Faith Plate" )
+		undo.AddEntity( catapult )
+		undo.SetPlayer( pl )
+	undo.Finish()
+	
+	return catapult
 	
 end
 
@@ -136,7 +152,6 @@ function TOOL:Think()
 	end
 
 end
-
 
 function TOOL.BuildCPanel( CPanel )
 

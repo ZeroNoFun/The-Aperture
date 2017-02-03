@@ -6,6 +6,7 @@ $Texture2 "effects/redlaser1_smoke"
 $nocull 1
 $nodecal 1
 $additive 1
+$selfillum 1
 
 $no_fullbright 1
 $model 1

@@ -4,8 +4,23 @@ ENT.Base 			= "gasl_base_ent"
 
 ENT.Editable		= true
 ENT.PrintName		= "Excursion Funnel"
+ENT.Category		= "Aperture Science"
+ENT.Spawnable		= true
 ENT.RenderGroup 	= RENDERGROUP_BOTH
 ENT.AutomaticFrameAdvance = true
+
+function ENT:SpawnFunction( ply, trace, ClassName )
+
+	if ( !trace.Hit ) then return end
+	
+	local ent = ents.Create( ClassName )
+	ent:SetPos( trace.HitPos + trace.HitNormal * 31 )
+	ent:SetAngles( trace.HitNormal:Angle() )
+	ent:Spawn()
+
+	return ent
+
+end
 
 function ENT:SetupDataTables()
 
@@ -36,6 +51,9 @@ function ENT:Initialize()
 		
 		self.GASL_EntInfo = { model = "models/tractor_beam_field/tractor_beam_field.mdl", length = 428.5, color = Color( 255, 255, 255 ), angle = Angle( 90, 0, 0 ), parent = true }
 		
+		if ( !WireAddon ) then return end
+		self.Inputs = Wire_CreateInputs( self, { "Enable", "Reverse" } )
+		
 	end
 
 	if ( CLIENT ) then
@@ -49,6 +67,7 @@ function ENT:Initialize()
 	end
 	
 	self:UpdateLabel()
+	
 end
 
 function ENT:UpdateLabel()
@@ -58,8 +77,7 @@ function ENT:UpdateLabel()
 	if ( self:GetReverse() ) then reverse = 1 else reverse = 0 end
 	
 	self:SetOverlayText( string.format( "Enabled: %i\nReversed: %i", enabled, reverse ) )
-
-
+	
 end
 
 function ENT:Draw()
@@ -368,6 +386,8 @@ end
 
 function ENT:CheckForLeave( )
 
+	if ( !self.GASL_TractorBeamLeavedEntities ) then return end
+	
 	for k, v in pairs( self.GASL_TractorBeamLeavedEntities ) do
 		
 		if ( not v:IsValid( ) ) then break end
@@ -387,6 +407,9 @@ function ENT:CheckForLeave( )
 	end
 	
 end
+
+-- no more client size
+if ( CLIENT ) then return end
 
 function ENT:SetupTrails( )
 	
@@ -417,16 +440,12 @@ end
 function ENT:TractorBeamEffectRemove( )
 
 	for k, v in pairs( self.GASL_TractorBeamFields ) do
-		if ( v:IsValid() ) then
-			v:Remove()
-		end
+		if ( v:IsValid() ) then v:Remove() end
 	end
 	
 end
 
 function ENT:TractorBeamEffect( distance )
-
-	if ( CLIENT ) then return end
 	
 	self:SetupTrails()
 	
@@ -472,13 +491,22 @@ function ENT:TractorBeamEffect( distance )
 		table.insert( self.GASL_TractorBeamFields, table.Count( self.GASL_TractorBeamFields ) + 1, ent )
 
 		addingDist = addingDist + PlateLength
+		
 	end
+	
+end
+
+function ENT:TriggerInput( iname, value )
+	if ( !WireAddon ) then return end
+	
+	if ( iname == "Enable" ) then self:ToggleEnable( tobool( value ) ) end
+	if ( iname == "Reverse" ) then self:ToggleReverse( tobool( value ) ) end
 	
 end
 
 function ENT:ToggleEnable( bDown )
 
-	if ( self:GetToggle( ) ) then
+	if ( self:GetToggle() ) then
 	
 		if ( !bDown ) then return end
 		
@@ -528,6 +556,7 @@ function ENT:ToggleReverse( bDown )
 		if ( self:GetReverse() ) then
 			APERTURESCIENCE:PlaySequence( self, "tractor_beam_turning_reverse", 2.0 )
 		else
+			self.GASL_BridgeUpdate = { }
 			APERTURESCIENCE:PlaySequence( self, "tractor_beam_turning", 2.0 )
 		end
 		
@@ -537,53 +566,48 @@ function ENT:ToggleReverse( bDown )
 	
 end
 
-if ( SERVER ) then
+numpad.Register( "aperture_science_tractor_beam_enable", function( pl, ent, keydown, idx )
 
-	numpad.Register( "aperture_science_tractor_beam_enable", function( pl, ent, keydown, idx )
+	if ( !IsValid( ent ) ) then return false end
 
-		if ( !IsValid( ent ) ) then return false end
+	if ( keydown ) then ent:ToggleEnable( true ) end
+	return true
 
-		if ( keydown ) then ent:ToggleEnable( true ) end
-		return true
+end )
 
-	end )
+numpad.Register( "aperture_science_tractor_beam_disable", function( pl, ent, keydown )
 
-	numpad.Register( "aperture_science_tractor_beam_disable", function( pl, ent, keydown )
+	if ( !IsValid( ent ) ) then return false end
 
-		if ( !IsValid( ent ) ) then return false end
+	if ( keydown ) then ent:ToggleEnable( false ) end
+	return true
 
-		if ( keydown ) then ent:ToggleEnable( false ) end
-		return true
+end )
 
-	end )
+numpad.Register( "aperture_science_tractor_beam_reverse_back", function( pl, ent, keydown )
+
+	if ( !IsValid( ent ) ) then return false end
+
+	if ( keydown ) then ent:ToggleReverse( true ) end
+	return true
+
+end )
+
+numpad.Register( "aperture_science_tractor_beam_reverse_forward", function( pl, ent, keydown )
+
+	if ( !IsValid( ent ) ) then return false end
+
+	if ( keydown ) then ent:ToggleReverse( false ) end
+	return true
+
+end )
+
+-- Removing field effect 
+function ENT:OnRemove()
+
+	self:CheckForLeave()
 	
-	numpad.Register( "aperture_science_tractor_beam_reverse_back", function( pl, ent, keydown )
-
-		if ( !IsValid( ent ) ) then return false end
-
-		if ( keydown ) then ent:ToggleReverse( true ) end
-		return true
-
-	end )
-
-	numpad.Register( "aperture_science_tractor_beam_reverse_forward", function( pl, ent, keydown )
-
-		if ( !IsValid( ent ) ) then return false end
-
-		if ( keydown ) then ent:ToggleReverse( false ) ent.GASL_BridgeUpdate.lastPos = { } end
-		return true
-
-	end )
-
-	-- Removing field effect 
-	function ENT:OnRemove()
-	
-		self:CheckForLeave()
-		
-		self:StopSound( "GASL.TractorBeamLoop" )
-		self:TractorBeamEffectRemove( )
-		
-	end
+	self:StopSound( "GASL.TractorBeamLoop" )
+	self:TractorBeamEffectRemove( )
 	
 end
-

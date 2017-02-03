@@ -120,11 +120,11 @@ function ENT:PaintGel( pos, normal, rad )
 	for k, v in pairs( findResult ) do
 	
 		if ( APERTURESCIENCE:IsValidEntity( v ) && !v:IsPlayer() && v:GetPhysicsObject():IsValid()
-			&& ( !APERTURESCIENCE.GELLED_ENTITIES[ v ] || v.GASL_GelType && v.GASL_GelType != self.GASL_GelType ) ) then
+			&& ( !APERTURESCIENCE.GELLED_ENTITIES[ v ] || v.GASL_GelledType && v.GASL_GelledType != self.GASL_GelType ) ) then
 			
 			-- Reseting physics material
 			if ( v.GASL_PrevPhysMaterial ) then
-				self:GetPhysicsObject():SetMaterial( v.GASL_PrevPhysMaterial )
+				v:GetPhysicsObject():SetMaterial( v.GASL_PrevPhysMaterial )
 				v.GASL_PrevPhysMaterial = nil
 			end
 			
@@ -144,13 +144,13 @@ function ENT:PaintGel( pos, normal, rad )
 				if ( !v.GASL_PrevPhysMaterial ) then
 				
 					if ( self.GASL_GelType == 1 ) then
-						v.GASL_PrevPhysMaterial = self:GetPhysicsObject():GetMaterial()
+						v.GASL_PrevPhysMaterial = v:GetPhysicsObject():GetMaterial()
 						v:GetPhysicsObject():SetMaterial( "metal_bouncy" )
 						APERTURESCIENCE.GELLED_ENTITIES[ v ] = v
 					end
 
 					if ( self.GASL_GelType == 2 ) then
-						v.GASL_PrevPhysMaterial = self:GetPhysicsObject():GetMaterial()
+						v.GASL_PrevPhysMaterial = v:GetPhysicsObject():GetMaterial()
 						v:GetPhysicsObject():SetMaterial( "gmod_ice" )
 					end
 					
@@ -159,6 +159,7 @@ function ENT:PaintGel( pos, normal, rad )
 			else
 				APERTURESCIENCE.GELLED_ENTITIES[ v ] = nil
 				v:SetSubMaterial( 0, "" )
+				v:GetPhysicsObject():SetMaterial( "none" )
 				v.GASL_GelledType = nil
 			end
 			

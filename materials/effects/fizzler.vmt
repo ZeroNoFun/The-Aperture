@@ -1,0 +1,34 @@
+VertexlitGeneric
+{
+$basetexture "effects/fizzler_ripples_dim"
+$detailscale 1
+$detail "effects/fizzler_noise"
+$detailblendmode 2
+$color2 "[.3 .8 1]"
+$surfaceprop glass
+"%keywords" Portal2
+$translucent 1
+$additive 1
+$selfillum 1
+$basescale "[1 1]"
+
+Proxies
+{
+TractorBeam
+{
+resultvar $scrollrate
+}
+Multiply
+{
+srcvar1 $detailscrollfactor
+srcvar2 $scrollrate
+resultvar $detailscrollrate
+}
+TextureScroll
+{
+texturescrollvar $detailtexturetransform
+texturescrollrate 0.1
+texturescrollangle 0
+}
+}
+}

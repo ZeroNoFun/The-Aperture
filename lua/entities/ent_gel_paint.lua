@@ -162,6 +162,12 @@ function ENT:Draw()
 	
 end
 
+function ENT:Think()
+
+	return
+	
+end
+
 if ( CLIENT ) then
 
 	function ENT:OnRemove()

@@ -1,11 +1,21 @@
 AddCSLuaFile( )
-DEFINE_BASECLASS( "base_gmodentity" )
 
 local WireAddon = WireAddon or WIRE_CLIENT_INSTALLED
 
 ENT.Editable		= true
 ENT.PrintName		= "GASL base class"
 ENT.AutomaticFrameAdvance = true
+
+if ( WireAddon ) then
+
+	DEFINE_BASECLASS( "base_wire_entity" )
+	ENT.WireDebugName = "GASL"
+	
+else
+
+	DEFINE_BASECLASS( "base_gmodentity" )
+
+end
 
 function ENT:Initialize()
 
@@ -34,22 +44,6 @@ function ENT:Draw()
 	
 end
 
-function ENT:Think()
-
-	self:NextThink( CurTime() )
-
-	if ( SERVER ) then
-	
-	end
-
-	if ( CLIENT ) then
-		
-	end
-
-	return true
-	
-end
-
 function ENT:GetAllPortalPassages( pos, angle )
 
 	-- If wall projector detect portal update bridge
@@ -62,9 +56,9 @@ function ENT:GetAllPortalPassages( pos, angle )
 	local passages = 1
 
 	local points = { }
-	
+	local a = 0
 	while ( portalLoop ) do
-	
+		a = a + 1
 		portalLoop = false
 		
 		-- Prev Hendling
@@ -74,6 +68,7 @@ function ENT:GetAllPortalPassages( pos, angle )
 			local bridgeOffsetPos = hitPortal:WorldToLocal( tracePrevHitPos )
 			local bridgeOffsetAngle = hitPortal:WorldToLocalAngles( bridgeBuildAng )
 			bridgeOffsetPos.y = -bridgeOffsetPos.y
+			
 			bridgeOffsetPos.x = 0
 			bridgeBuildPos = hitPortal:GetNWBool( "Potal:Other" ):LocalToWorld( bridgeOffsetPos )
 			bridgeBuildAng = hitPortal:GetNWBool( "Potal:Other" ):LocalToWorldAngles( bridgeOffsetAngle + Angle( 0, 180, 0 ) )
@@ -84,18 +79,16 @@ function ENT:GetAllPortalPassages( pos, angle )
 		end
 		
 		local trace = util.TraceLine( {
-			start = bridgeBuildPos + bridgeBuildAng:Forward() * 10,
+			start = bridgeBuildPos,
 			endpos = bridgeBuildPos + bridgeBuildAng:Forward() * 100000,
 			filter = function( ent )
-				-- Portal loop if trace hit portal and it not equal to prev portal
-				if ( ent:GetClass() == "prop_portal" ) then return true end
-				if ( ent == self or ent:IsPlayer() or ent:IsNPC() or ent:GetPhysicsObject():IsValid() ) then return false end
+				if ( ent == self || ent:GetClass() == "prop_portal" || ent:IsPlayer() || ent:IsNPC() || ent:GetPhysicsObject() && ent:GetPhysicsObject():IsValid() ) then return false end
 			end
 		} )
 		
 		table.insert( points, table.Count( points ) + 1, { startpos = bridgeBuildPos, endpos = trace.HitPos } )
 		
-		-- Searth for: is tracer hit portal
+		-- Portal loop if trace hit portal
 		for k, v in pairs( ents.FindByClass( "prop_portal" ) ) do
 			
 			local pos = v:WorldToLocal( trace.HitPos )
@@ -104,7 +97,6 @@ function ENT:GetAllPortalPassages( pos, angle )
 				&& pos.z > -45 && pos.z < 45 ) then
 
 				if ( v:GetNWBool( "Potal:Other" ) && v:GetNWBool( "Potal:Other" ):IsValid() ) then
-					
 					tracePrevHitPos = trace.HitPos
 					passages = passages + 1
 					portalLoop = true
@@ -159,12 +151,10 @@ function ENT:MakeBridges( )
 		end
 		
 		local trace = util.TraceLine( {
-			start = bridgeBuildPos + bridgeBuildAng:Forward() * 10,
+			start = bridgeBuildPos,
 			endpos = bridgeBuildPos + bridgeBuildAng:Forward() * 100000,
 			filter = function( ent )
-				-- Portal loop if trace hit portal and it not equal to prev portal
-				if ( ent:GetClass() == "prop_portal" ) then return true end
-				if ( ent == self or ent:IsPlayer() or ent:IsNPC() or ent:GetPhysicsObject():IsValid() ) then return false end
+				if ( ent == self || ent:GetClass() == "prop_portal" || ent:IsPlayer() || ent:IsNPC() || ent:GetPhysicsObject() && ent:GetPhysicsObject():IsValid() ) then return false end
 			end
 		} )
 		
@@ -227,9 +217,9 @@ function ENT:MakeBridges( )
 
 end
 
-function ENT:ClearAllData( )
+function ENT:ClearAllData()
 
-	self:RemoveBridges( )
+	self:RemoveBridges()
 	self.GASL_BridgeUpdate = { }
 	self.GASL_EntitiesEffects = { }
 	self.GASL_Portals = { }
@@ -247,7 +237,7 @@ function ENT:RemoveBridge( index )
 
 end
 
-function ENT:RemoveBridges( )
+function ENT:RemoveBridges()
 	
 	for k, v in pairs( self.GASL_EntitiesEffects ) do
 	
@@ -256,9 +246,6 @@ function ENT:RemoveBridges( )
 	end	
 
 end
-
-
-
 
 function ENT:BridgeRemoveBridgesFromPortal2End( index )
 
@@ -280,7 +267,7 @@ function ENT:BridgeRemoveBridgesFromPortal2End( index )
 	
 end
 
-function ENT:BridgeCheckUpdate( )
+function ENT:BridgeCheckUpdate()
 
 	---------------------------------
 	--------- BRIDGE UPDATE ---------
@@ -326,7 +313,7 @@ function ENT:BridgeBuild( trace, bridgeBuildPos, bridgeBuildAng, passages )
 	local disatance = 0
 	local hitPortal = nil
 	local hitPortalExit = nil
-	local tracePrevHitPos = Vector( )
+	local tracePrevHitPos = Vector()
 	
 	-- Removing all prev walls
 	if ( self.GASL_EntitiesEffects[ passages ] ) then

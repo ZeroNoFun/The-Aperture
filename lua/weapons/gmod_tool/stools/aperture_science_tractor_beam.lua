@@ -56,7 +56,6 @@ if ( SERVER ) then
 		else
 			toggleB = false
 		end
-
 		tractor_beam:SetToggle( toggleB )
 		
 		undo.Create( "Excursion Funnel" )
