@@ -17,6 +17,7 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	ent:SetPos( trace.HitPos )
 	ent:SetAngles( trace.HitNormal:Angle() )
 	ent:Spawn()
+	
 
 	return ent
 
@@ -27,6 +28,16 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Bool", 0, "Enable" )
 	self:NetworkVar( "Bool", 1, "Toggle" )
 	
+end
+
+if ( CLIENT ) then
+
+	function ENT:Think() 
+
+		self:SetRenderBounds( self.GASL_RenderBounds.mins, self.GASL_RenderBounds.maxs )
+		
+	end
+
 end
 
 function ENT:Draw()
@@ -49,13 +60,15 @@ function ENT:Draw()
 	} )
 	
 	local totalDistance = self:GetPos():Distance( trace.HitPos )
-		
+	
 	if ( self.GASL_BridgeUpdate.lastPos != self:GetPos() or self.GASL_BridgeUpdate.lastAngle != self:GetAngles() ) then
 		self.GASL_BridgeUpdate.lastPos = self:GetPos()
 		self.GASL_BridgeUpdate.lastAngle = self:GetAngles()
 		
 		local min, max = self:GetRenderBounds() 
-		self:SetRenderBounds( min, max + Vector( totalDistance, 0, 0 ) )
+		max = max + Vector( totalDistance, 0, 0 )
+		self.GASL_RenderBounds = { mins = min, maxs = max }
+		
 	end
 
 	render.SetMaterial( MatBridgeBorder )
@@ -69,9 +82,6 @@ function ENT:UpdateLabel()
 	self:SetOverlayText( string.format( "Speed: %i\nResistance: %.2f", self:GetSpeed(), self:GetAirResistance() ) )
 
 end
-
--- no more client side
-if ( CLIENT ) then return end
 
 function ENT:Initialize()
 
@@ -94,11 +104,15 @@ function ENT:Initialize()
 
 	if ( CLIENT ) then
 
+		local min, max = self:GetRenderBounds() 
+		self.GASL_RenderBounds = { mins = min, maxs = max }
 		
 	end
 	
 end
 
+-- no more client side
+if ( CLIENT ) then return end
 
 function ENT:Think()
 	

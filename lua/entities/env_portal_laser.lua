@@ -15,6 +15,7 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	
 	local ent = ents.Create( ClassName )
 	ent:SetPos( trace.HitPos )
+	ent:SetModel( "models/props/laser_emitter_center.mdl" )
 	ent:SetAngles( trace.HitNormal:Angle() )
 	ent:Spawn()
 
@@ -31,12 +32,37 @@ end
 
 if ( CLIENT ) then
 
+	function ENT:Think()
+	
+		//if ( self.GASL_UpdateRenderBounds.mins != self.GASL_RenderBounds.mins || self.GASL_UpdateRenderBounds.maxs != self.GASL_RenderBounds.maxs ) then
+			//self.GASL_UpdateRenderBounds = { mins = self.GASL_RenderBounds.mins, maxs = self.GASL_RenderBounds.maxs }
+			self:SetRenderBounds( self.GASL_RenderBounds.mins, self.GASL_RenderBounds.maxs )
+		//end
+		
+	end
+
 	function ENT:Initialize()
-	
-		self.GASL_UpdateRenderBounds = Vector()
-	
+		
+		local min, max = self:GetRenderBounds() 
+		self.GASL_RenderBounds = { mins = min, maxs = max }
+		self.GASL_UpdateRenderBounds = { mins = Vector(), maxs = Vector() }
+		
 	end
 	
+	function ENT:DrawMuzzleEffect( startpos, dir )
+
+		local LaserSpriteCount = 8
+		local LaserSpriteRadius = 70 * math.Rand( 0.9, 1.1 )
+		local LaserSpriteDist = 50
+		
+		for i = 1, ( LaserSpriteCount - 2 ) do
+			local radius = LaserSpriteRadius * ( 1 - ( i / LaserSpriteCount ) )
+			render.SetMaterial( Material( "particle/laser_beam_glow" ) )
+			render.DrawSprite( startpos + dir * i * ( LaserSpriteDist / LaserSpriteCount ), radius, radius, Color( 255, 255, 255 ) )
+		end
+		
+	end
+
 end
 
 function ENT:ModelToStartCoord()
@@ -86,24 +112,22 @@ function ENT:DoLaser( startpos, ang, ignore )
 
 		if ( CLIENT ) then
 		
-			render.SetMaterial( Material( "effects/redlaser1" ) )
-			render.DrawBeam( startpos, endpos, 10, distance / 100, 1, Color( 255, 255, 255 ) )
-			render.SetMaterial( Material( "effects/redlaser2" ) )
-			render.DrawBeam( startpos, endpos, 3, distance / 100, 1, Color( 255, 255, 255 ) )
+			local localEndPos = self:WorldToLocal( endpos )
+			
+			if ( localEndPos.x > self.GASL_RenderBounds.maxs.x ) then self.GASL_RenderBounds.maxs.x = localEndPos.x end
+			if ( localEndPos.y > self.GASL_RenderBounds.maxs.y ) then self.GASL_RenderBounds.maxs.y = localEndPos.y end
+			if ( localEndPos.z > self.GASL_RenderBounds.maxs.z ) then self.GASL_RenderBounds.maxs.z = localEndPos.z end
+			
+			if ( localEndPos.x < self.GASL_RenderBounds.mins.x ) then self.GASL_RenderBounds.mins.x = localEndPos.x end
+			if ( localEndPos.y < self.GASL_RenderBounds.mins.y ) then self.GASL_RenderBounds.mins.y = localEndPos.y end
+			if ( localEndPos.z < self.GASL_RenderBounds.mins.z ) then self.GASL_RenderBounds.mins.z = localEndPos.z end
+
+			render.SetMaterial( Material( "sprites/purplelaser1" ) )
+			render.DrawBeam( startpos, endpos, 40, distance / 100, 1, Color( 255, 255, 255 ) )
 			
 		else
-
-			local tr = util.TraceHull( {
-				start = v.startpos,
-				endpos = v.endpos + offset,
-				filter = function( ent ) 
-					if ( ( APERTURESCIENCE:IsValidEntity( ent ) ) ) then return true end
-				end,
-				mins = -Vector( 10, 10, 10 ),
-				maxs = Vector( 10, 10, 10 )
-			} )
 		
-			local trEnt = tr.Entity
+			local trEnt = trace.Entity
 			
 			if ( trEnt && trEnt:IsValid() 
 				&& ( trEnt:IsPlayer()
@@ -111,12 +135,17 @@ function ENT:DoLaser( startpos, ang, ignore )
 				trEnt:TakeDamage( 10, self, self ) 
 				trEnt:EmitSound( "GASL.LaserBodyBurn" )
 				
-				local forceDirLocal = WorldToLocal( trEnt:LocalToWorld( trEnt:GetPhysicsObject():GetMassCenter() ), Angle(), self:LocalToWorld( self:ModelToStartCoord() ), self:GetAngles() )
-				forceDirLocal.x = 0
+				if ( !trEnt:IsPlayer() && trEnt:Health() > 0 ) then trEnt:Ignite( 1 ) end
 				
-				local forceDir = WorldToLocal( forceDirLocal, Angle(), Vector(), self:GetAngles() )
-				forceDir = forceDir:GetNormalized() * -forceDir:Length()
-				trEnt:SetVelocity( forceDir * 20 )
+				-- Forces Player away from the laser
+				-- local angles = ( v.endpos - v.startpos ):Angle()
+				-- local forceDirLocal = WorldToLocal( trEnt:LocalToWorld( trEnt:GetPhysicsObject():GetMassCenter() ), Angle(), v.startpos, angles )
+				-- forceDirLocal.x = 0
+				
+				-- local forceDir = WorldToLocal( forceDirLocal, Angle(), Vector(), angles )
+				-- forceDir.z = 0
+				-- forceDir = -forceDir:GetNormalized() * ( 40 - forceDir:Length() )
+				-- trEnt:SetVelocity( forceDir * 20 )
 				
 			end
 		
@@ -126,6 +155,12 @@ function ENT:DoLaser( startpos, ang, ignore )
 		if ( traceEnt && traceEnt:IsValid() && !self.GASL_AllreadyHandled[ traceEnt:EntIndex() ]
 			&& ( traceEnt:GetModel() == "models/props/reflection_cube.mdl" ) ) then
 			
+			if ( CLIENT ) then
+			
+				self:DrawMuzzleEffect( traceEnt:GetPos(), traceEnt:GetForward() )
+
+			end
+
 			self.GASL_AllreadyHandled[ traceEnt:EntIndex() ] = true
 			return self:DoLaser( traceEnt:GetPos(), traceEnt:GetAngles(), traceEnt )
 		end
@@ -137,6 +172,7 @@ function ENT:DoLaser( startpos, ang, ignore )
 	
 end
 
+
 function ENT:Draw()
 
 	self:DrawModel()
@@ -145,25 +181,18 @@ function ENT:Draw()
 	if ( !self:GetEnable() ) then return end
 
 	self.GASL_AllreadyHandled = { }
-		
+	local startPos = self:LocalToWorld( self:ModelToStartCoord() )
+	
+	self:DrawMuzzleEffect( startPos, self:GetForward() )
+	
 	local endtrace = self:DoLaser( self:LocalToWorld( self:ModelToStartCoord() ), self:GetAngles(), self )
 	local endpos = endtrace.HitPos
 	local endnormal = endtrace.HitNormal
 	
 	local pos = self:WorldToLocal( endpos )
 	
-	if ( pos != self.GASL_UpdateRenderBounds && self:GetVelocity():Length() == 0 ) then
-		
-		self.GASL_UpdateRenderBounds = pos
-		local min, max = self:GetRenderBounds() 
-		
-		max.x = pos.x
-		self:SetRenderBounds( min, max )
-		
-	end
-	
 	if ( !timer.Exists( "GASL_LaserSparksEffect"..self:EntIndex() ) ) then 
-			timer.Create( "GASL_LaserSparksEffect"..self:EntIndex(), 0.08, 1, function() end )
+		timer.Create( "GASL_LaserSparksEffect"..self:EntIndex(), 0.05, 1, function() end )
 
 		local vPoint = Vector( 0, 0, 0 )
 		local effectdata = EffectData()
@@ -185,8 +214,18 @@ function ENT:Initialize()
 	self:SetSolid( SOLID_VPHYSICS )
 	self:GetPhysicsObject():EnableMotion( false )
 
+	--
+	if ( !WireAddon ) then return end
+	self.Inputs = Wire_CreateInputs( self, { "Enable" } )
+
 end
 
+function ENT:TriggerInput( iname, value )
+	if ( !WireAddon ) then return end
+	
+	if ( iname == "Enable" ) then self:ToggleEnable( tobool( value ) ) end
+	
+end
 
 function ENT:Think()
 
