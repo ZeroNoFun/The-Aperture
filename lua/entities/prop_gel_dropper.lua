@@ -7,7 +7,8 @@ function ENT:SetupDataTables()
 
 	self:NetworkVar( "Bool", 0, "Enable" )
 	self:NetworkVar( "Bool", 1, "Toggle" )
-	
+	self:NetworkVar( "Bool", 2, "StartEnabled" )
+
 end
 
 if ( CLIENT ) then
@@ -71,6 +72,8 @@ function ENT:MakePuddle( )
 	ent:SetPos( self:LocalToWorld( ( Vector( 0, 0, -1 ) + VectorRand() ) * 5 ) )
 	ent:SetMoveType( MOVETYPE_NONE )
 	ent:Spawn()
+	ent:SetOwner( self:GetOwner() )
+
 	ent:GetPhysicsObject():EnableCollisions( false )
 	ent:GetPhysicsObject():Wake()
 	ent:GetPhysicsObject():SetVelocity( -self:GetUp() * self.GASL_GelLaunchSpeed )
@@ -131,6 +134,8 @@ function ENT:TriggerInput( iname, value )
 end
 
 function ENT:ToggleEnable( bDown )
+
+	if ( self:GetStartEnabled() ) then bDown = !bDown end
 
 	if ( self:GetToggle() ) then
 	

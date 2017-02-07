@@ -27,6 +27,7 @@ function ENT:SetupDataTables()
 	
 	self:NetworkVar( "Bool", 0, "Enable" )
 	self:NetworkVar( "Bool", 1, "Toggle" )
+	self:NetworkVar( "Bool", 2, "StartEnabled" )
 	
 end
 
@@ -91,9 +92,10 @@ function ENT:DoLaser( startpos, ang, ignore )
 		trace = util.TraceLine( {
 			start = v.startpos,
 			endpos = v.endpos + offset,
-			filter = function( ent ) 
+			filter = function( ent )
 				if ( ent:GetClass() == "prop_portal" || ( ent:IsPlayer() || ent:IsNPC() ) && CLIENT || ent == ignore ) then return false end
-				if ( ( APERTURESCIENCE:IsValidEntity( ent ) ) ) then return true end
+				if ( ent:GetClass() == "env_laser_relay" ) then ent.GASL_LastHittedByLaser = CurTime() end
+				if ( APERTURESCIENCE:IsValidEntity( ent ) || ent:GetClass() == "env_laser_catcher" ) then return true end
 			end
 		} )
 		
@@ -111,7 +113,11 @@ function ENT:DoLaser( startpos, ang, ignore )
 		local distance = trace.HitPos:Distance( v.startpos )
 
 		if ( CLIENT ) then
-		
+			
+			if ( IsValid( traceEnt ) && traceEnt:GetClass() == "env_laser_catcher" ) then
+				endpos = traceEnt:LocalToWorld( traceEnt:ModelToStartCoord() )
+			end
+			
 			local localEndPos = self:WorldToLocal( endpos )
 			
 			if ( localEndPos.x > self.GASL_RenderBounds.maxs.x ) then self.GASL_RenderBounds.maxs.x = localEndPos.x end
@@ -123,7 +129,7 @@ function ENT:DoLaser( startpos, ang, ignore )
 			if ( localEndPos.z < self.GASL_RenderBounds.mins.z ) then self.GASL_RenderBounds.mins.z = localEndPos.z end
 
 			render.SetMaterial( Material( "sprites/purplelaser1" ) )
-			render.DrawBeam( startpos, endpos, 40, distance / 100, 1, Color( 255, 255, 255 ) )
+			render.DrawBeam( startpos, endpos, 80, distance / 100, 1, Color( 255, 255, 255 ) )
 			
 		else
 		
@@ -151,9 +157,10 @@ function ENT:DoLaser( startpos, ang, ignore )
 		
 		end
 		
+		-- skip if 
+		if ( self.GASL_AllreadyHandled[ traceEnt:EntIndex() ] ) then break end
 		-- reflects when hit reflection cube
-		if ( traceEnt && traceEnt:IsValid() && !self.GASL_AllreadyHandled[ traceEnt:EntIndex() ]
-			&& ( traceEnt:GetModel() == "models/props/reflection_cube.mdl" ) ) then
+		if ( traceEnt && traceEnt:IsValid() && ( traceEnt:GetModel() == "models/props/reflection_cube.mdl" ) ) then
 			
 			if ( CLIENT ) then
 			
@@ -188,8 +195,13 @@ function ENT:Draw()
 	local endtrace = self:DoLaser( self:LocalToWorld( self:ModelToStartCoord() ), self:GetAngles(), self )
 	local endpos = endtrace.HitPos
 	local endnormal = endtrace.HitNormal
+	local endentity = endtrace.Entity
 	
 	local pos = self:WorldToLocal( endpos )
+	
+	if ( IsValid( endentity ) && endentity:GetClass() == "env_laser_catcher" ) then
+		return
+	end
 	
 	if ( !timer.Exists( "GASL_LaserSparksEffect"..self:EntIndex() ) ) then 
 		timer.Create( "GASL_LaserSparksEffect"..self:EntIndex(), 0.05, 1, function() end )
@@ -238,7 +250,14 @@ function ENT:Think()
 			timer.Create( "GASL_LaserDamaging"..self:EntIndex(), 0.1, 1, function() end )
 			
 		self.GASL_AllreadyHandled = { }
-		self:DoLaser( self:LocalToWorld( self:ModelToStartCoord() ), self:GetAngles(), self )
+		local endtrace = self:DoLaser( self:LocalToWorld( self:ModelToStartCoord() ), self:GetAngles(), self )
+		local endentity = endtrace.Entity
+		
+		if ( IsValid( endentity ) && endentity:GetClass() == "env_laser_catcher" ) then
+
+			endentity.GASL_LastHittedByLaser = CurTime()
+			return
+		end
 	
 	end
 
@@ -248,6 +267,8 @@ end
 
 function ENT:ToggleEnable( bDown )
 
+	if ( self:GetStartEnabled() ) then bDown = !bDown end
+	
 	if ( self:GetToggle() ) then
 	
 		if ( !bDown ) then return end

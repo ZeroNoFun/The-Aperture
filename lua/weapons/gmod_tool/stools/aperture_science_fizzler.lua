@@ -5,6 +5,7 @@ TOOL.ClientConVar[ "model" ] = "models/props/fizzler.mdl"
 TOOL.ClientConVar[ "maxrad" ] = "20"
 TOOL.ClientConVar[ "keyenable" ] = "45"
 TOOL.ClientConVar[ "toggle" ] = "0"
+TOOL.ClientConVar[ "startenabled" ] = "0"
 
 if ( CLIENT ) then
 
@@ -12,6 +13,7 @@ if ( CLIENT ) then
 	language.Add( "tool.aperture_science_fizzler.name", "Fizzler" )
 	language.Add( "tool.aperture_science_fizzler.desc", "Creates Fizzler" )
 	language.Add( "tool.aperture_science_fizzler.0", "Left click to use" )
+	language.Add( "tool.aperture_science_fizzler.startenabled", "Start Enabled" )
 	language.Add( "tool.aperture_science_fizzler.enable", "Enable" )
 	language.Add( "tool.aperture_science_fizzler.toggle", "Toggle" )
 	language.Add( "tool.aperture_science_fizzler.maxrad", "Maximum Length" )
@@ -30,13 +32,17 @@ function TOOL:LeftClick( trace )
 	local maxrad = self:GetClientNumber( "maxrad" )
 	local toggle = self:GetClientNumber( "toggle" )
 	local keyenable = self:GetClientNumber( "keyenable" )
+	local startenabled = self:GetClientNumber( "startenabled" )
 	local angle = trace.HitNormal:Angle()
 
-	local firstFizzler = MakeFizzler( ply, model, angle, -90, trace.HitPos, toggle, keyenable )
+	local firstFizzler = MakeFizzler( ply, model, angle, -90, trace.HitPos, startenabled, toggle, keyenable )
 
 	trace = util.QuickTrace( firstFizzler:GetPos(), -firstFizzler:GetRight() * maxrad, firstFizzler )
 
-	local secondFizzler = MakeFizzler( ply, model, angle, 90, trace.HitPos, toggle, keyenable )
+	local secondFizzler = MakeFizzler( ply, model, angle, 90, trace.HitPos, startenabled, toggle, keyenable )
+
+	firstFizzler:SetAngles( firstFizzler:LocalToWorldAngles( firstFizzler:ModelToInfo().angle ) )
+	secondFizzler:SetAngles( secondFizzler:LocalToWorldAngles( secondFizzler:ModelToInfo().angle ) )
 
 	firstFizzler:SetNWEntity( "GASL_ConnectedField", secondFizzler )
 	secondFizzler:SetNWEntity( "GASL_ConnectedField", firstFizzler )
@@ -53,18 +59,22 @@ end
 
 if ( SERVER ) then
 
-	function MakeFizzler( pl, model, ang, addAng, pos, toggle, key_enable )
+	function MakeFizzler( pl, model, ang, addAng, pos, startenabled, toggle, key_enable )
 		
 		local fizzler = ents.Create( "ent_fizzler" )
 		fizzler:SetPos( pos )
 		fizzler:SetAngles( ang )
+		fizzler:SetModel( model )
 		fizzler:SetAngles( fizzler:LocalToWorldAngles( Angle( 0, addAng, 0 ) ) )
 		fizzler:SetMoveType( MOVETYPE_NONE )
 		fizzler:Spawn()
 
 		fizzler.NumEnableDown = numpad.OnDown( pl, key_enable, "aperture_science_fizzler_enable", fizzler, 1 )
 		fizzler.NumEnableUp = numpad.OnUp( pl, key_enable, "aperture_science_fizzler_disable", fizzler, 1 )
-		fizzler:SetToggle( toggle )
+		
+		fizzler:SetStartEnabled( tobool( startenabled ) )
+		fizzler:ToggleEnable( false )
+		fizzler:SetToggle( tobool( toggle ) )
 		
 		return fizzler
 		
@@ -132,12 +142,13 @@ local ConVarsDefault = TOOL:BuildConVarList()
 function TOOL.BuildCPanel( CPanel )
 
 	CPanel:AddControl( "Header", { Description = "#tool.aperture_science_fizzler.desc" } )
-	CPanel:NumSlider( "#tool.aperture_science_fizzler.maxrad", "aperture_science_fizzler_maxrad", 20, 1000 )
+	CPanel:NumSlider( "#tool.aperture_science_fizzler.maxrad", "aperture_science_fizzler_maxrad", 80, 1000 )
 	CPanel:AddControl( "PropSelect", { ConVar = "aperture_science_fizzler_model", Models = list.Get( "FizzlerModels" ), Height = 1 } )
+	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_fizzler.startenabled", Command = "aperture_science_fizzler_startenabled" } )
 	CPanel:AddControl( "Numpad", { Label = "#tool.aperture_science_fizzler.enable", Command = "aperture_science_fizzler_keyenable" } )
 	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_fizzler.toggle", Command = "aperture_science_fizzler_toggle" } )
 
 end
 
-list.Set( "FizzlerModels", "models/props/fizzler.mdl", {} )
-list.Set( "FizzlerModels", "models/props/fizzler.mdl", {} )
+list.Set( "FizzlerModels", "models/props/fizzler_dynamic.mdl", {} )
+list.Set( "FizzlerModels", "models/props_underground/underground_fizzler_wall.mdl", {} )

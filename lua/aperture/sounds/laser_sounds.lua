@@ -33,13 +33,35 @@ APERTURESCIENCE.LaserStart =
 }
 sound.Add( APERTURESCIENCE.LaserStart )
 
-APERTURESCIENCE.LaserImpact =
+APERTURESCIENCE.LaserCatcherOn =
 {
 	channel	= CHAN_BODY,
-	name	= "GASL.LaserImpact",
-	level	= 65,
-	sound	= "vfx/laser_beam_impact_lp_01.wav",
+	name	= "GASL.LaserCatcherOn",
+	level	= 75,
+	sound	= "world/laser_node_power_on.wav",
 	volume	= 1.0,
 	pitch	= 100,
 }
-sound.Add( APERTURESCIENCE.LaserImpact )
+sound.Add( APERTURESCIENCE.LaserCatcherOn )
+
+APERTURESCIENCE.LaserCatcherOff =
+{
+	channel	= CHAN_BODY,
+	name	= "GASL.LaserCatcherOff",
+	level	= 75,
+	sound	= "world/laser_node_power_off.wav",
+	volume	= 1.0,
+	pitch	= 100,
+}
+sound.Add( APERTURESCIENCE.LaserCatcherOff )
+
+APERTURESCIENCE.LaserCatcherLoop =
+{
+	channel	= CHAN_BODY,
+	name	= "GASL.LaserCatcherLoop",
+	level	= 75,
+	sound	= "world/laser_node_lp_01.wav",
+	volume	= 1.0,
+	pitch	= 100,
+}
+sound.Add( APERTURESCIENCE.LaserCatcherLoop )

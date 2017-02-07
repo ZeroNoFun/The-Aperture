@@ -27,7 +27,9 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Bool", 0, "Reverse" )
 	self:NetworkVar( "Bool", 1, "Enable" )
 	self:NetworkVar( "Bool", 2, "Toggle" )
-	
+	self:NetworkVar( "Bool", 3, "StartEnabled" )
+	self:NetworkVar( "Bool", 4, "StartReversed" )
+
 end
 
 function ENT:Initialize()
@@ -62,7 +64,9 @@ function ENT:Initialize()
 		self.GASL_ParticleEffectTime = 0
 		self.GASL_RotationStep = 0
 		
-		APERTURESCIENCE:PlaySequence( self, "tractor_beam_idle", 1.0 )
+		if ( !self:GetStartEnabled() ) then
+			APERTURESCIENCE:PlaySequence( self, "tractor_beam_idle", 1.0 )
+		end
 		
 	end
 	
@@ -506,6 +510,8 @@ end
 
 function ENT:ToggleEnable( bDown )
 
+	if ( self:GetStartEnabled() ) then bDown = !bDown end
+
 	if ( self:GetToggle() ) then
 	
 		if ( !bDown ) then return end
@@ -540,6 +546,8 @@ function ENT:ToggleEnable( bDown )
 end
 
 function ENT:ToggleReverse( bDown )
+
+	if ( self:GetStartReversed() ) then bDown = !bDown end
 
 	if ( self:GetToggle() ) then
 	

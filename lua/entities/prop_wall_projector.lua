@@ -17,7 +17,6 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	ent:SetPos( trace.HitPos )
 	ent:SetAngles( trace.HitNormal:Angle() )
 	ent:Spawn()
-	
 
 	return ent
 
@@ -27,7 +26,8 @@ function ENT:SetupDataTables()
 
 	self:NetworkVar( "Bool", 0, "Enable" )
 	self:NetworkVar( "Bool", 1, "Toggle" )
-	
+	self:NetworkVar( "Bool", 2, "StartEnabled" )
+
 end
 
 if ( CLIENT ) then
@@ -154,6 +154,8 @@ end
 
 function ENT:ToggleEnable( bDown )
 
+	if ( self:GetStartEnabled() ) then bDown = !bDown end
+
 	if ( self:GetToggle( ) ) then
 	
 		if ( !bDown ) then return end
@@ -161,6 +163,12 @@ function ENT:ToggleEnable( bDown )
 		self:SetEnable( !self:GetEnable( ) )
 	else
 		self:SetEnable( bDown )
+	end
+	
+	if ( self:GetEnable() ) then
+		self:EmitSound( "GASL.WallEmiterEnabledNoises" )
+	else
+		self:StopSound( "GASL.WallEmiterEnabledNoises" )
 	end
 	
 end
@@ -187,5 +195,6 @@ end )
 function ENT:OnRemove()
 	
 	self:RemoveBridges()
+	self:StopSound( "GASL.WallEmiterEnabledNoises" )
 	
 end

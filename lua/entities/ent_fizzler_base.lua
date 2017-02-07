@@ -1,9 +1,6 @@
 AddCSLuaFile( )
 
 ENT.Base 			= "gasl_base_ent"
-
-ENT.Editable		= true
-ENT.Spawnable		= true
 ENT.RenderGroup 	= RENDERGROUP_BOTH
 ENT.AutomaticFrameAdvance = true
 
@@ -11,6 +8,7 @@ function ENT:SetupDataTables()
 
 	self:NetworkVar( "Bool", 0, "Enable" )
 	self:NetworkVar( "Bool", 1, "Toggle" )
+	self:NetworkVar( "Bool", 2, "StartEnabled" )
 	
 end
 
@@ -25,6 +23,17 @@ function ENT:Draw()
 	local dis = secondField:GetPos():Distance( self:GetPos() )
 
 	self:SetRenderBounds( min, max, Vector( 0, dis, 0 ) )
+	
+end
+
+function ENT:ModelToInfo()
+
+	local modelsToInfo = {
+		["models/props/fizzler_dynamic.mdl"] = { offset = Vector( 0, 0, 0 ), angle = Angle( 0, 0, 0 ) },
+		["models/props_underground/underground_fizzler_wall.mdl"] = { offset = Vector( 0, 0, 70 ), angle = Angle( 0, 180, 0 ) }
+	}
+
+	return modelsToInfo[ self:GetModel() ]
 	
 end
 
@@ -46,8 +55,7 @@ function ENT:Initialize()
 	self:GetPhysicsObject():EnableMotion( false )
 	
 	self:UpdateLabel()
-
-	self.GASL_ConnectedField = NULL
+	
 	self.GASL_AllreadyHandled = { }
 	
 	if ( !WireAddon ) then return end
@@ -75,11 +83,11 @@ function ENT:Think()
 	
 	for i = 0, DivCount do
 	
-		local pos = self:LocalToWorld( Vector( 0, 0, -Height / 2 + i * ( Height / DivCount ) ) )
+		local pos = self:LocalToWorld( Vector( 0, 0, -Height / 2 + i * ( Height / DivCount ) ) + self:ModelToInfo().offset )
 		
 		local tracer = util.TraceHull( {
 			start = pos,
-			endpos = pos - self:GetRight() * 1000,
+			endpos = pos + ( self:GetNWEntity( "GASL_ConnectedField" ):GetPos() - self:GetPos() ) * self:GetPos():Distance( self:GetNWEntity( "GASL_ConnectedField" ):GetPos() ),
 			filter = function( ent ) 
 				if ( ( APERTURESCIENCE:IsValidEntity( ent ) || ent:IsPlayer() || ent:IsNPC() ) && !self.GASL_AllreadyHandled[ ent:EntIndex() ] ) then
 					return true
@@ -107,11 +115,16 @@ end
 function ENT:TriggerInput( iname, value )
 	if ( !WireAddon ) then return end
 	
-	if ( iname == "Enable" ) then self:ToggleEnable( tobool( value ) ) end
+	if ( iname == "Enable" ) then
+		self:ToggleEnable( tobool( value ) )
+		self:GetNWEntity( "GASL_ConnectedField" ):ToggleEnable( tobool( value ) )
+	end
 	
 end
 
 function ENT:ToggleEnable( bDown )
+
+	if ( self:GetStartEnabled() ) then bDown = !bDown end
 
 	if ( self:GetToggle() ) then
 	

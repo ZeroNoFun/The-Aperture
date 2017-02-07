@@ -9,6 +9,44 @@ ENT.Spawnable		= true
 ENT.RenderGroup 	= RENDERGROUP_BOTH
 ENT.AutomaticFrameAdvance = true
 
+function ENT:SpawnFunction( ply, trace, ClassName )
+
+	if ( !trace.Hit ) then return end
+	
+	local firstLaserField = ents.Create( ClassName )
+	firstLaserField:SetPos( trace.HitPos )
+	firstLaserField:SetModel( "models/props/fizzler_dynamic.mdl" )
+	firstLaserField:SetAngles( trace.HitNormal:Angle() )
+	firstLaserField:Spawn()
+	firstLaserField:SetAngles( firstLaserField:LocalToWorldAngles( Angle( 0, -90, 0 ) ) )
+
+	local traceSecond = util.QuickTrace( firstLaserField:GetPos(), -firstLaserField:GetRight() * 1000, firstLaserField )
+
+	local secondLaserField = ents.Create( ClassName )
+	secondLaserField:SetPos( traceSecond.HitPos )
+	secondLaserField:SetModel( "models/props/fizzler_dynamic.mdl" )
+	secondLaserField:SetAngles( traceSecond.HitNormal:Angle() )
+	secondLaserField:Spawn()
+	secondLaserField:SetAngles( secondLaserField:LocalToWorldAngles( Angle( 0, -90, 0 ) ) )
+
+	print( secondLaserField.BaseClass.ModelToInfo( secondLaserField ), 123 )
+	
+	firstLaserField:SetAngles( firstLaserField:LocalToWorldAngles( firstLaserField:ModelToInfo().angle ) )
+	secondLaserField:SetAngles( secondLaserField:LocalToWorldAngles( secondLaserField:ModelToInfo().angle ) )
+
+	firstLaserField:SetNWEntity( "GASL_ConnectedField", secondLaserField )
+	secondLaserField:SetNWEntity( "GASL_ConnectedField", firstLaserField )
+	
+	undo.Create( "LaserField" )
+		undo.AddEntity( firstLaserField )
+		undo.AddEntity( secondLaserField )
+		undo.SetPlayer( ply )
+	undo.Finish()
+	
+	return ent
+
+end
+
 function ENT:Draw()
 
 	self.BaseClass.Draw( self )
@@ -21,10 +59,10 @@ function ENT:Draw()
 	local Height = 110
 	
 	local halfHeight = Height / 2
-	local pos1 = self:LocalToWorld( Vector( 0, 0, halfHeight ) )
-	local pos2 = secondField:LocalToWorld( Vector( 0, 0, halfHeight ) )
-	local pos3 = secondField:LocalToWorld( Vector( 0, 0, -halfHeight ) )
-	local pos4 = self:LocalToWorld( Vector( 0, 0, -halfHeight ) )
+	local pos1 = self:LocalToWorld( Vector( 0, 0, halfHeight ) + self:ModelToOffset() )
+	local pos2 = secondField:LocalToWorld( Vector( 0, 0, halfHeight ) + self:ModelToOffset() )
+	local pos3 = secondField:LocalToWorld( Vector( 0, 0, -halfHeight ) + self:ModelToOffset() )
+	local pos4 = self:LocalToWorld( Vector( 0, 0, -halfHeight ) + self:ModelToOffset() )
 	
 	render.SetMaterial( Material( "effects/laserplane" ) )
 	render.DrawQuad( pos1 , pos2, pos3, pos4, Color( 255, 255, 255 ) ) 
@@ -42,8 +80,6 @@ end
 
 function ENT:Initialize()
 
-	self:SetModel( "models/props/fizzler_dynamic.mdl" )
-	self:SetSkin( 2 )
 	self.BaseClass.Initialize( self )
 	
 end

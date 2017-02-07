@@ -6,6 +6,7 @@ TOOL.ConfigName = ""
 TOOL.ClientConVar[ "model" ] = "models/props/faith_plate.mdl"
 TOOL.ClientConVar[ "keyenable" ] = "42"
 TOOL.ClientConVar[ "toggle" ] = "0"
+TOOL.ClientConVar[ "startenabled" ] = "0"
 
 cleanup.Register( "aperture_science_catapult" )
 
@@ -16,6 +17,7 @@ if ( CLIENT ) then
 	language.Add( "tool.aperture_science_catapult.desc", "Creates Aerial Faith Plate" )
 	language.Add( "tool.aperture_science_catapult.0", "Left click to place" )
 	language.Add( "tool.aperture_science_catapult.description", "Makes Aperture Aerial Faith Plate that can launch things in the air" )
+	language.Add( "tool.aperture_science_catapult.startenabled", "Start Enabled" )
 	language.Add( "tool.aperture_science_catapult.enable", "Enable" )
 	language.Add( "tool.aperture_science_catapult.toggle", "Toggle" )
 	
@@ -48,13 +50,14 @@ function TOOL:LeftClick( trace )
 		local model = self:GetClientInfo( "model" )
 		local toggle = self:GetClientNumber( "toggle" )
 		local keyenable = self:GetClientNumber( "keyenable" )
+		local startenabled = self:GetClientNumber( "startenabled" )
 		
-		local catapult = MakeCatapult( ply, model, trace.HitPos + trace.HitNormal * 5, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), toggle, keyenable )
+		local catapult = MakeCatapult( ply, model, trace.HitPos + trace.HitNormal * 5, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), startenabled, toggle, keyenable )
 		self.GASL_Catapult = catapult
 		
 	else
 	
-		self.GASL_Catapult:SetLandPoint( trace.HitPos )
+		self.GASL_Catapult:SetLandingPoint( trace.HitPos )
 		self.GASL_Catapult:SetLaunchHeight( trace.HitPos:Distance( self.GASL_Catapult:GetPos() ) / 4 )
 		
 	end
@@ -65,7 +68,7 @@ function TOOL:LeftClick( trace )
 	
 end
 
-function MakeCatapult( pl, model, pos, ang, toggle, key_enable )
+function MakeCatapult( pl, model, pos, ang, startenabled, toggle, key_enable )
 	
 	if ( !util.IsValidModel( model ) ) then return false end
 	
@@ -80,7 +83,9 @@ function MakeCatapult( pl, model, pos, ang, toggle, key_enable )
 	
 	catapult.NumEnableDown = numpad.OnDown( pl, key_enable, "aperture_science_catapult_enable", catapult, 1 )
 	catapult.NumEnableUp = numpad.OnUp( pl, key_enable, "aperture_science_catapult_disable", catapult, 1 )
-	catapult:SetToggle( toggle )
+	catapult:SetStartEnabled( tobool( startenabled ) )
+	catapult:SetToggle( tobool( toggle ) )
+	catapult:ToggleEnable( false )
 
 	undo.Create( "Aerial Faith Plate" )
 		undo.AddEntity( catapult )
@@ -157,6 +162,7 @@ function TOOL.BuildCPanel( CPanel )
 
 	CPanel:AddControl( "Header", { Description = "#tool.aperture_science_catapult.description" } )
 	CPanel:AddControl( "PropSelect", { ConVar = "aperture_science_catapult_model", Models = list.Get( "CatapultModels" ), Height = 1 } )
+	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_catapult.startenabled", Command = "aperture_science_catapult_startenabled" } )
 	CPanel:AddControl( "Numpad", { Label = "#tool.aperture_science_catapult.enable", Command = "aperture_science_catapult_keyenable" } )
 	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_catapult.toggle", Command = "aperture_science_catapult_toggle" } )
 

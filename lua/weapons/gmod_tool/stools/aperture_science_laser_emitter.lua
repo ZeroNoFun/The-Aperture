@@ -45,7 +45,6 @@ if ( SERVER ) then
 			
 		local laser_emitter = ents.Create( "env_portal_laser" )
 		laser_emitter:SetPos( pos )
-		laser_emitter:ToggleEnable( startenabled )
 		laser_emitter:SetModel( model )
 		laser_emitter:SetAngles( ang )
 		laser_emitter:Spawn()
@@ -53,6 +52,8 @@ if ( SERVER ) then
 		laser_emitter.NumEnableDown = numpad.OnDown( pl, key_enable, "aperture_science_laser_emitter_enable", laser_emitter, 1 )
 		laser_emitter.NumEnableUp = numpad.OnUp( pl, key_enable, "aperture_science_laser_emitter_disable", laser_emitter, 1 )
 		
+		laser_emitter:SetStartEnabled( tobool( startenabled ) )
+		laser_emitter:ToggleEnable( false )
 		laser_emitter:SetToggle( tobool( toggle ) )
 
 		undo.Create( "Laser Emiter" )
@@ -63,6 +64,42 @@ if ( SERVER ) then
 		return true
 		
 	end
+end
+
+function TOOL:UpdateGhostLaserField( ent, ply )
+
+	if ( !IsValid( ent ) ) then return end
+
+	local trace = ply:GetEyeTrace()
+	if ( !trace.Hit || trace.Entity && ( trace.Entity:GetClass() == "ent_LaserField" || trace.Entity:IsPlayer() ) ) then
+
+		ent:SetNoDraw( true )
+		return
+
+	end
+	
+	local CurPos = ent:GetPos()
+	local ang = trace.HitNormal:Angle()
+	local pos = trace.HitPos
+
+	ent:SetPos( pos )
+	ent:SetAngles( ang )
+
+	ent:SetNoDraw( false )
+
+end
+
+function TOOL:Think()
+
+	local mdl = self:GetClientInfo( "model" )
+	if ( !util.IsValidModel( mdl ) ) then self:ReleaseGhostEntity() return end
+
+	if ( !IsValid( self.GhostEntity ) || self.GhostEntity:GetModel() != mdl ) then
+		self:MakeGhostEntity( mdl, Vector( 0, 0, 0 ), Angle( 0, 0, 0 ) )
+	end
+
+	self:UpdateGhostLaserField( self.GhostEntity, self:GetOwner() )
+
 end
 
 function TOOL:RightClick( trace )

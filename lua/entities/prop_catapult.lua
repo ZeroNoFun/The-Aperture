@@ -13,6 +13,7 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Float", 1, "LaunchHeight" )
 	self:NetworkVar( "Bool", 2, "Enable" )
 	self:NetworkVar( "Bool", 3, "Toggle" )
+	self:NetworkVar( "Bool", 4, "StartEnabled" )
 
 end
 
@@ -35,12 +36,15 @@ function ENT:Initialize()
 	self.GASL_LaunchedEntities = { }
 	self.GASL_TrajectoryCurve = { }
 	self.GASL_CatapultUpdate = Vector( )
+	self.GASL_LaunchAngle = 0
+	self.GASL_LaunchForce = 0
+	self.GASL_FlyTime = 0
 	
 end
 
 function ENT:Think()
 
-	self:NextThink( CurTime() )
+	self:NextThink( CurTime() + 0.1 )
 
 	if ( self:GetLandPoint() == Vector() ) then return end
 	
@@ -59,17 +63,16 @@ function ENT:Think()
 	
 	-- Handling catapult location change
 	if ( self.GASL_CatapultUpdate != self:GetPos() ) then
-		
 		self.GASL_CatapultUpdate = self:GetPos()
 		
-		local startpos = self:GetPos()
-		local endpos = self:GetLandPoint()
-		local middlepos = ( startpos + endpos ) / 2 + Vector( 0, 0, self:GetLaunchHeight() * 2 )
+		-- local startpos = self:GetPos()
+		-- local endpos = self:GetLandPoint()
+		-- local middlepos = ( startpos + endpos ) / 2 + Vector( 0, 0, self:GetLaunchHeight() * 2 )
+		-- local dist = startpos:Distance( endpos )
+		-- self.GASL_TrajectoryCurve = APERTURESCIENCE:CalcBezierCurvePoint( startpos, middlepos, endpos, 20 )
+
 		
-		local dist = startpos:Distance( endpos )
-		
-		self.GASL_TrajectoryCurve = APERTURESCIENCE:CalcBezierCurvePoint( startpos, middlepos, endpos, 20 )
-		
+	
 	end
 	
 	-- launch init
@@ -81,114 +84,91 @@ function ENT:Think()
 		local ent = trace.Entity
 		
 		APERTURESCIENCE:PlaySequence( self, "straightup", 1.0 )
-		
-		self:EmitSound( "GASL.CatapultLaunch" )
+		self:EmitSound( "door/heavy_metal_stop1.wav" )
 		EmitSound( "door/heavy_metal_stop1.wav", self:LocalToWorld( Vector( 0, 0, 100 ) ), self:EntIndex(), CHAN_AUTO, 1, 75, 0, 100 )
 		
-		self.GASL_Cooldown = 10
-		if ( !self.GASL_LaunchedEntities[ ent:EntIndex() ] ) then
+		self:LaunchEntity( ent )
 		
-			if ( ent.GASL_CatapultEnt && ent.GASL_CatapultEnt:IsValid() ) then
-			
-				ent.GASL_CatapultEnt.GASL_LaunchedEntities[ ent:EntIndex() ] = nil
-				
-			end
+		self.GASL_Cooldown = 2
 
-			table.insert( self.GASL_LaunchedEntities, ent:EntIndex(), ent )
-			ent.GASL_TrajectoryStep = 1
-			ent.GASL_CatapultEnt = self
-			
-		end
-		
-	end
-	
-	-- Launch process
-	for k, ent in pairs( self.GASL_LaunchedEntities ) do
-		
-		-- if entity was removed skipping this tick or it enter a tractor beam
-		if ( !ent:IsValid() or ent.GASL_TractorBeamEnter ) then
-			self.GASL_LaunchedEntities[ k ] = nil
-			continue
-		end
-		
-		if ( ent.GASL_TrajectoryStep < table.Count( self.GASL_TrajectoryCurve ) ) then
-			
-			local vec = self.GASL_TrajectoryCurve[ ent.GASL_TrajectoryStep ]
-
-			local nextVec
-			if ( ent.GASL_TrajectoryStep + 1 < table.Count( self.GASL_TrajectoryCurve ) ) then
-				nextVec = self.GASL_TrajectoryCurve[ ent.GASL_TrajectoryStep + 1 ]
-			else
-				nextVec = self:GetLandPoint()
-			end
-			
-			local distBetweenVecs = vec:Distance( nextVec )
-			
-			local centerPos = Vector()
-			if ( ent:GetPhysicsObject() ) then
-			
-				local vPhysObject = ent:GetPhysicsObject()
-				centerPos = ent:LocalToWorld( vPhysObject:GetMassCenter() )
-				
-			else
-				centerPos = ent:GetPos()
-			end
-			
-			local dir = ( vec - centerPos )
-			dir:Normalize()
-			dir = dir * math.max( 200, math.min( 100, distBetweenVecs ) )
-			
-			if ( ent:IsPlayer() || ent:IsNPC() ) then
-				
-				local addingHeight = Vector( )
-				if ( ent:IsPlayer() ) then
-					 addingHeight = Vector( 0, 0, math.max( 100, distBetweenVecs / 4 ) )
-				end
-				
-				-- releases objects	
-				if ( ent.GASL_TrajectoryStep > 1 && ( ent:GetVelocity():Distance( ent.GASL_PrevVel ) > ent.GASL_PrevVel:Length() * 2
-				|| ( ent:IsPlayer() && ( ent:KeyDown( IN_DUCK ) || ent:GetVelocity() == Vector() ) ) ) ) then
-					ent.GASL_CatapultEnt = nil
-					self.GASL_LaunchedEntities[ k ] = nil
-				end
-				
-				dir = Vector( dir.x * 2, dir.y * 2, dir.z * 1.5 )
-				ent:SetVelocity( dir * FlyingSpeedMult + addingHeight - ent:GetVelocity() )
-				ent.GASL_PrevVel = dir * FlyingSpeedMult + addingHeight
-				
-			elseif ( ent:GetPhysicsObject() ) then
-				
-				-- releases objects	
-				if ( ent.GASL_TrajectoryStep > 1 && ent:GetPhysicsObject():GetVelocity():Distance( ent.GASL_PrevVel ) > ent.GASL_PrevVel:Length() * 2 ) then
-					ent.GASL_CatapultEnt = nil
-					self.GASL_LaunchedEntities[ k ] = nil
-				end
-				
-				ent:GetPhysicsObject():SetVelocity( dir * FlyingSpeedMult * 1.75 )
-				ent.GASL_PrevVel = ent:GetPhysicsObject():GetVelocity()
-				
-			end
-
-			-- Changing to next step when reached point in this step
-			if ( ent:GetPos():Distance( vec ) < math.max( distBetweenVecs, 200 ) ) then
-				
-				ent.GASL_TrajectoryStep = ent.GASL_TrajectoryStep + 1
-				
-			end
-		
-		else
-			-- releases objects	
-			ent.GASL_CatapultEnt = nil
-			self.GASL_LaunchedEntities[ k ] = nil
-		end
-	
 	end
 	
 	-- Reseting cooldown
 	if ( self.GASL_Cooldown > 0 ) then self.GASL_Cooldown = self.GASL_Cooldown - 1
-	elseif ( self.GASL_Cooldown < 0 ) then  self.GASL_Cooldown = 0 end
+	elseif ( self.GASL_Cooldown < 0 ) then  self.GASL_Cooldown = 0 end		
 
 	return true
+	
+end
+
+function ENT:CalculateTrajectoryForceAng( )
+
+	local pos = self:GetPos()
+	local destination = self:GetLandPoint()
+	local locXY = Vector( destination.x, destination.y, 0 ):Distance( Vector( pos.x, pos.y, 0 ) )
+    local locZ = destination.z - pos.z
+	local Gravity = -physenv.GetGravity().z
+	
+	local force = 2000 -- start force
+	local dist = 0
+	local angle = 0
+	local time = 0
+	local velX = 0
+	local velY = 0
+	local maxY = 0
+	
+	while math.sqrt ( ( dist - locXY ) * ( dist - locXY ) ) > 1 do
+
+		-- if doesn't found add force
+		if ( angle > 360 ) then
+			angle = angle - 360
+			force = force + 100
+		end
+
+		angle = angle + ( locXY - dist ) / 5000
+		
+		velX = math.cos( ( 90 - angle ) * math.pi / 180 ) * force
+		velY = math.sin( ( 90 - angle ) * math.pi / 180 ) * force
+		time = velY / Gravity -- time to lift up
+		maxY = ( velY * velY ) / ( 2 * Gravity )
+		
+		time = time + math.sqrt( ( ( maxY - locZ ) * 2 ) / Gravity )
+		dist = velX * time
+		
+	end
+	
+	print("VelX: ", math.Round( velX ),"  VelY: ", math.Round( velY ), "  MaxY: ", math.Round( maxY ), "  Time: ", math.Round( time * 100 ) / 100, " Force: ", force )
+	
+	self.GASL_LaunchAngle = angle
+	self.GASL_LaunchForce = force
+	self.GASL_FlyTime = time
+
+	return angle, force, time
+	
+end
+
+function ENT:LaunchEntity( entity )
+
+	local angle = self.GASL_LaunchAngle
+	local force = self.GASL_LaunchForce
+	local time = self.GASL_FlyTime
+	
+	local destination = self:GetLandPoint()
+	local direction = Angle( -90 + angle, ( destination - self:GetPos() ):Angle().y, 0 )
+
+	local velocity = direction:Forward() * force
+	
+	velocity = velocity + ( self:GetPos() - entity:GetPos() ) / time
+	
+	if ( entity:IsPlayer() ) then
+		
+		entity:SetVelocity( velocity - entity:GetVelocity() )
+		
+	elseif ( entity:GetPhysicsObject():IsValid() ) then
+	
+		entity:GetPhysicsObject():SetVelocity( velocity )
+		
+	end
 	
 end
 
@@ -201,6 +181,8 @@ end
 
 function ENT:ToggleEnable( bDown )
 
+	if ( self:GetStartEnabled() ) then bDown = !bDown end
+
 	if ( self:GetToggle() ) then
 	
 		if ( !bDown ) then return end
@@ -210,11 +192,14 @@ function ENT:ToggleEnable( bDown )
 		self:SetEnable( bDown )
 	end
 	
-	if ( self:GetEnable() ) then
-		self:SetSkin( 0 )
-	else
-		self:SetSkin( 1 )
-	end
+	if ( self:GetEnable() ) then self:SetSkin( 0 ) else self:SetSkin( 1 ) end
+	
+end
+
+function ENT:SetLandingPoint( point )
+
+	self:SetLandPoint( point )
+	self:CalculateTrajectoryForceAng()
 	
 end
 

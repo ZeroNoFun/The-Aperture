@@ -8,6 +8,7 @@ TOOL.ClientConVar[ "gel_radius" ] = "50"
 TOOL.ClientConVar[ "gel_randomize_size" ] = "0"
 TOOL.ClientConVar[ "gel_amount" ] = "10"
 TOOL.ClientConVar[ "gel_launch_speed" ] = "0"
+TOOL.ClientConVar[ "startenabled" ] = "0"
 
 if ( CLIENT ) then
 
@@ -20,6 +21,7 @@ if ( CLIENT ) then
 	language.Add( "tool.aperture_science_paint_dropper.gelRandomizeSize", "Gel Randomize Size" )
 	language.Add( "tool.aperture_science_paint_dropper.gelAmount", "Gel Amount" )
 	language.Add( "tool.aperture_science_paint_dropper.gelLaunchSpeed", "Gel Launch Speed" )
+	language.Add( "tool.aperture_science_paint_dropper.startenabled", "Start Enabled" )
 	language.Add( "tool.aperture_science_paint_dropper.enable", "Enable" )
 	language.Add( "tool.aperture_science_paint_dropper.toggle", "Toggle" )
 	
@@ -42,8 +44,9 @@ function TOOL:LeftClick( trace )
 	local gelRandomizeSize = self:GetClientNumber( "gel_randomize_size" )
 	local gelAmount = self:GetClientNumber( "gel_amount" )
 	local gelLaunchSpeed = self:GetClientNumber( "gel_launch_speed" )
-	
-	local paint_dropper = MakePaintDropper( ply, trace.HitPos, trace.HitNormal:Angle() - Angle( 90, 0, 0 ), gelType, gelRad, gelAmount, gelRandomizeSize, gelLaunchSpeed, toggle, key_enable )
+	local startenabled = self:GetClientNumber( "startenabled" )
+
+	local paint_dropper = MakePaintDropper( ply, trace.HitPos, trace.HitNormal:Angle() - Angle( 90, 0, 0 ), gelType, gelRad, gelAmount, gelRandomizeSize, gelLaunchSpeed, startenabled, toggle, key_enable )
 	
 	return true
 	
@@ -51,7 +54,7 @@ end
 
 if ( SERVER ) then
 
-	function MakePaintDropper( pl, pos, ang, gelType, gelRad, gelAmount, gelRandomizeSize, gelLaunchSpeed, toggle, key_enable )
+	function MakePaintDropper( pl, pos, ang, gelType, gelRad, gelAmount, gelRandomizeSize, gelLaunchSpeed, startenabled, toggle, key_enable )
 		
 		local paint_dropper = ents.Create( "prop_gel_dropper" )
 		paint_dropper:SetPos( pos )
@@ -67,15 +70,12 @@ if ( SERVER ) then
 		paint_dropper:SetGelRandomizeSize( gelRandomizeSize )
 		paint_dropper.GASL_GelAmount = gelAmount
 		paint_dropper.GASL_GelLaunchSpeed = gelLaunchSpeed
-
-		local toggleB
-		if ( toggle == 1 ) then
-			toggleB = true
-		else
-			toggleB = false
-		end
-		paint_dropper:SetToggle( toggleB )
 		
+		paint_dropper:SetStartEnabled( tobool( startenabled ) )
+		paint_dropper:ToggleEnable( false )
+		paint_dropper:SetToggle( tobool( toggle ) )
+		paint_dropper:SetOwner( pl )
+
 		undo.Create( "Gel Dropper" )
 			undo.AddEntity( paint_dropper )
 			undo.SetPlayer( pl )
@@ -108,6 +108,7 @@ function TOOL.BuildCPanel( CPanel )
 	CPanel:NumSlider( "#tool.aperture_science_paint_dropper.gelAmount", "aperture_science_paint_dropper_gel_amount", 1, 100 )
 	CPanel:NumSlider( "#tool.aperture_science_paint_dropper.gelLaunchSpeed", "aperture_science_paint_dropper_gel_launch_speed", 0, 1000 )
 
+	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_paint_dropper.startenabled", Command = "aperture_science_paint_dropper_startenabled" } )
 	CPanel:AddControl( "Numpad", { Label = "#tool.aperture_science_paint_dropper.enable", Command = "aperture_science_paint_dropper_keyenable" } )
 	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_paint_dropper.toggle", Command = "aperture_science_paint_dropper_toggle" } )
 

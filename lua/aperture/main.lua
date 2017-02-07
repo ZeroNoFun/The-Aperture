@@ -30,6 +30,7 @@ include( "aperture/sounds/wall_projector_sounds.lua" )
 include( "aperture/sounds/monster_box_sounds.lua" )
 include( "aperture/sounds/fizzler_sounds.lua" )
 include( "aperture/sounds/laser_sounds.lua" )
+include( "aperture/sounds/item_dropper_sounds.lua" )
 
 function APERTURESCIENCE:PlaySequence( self, seq, rate )
 
@@ -47,7 +48,8 @@ end
 
 function APERTURESCIENCE:IsValidEntity( ent )
 
-	if ( ent:IsValid()
+	if ( ent:IsValid() && !ent.GASL_Ignore 
+		&& ( !ent:GetPhysicsObject():IsValid() || ent:GetPhysicsObject():IsValid() && ent:GetPhysicsObject():IsMotionEnabled() )
 		&& ent:GetClass() != "ent_gel_paint" 
 		&& ent:GetClass() != "ent_gel_puddle"
 		&& ent:GetClass() != "prop_gel_dropper"
@@ -56,11 +58,31 @@ function APERTURESCIENCE:IsValidEntity( ent )
 		&& ent:GetClass() != "ent_laser_field"
 		&& ent:GetClass() != "ent_fizzler"
 		&& ent:GetClass() != "env_portal_laser"
+		&& ent:GetClass() != "env_laser_catcher"
+		&& ent:GetClass() != "env_laser_relay"
+		&& ent:GetClass() != "ent_portal_bomb"
+		&& ent:GetClass() != "env_dropper"
 		&& ent:GetClass() != "prop_catapult" ) then 
 		return true
 	end
 	
 	return false
+end
+
+function APERTURESCIENCE:DissolveEnt( ent )
+
+	local phys = ent:GetPhysicsObject()
+	ent:SetSolid( SOLID_NONE )
+	if ( phys:GetVelocity():Length() < 10 ) then
+		phys:SetVelocity( Vector( 0, 0, 10 ) + VectorRand() * 2 )
+		phys:AddAngleVelocity( VectorRand() * 100 )
+	else
+		phys:SetVelocity( phys:GetVelocity() / 4 )
+	end
+	phys:EnableGravity( false )
+	ent:EmitSound( "GASL.FizzlerDissolve" )
+	table.insert( APERTURESCIENCE.DISSOLVE_ENTITIES, table.Count( APERTURESCIENCE.DISSOLVE_ENTITIES ) + 1, ent )
+
 end
 
 function APERTURESCIENCE:GetColorByGelType( gelType )
@@ -286,7 +308,7 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 		-- Entering Gel
 		if ( ply:IsOnGround() ) then
 		
-			if ( ( !ply.GASL_LastTimeOnGel || ply.GASL_LastTimeOnGel && CurTime() > ply.GASL_LastTimeOnGel + 0.25 ) ) then
+			if ( !ply.GASL_LastTimeOnGel || ply.GASL_LastTimeOnGel && CurTime() > ply.GASL_LastTimeOnGel + 0.25 ) then
 			
 				if ( gel:GetGelType() == 1 ) then
 					ply:EmitSound( "GASL.GelBounceEnter" )
@@ -296,7 +318,10 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 					ply:EmitSound( "GASL.GelSpeedEnter" )
 				end
 
-				ply.GASL_LastStandingGelType = gel:GetGelType()
+				-- doesn't change if player ran on repulsion gel when he was on propulsion gel
+				if ( !( gel:GetGelType() == 1 && ply.GASL_LastStandingGelType == 2 && plyVelocity:Length() > 400 ) ) then
+					ply.GASL_LastStandingGelType = gel:GetGelType()
+				end
 				
 			end
 			
@@ -310,7 +335,8 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 			local plyVelocity = ply:GetVelocity()
 			
 			-- skip if player stand on the ground
-			if ( ply:IsOnGround() && !ply:KeyDown( IN_JUMP ) ) then continue end
+			-- doesn't skip if player ran on repulsion gel when he was on propulsion gel
+			if ( ply:IsOnGround() && !( ply.GASL_LastStandingGelType == 2 && plyVelocity:Length() > 400 ) ) then continue end
 			
 			local WTL = WorldToLocal( gel:GetPos() + plyVelocity, Angle( ), gel:GetPos(), gel:GetAngles() )
 			WTL = Vector( 0, 0, math.max( -WTL.z * 2, 800 ) )
@@ -335,7 +361,7 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 				ply.GASL_GelPlayerVelocity = ply.GASL_GelPlayerVelocity + Vector( ply:GetForward().x, ply:GetForward().y, 0 ) * 30
 			end
 
-			ply:SetVelocity( Vector( ply.GASL_GelPlayerVelocity.x, ply.GASL_GelPlayerVelocity.y, 0 ) / 2 * math.max( 1, ply:Ping() / 10 ) )
+			ply:SetVelocity( Vector( ply.GASL_GelPlayerVelocity.x, ply.GASL_GelPlayerVelocity.y, 0 ) / 2 * math.max( 1, ply:Ping() / 50 ) )
 			ply.GASL_GelPlayerVelocity = ply.GASL_GelPlayerVelocity / 2
 			
 		end
@@ -406,6 +432,10 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 		
 		if ( alpha < 255 ) then v:SetRenderMode( RENDERMODE_TRANSALPHA ) end
 
+		local effectdata = EffectData()
+		effectdata:SetEntity( v )
+		util.Effect( "fizzler_dissolve", effectdata )
+		
 		if ( v.GASL_Dissolve >= APERTURESCIENCE.DISSOLVE_SPEED ) then
 		
 			APERTURESCIENCE.DISSOLVE_ENTITIES[ k ] = nil

@@ -29,3 +29,14 @@ APERTURESCIENCE.WallProjectorFootsteps =
 	pitch	= 100,
 }
 sound.Add( APERTURESCIENCE.WallProjectorFootsteps )
+
+APERTURESCIENCE.WallEmiterEnabledNoises =
+{
+	channel	= CHAN_WEAPON,
+	name	= "GASL.WallEmiterEnabledNoises",
+	level	= 70,
+	sound	= "vfx/bridge_glow_lp_01.wav",
+	volume	= 1.0,
+	pitch	= 100,
+}
+sound.Add( APERTURESCIENCE.WallEmiterEnabledNoises )

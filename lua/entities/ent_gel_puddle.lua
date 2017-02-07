@@ -10,6 +10,8 @@ function ENT:SetupDataTables()
 	
 end
 
+cleanup.Register( "gasl_gel" )
+
 function ENT:Initialize()
 
 	if ( SERVER ) then
@@ -47,7 +49,7 @@ function ENT:Convert2Grid( pos, angle, rad )
 	
 end
 
-function ENT:PaintGel( pos, normal, rad )
+function ENT:PaintGel( pl, pos, normal, rad )
 
 	local maxseg = math.floor( rad / APERTURESCIENCE.GEL_BOX_SIZE )
 	
@@ -97,6 +99,11 @@ function ENT:PaintGel( pos, normal, rad )
 			ent:SetAngles( trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
 			ent:SetMoveType( MOVETYPE_NONE )
 			ent:Spawn()
+			
+			if ( IsValid( pl ) ) then
+				pl:AddCount( "gasl_gel", ent )
+				pl:AddCleanup( "gasl_gel", ent )
+			end
 			
 			ent:SetGelType( self.GASL_GelType )
 			ent:UpdateGel()
@@ -224,9 +231,12 @@ function ENT:Think()
 		
 		if ( trace.Hit && ( !traceEnt:IsValid() || traceEnt:IsValid() && traceEnt:GetClass() != "prop_portal" ) ) then
 		
-			self:PaintGel( trace.HitPos, trace.HitNormal, self:GetGelRadius() )
+			local ply = self:GetOwner()
+			
+			self:PaintGel( ply, trace.HitPos, trace.HitNormal, self:GetGelRadius() )
 			self:SetColor( Color( 0, 0, 0, 0 ) )
 			self:GetPhysicsObject():EnableMotion( false )
+
 			timer.Simple( 1, function() if ( self:IsValid() ) then self:Remove() end end )
 			self:NextThink( CurTime() + 2 )
 			

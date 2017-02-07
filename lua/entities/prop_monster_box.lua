@@ -31,23 +31,6 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 
 end
 
-function ENT:Initialize()
-
-	if ( SERVER ) then
-		
-		self:SetModel( "models/npcs/monsters/monster_a.mdl" )
-		self:PhysicsInit( SOLID_VPHYSICS )
-		self:SetMoveType( MOVETYPE_VPHYSICS )
-		self:SetSolid( SOLID_VPHYSICS )
-		
-	end
-
-	if ( CLIENT ) then
-	
-	end
-	
-end
-
 function ENT:Draw()
 
 	self:DrawModel()
@@ -56,6 +39,16 @@ end
 
 -- no more client side
 if ( CLIENT ) then return end
+
+function ENT:Initialize()
+
+	self:SetModel( "models/npcs/monsters/monster_a.mdl" )
+	self:PhysicsInit( SOLID_VPHYSICS )
+	self:SetMoveType( MOVETYPE_VPHYSICS )
+	self:SetSolid( SOLID_VPHYSICS )
+	self.GASL_Monsterbox_cubemode = false
+
+end
 
 function ENT:Think()
 
@@ -70,8 +63,10 @@ function ENT:Think()
 	end
 	
 	local traceDown = util.QuickTrace( self:GetPos(), -Vector( 0, 0, 50 ), self )
+	-- When player is holding release cube mode toggle
+	if ( self:IsPlayerHolding() ) then self.GASL_Monsterbox_cubemode = false end
 	-- When player is holding or it stand on the button transform into a cube mode
-	if ( self:IsPlayerHolding() || ( traceDown.Entity:IsValid()
+	if ( self:IsPlayerHolding() || self.GASL_Monsterbox_cubemode || ( IsValid( traceDown.Entity )
 		&& ( traceDown.Entity:GetClass() == "sent_portalbutton_box"
 		|| traceDown.Entity:GetClass() == "sent_portalbutton_normal"
 		|| traceDown.Entity:GetClass() == "sent_portalbutton_old"
@@ -85,6 +80,7 @@ function ENT:Think()
 		
 	end
 	
+	-- When box in the air
 	if ( self.GASL_TractorBeamEnter ) then
 	
 		if ( !timer.Exists( "GASL_Monsterbox_intheair"..self:EntIndex() ) ) then 
@@ -95,6 +91,7 @@ function ENT:Think()
 	
 	end
 	
+	-- When box is fallower
 	if ( !trace.Hit ) then
 	
 		if ( !timer.Exists( "GASL_Monsterbox_fallover"..self:EntIndex() ) ) then 
@@ -109,6 +106,7 @@ function ENT:Think()
 		
 	else
 	
+		-- When box is trapped
 		local traceForward = util.QuickTrace( self:GetPos(), self:GetForward() * 60, self )
 
 		if ( traceForward.Hit ) then
@@ -125,6 +123,7 @@ function ENT:Think()
 		
 	end
 	
+	-- Default box jump-walk
 	if ( !timer.Exists( "GASL_Monsterbox_straight"..self:EntIndex() ) ) then 
 		local animType = math.random( 1, 3 )
 		
