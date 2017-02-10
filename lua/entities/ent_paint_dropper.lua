@@ -23,6 +23,8 @@ end
 
 function ENT:Initialize()
 
+	self.BaseClass.Initialize( self )
+
 	if ( CLIENT ) then return end
 	
 	self:SetModel( "models/props_ingame/paint_dropper.mdl" )
@@ -38,6 +40,8 @@ function ENT:Initialize()
 	self.GASL_GelAmount = 0
 	self.GASL_GelLaunchSpeed = 0
 	
+	self:AddInput( "Enable", function( value ) self:ToggleEnable( value ) end )
+
 	if ( !WireAddon ) then return end
 	self.Inputs = Wire_CreateInputs( self, { "Enable", "Gel Radius", "Gel Randomize Size", "Gel Amount", "Gel Launch Speed" } )
 
@@ -72,7 +76,6 @@ function ENT:MakePuddle( )
 	ent:SetPos( self:LocalToWorld( ( Vector( 0, 0, -1 ) + VectorRand() ) * 5 ) )
 	ent:SetMoveType( MOVETYPE_NONE )
 	ent:Spawn()
-	ent:SetOwner( self:GetOwner() )
 
 	ent:GetPhysicsObject():EnableCollisions( false )
 	ent:GetPhysicsObject():Wake()

@@ -2,9 +2,9 @@ AddCSLuaFile( )
 
 ENT.Base 			= "gasl_base_ent"
 
-ENT.Editable		= true
 ENT.PrintName		= "Hard Light Bridge"
 ENT.Category		= "Aperture Science"
+ENT.Editable		= true
 ENT.Spawnable		= true
 ENT.RenderGroup 	= RENDERGROUP_BOTH
 ENT.AutomaticFrameAdvance = true
@@ -17,6 +17,7 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	ent:SetPos( trace.HitPos )
 	ent:SetAngles( trace.HitNormal:Angle() )
 	ent:Spawn()
+	ent:Activate()
 
 	return ent
 
@@ -77,15 +78,13 @@ function ENT:Draw()
 
 end
 
-function ENT:UpdateLabel()
-
-	self:SetOverlayText( string.format( "Speed: %i\nResistance: %.2f", self:GetSpeed(), self:GetAirResistance() ) )
-
-end
-
 function ENT:Initialize()
 
 	self.BaseClass.Initialize( self )
+	
+	self:PEffectSpawnInit()
+
+	self.GASL_BridgeUpdate = { lastPos = Vector(), lastAngle = Angle() }
 	
 	if ( SERVER ) then
 	
@@ -97,53 +96,68 @@ function ENT:Initialize()
 		
 		self.GASL_EntInfo = { model = "models/wall_projector_bridge/wall.mdl", length = 200.393692, color = Color( 255, 255, 255 ) }
 
+		self:AddInput( "Enable", function( value ) self:ToggleEnable( value ) end )
+
 		if ( !WireAddon ) then return end
 		self.Inputs = Wire_CreateInputs( self, { "Enable" } )
 		
 	end
 
 	if ( CLIENT ) then
-
+	
 		local min, max = self:GetRenderBounds() 
 		self.GASL_RenderBounds = { mins = min, maxs = max }
 		
 	end
+
+	return true
+	
+end
+
+function ENT:Think()
+	
+	self:NextThink( CurTime() + 0.1 )
+	
+	self.BaseClass.Think( self )
+	
+	if ( CLIENT ) then return end
+	
+	-- Skip this tick if exursion funnel is disabled and removing effect if possible
+	if ( !self:GetEnable() ) then
+		
+		if ( self.GASL_BridgeUpdate.lastPos || self.GASL_BridgeUpdate.lastAngle ) then
+				self.GASL_BridgeUpdate.lastPos = nil
+				self.GASL_BridgeUpdate.lastAngle = nil
+			
+			-- Removing effects
+			self:ClearAllData( )
+
+		end
+
+		return
+	end
+	
+	for k, v in pairs( self.GASL_EntitiesEffects ) do
+	for k2, v2 in pairs( v ) do
+		if ( v2:IsValid() ) then v2:RemoveAllDecals() end
+	end
+	end
+
+	self:MakePEffect( )
+
+	-- Handling changes position or angles
+	if ( self.GASL_BridgeUpdate.lastPos != self:GetPos() or self.GASL_BridgeUpdate.lastAngle != self:GetAngles() ) then
+		self.GASL_BridgeUpdate.lastPos = self:GetPos()
+		self.GASL_BridgeUpdate.lastAngle = self:GetAngles()
+		
+	end
+	
+	return true
 	
 end
 
 -- no more client side
 if ( CLIENT ) then return end
-
-function ENT:Think()
-	
-	self:NextThink( CurTime() + 0.1 )
-
-	if ( self:GetEnable() ) then
-		
-		self:MakeBridges( )
-		
-		-- Handling changes position or angles
-		if ( self.GASL_BridgeUpdate.lastPos != self:GetPos() or self.GASL_BridgeUpdate.lastAngle != self:GetAngles() ) then
-			self.GASL_BridgeUpdate.lastPos = self:GetPos()
-			self.GASL_BridgeUpdate.lastAngle = self:GetAngles()
-		end
-		
-		for k, v in pairs( self.GASL_EntitiesEffects ) do
-		for k2, v2 in pairs( v ) do
-			
-			if ( v2:IsValid() ) then v2:RemoveAllDecals() end
-				
-		end
-		end
-		
-	elseif ( self.GASL_BridgeUpdate.lastPos || self.GASL_BridgeUpdate.lastAngle ) then
-		self.GASL_BridgeUpdate.lastPos = nil
-		self.GASL_BridgeUpdate.lastAngle = nil
-		self:RemoveBridges()
-	end
-
-	return true
-end
 
 function ENT:TriggerInput( iname, value )
 	if ( !WireAddon ) then return end
@@ -194,7 +208,7 @@ end )
 -- Removing wall props
 function ENT:OnRemove()
 	
-	self:RemoveBridges()
+	self:ClearAllData()
 	self:StopSound( "GASL.WallEmiterEnabledNoises" )
 	
 end

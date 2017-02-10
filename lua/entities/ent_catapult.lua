@@ -1,6 +1,6 @@
 AddCSLuaFile( )
 
-ENT.Base 			= "base_entity"
+ENT.Base 			= "gasl_base_ent"
 
 ENT.Editable		= true
 ENT.PrintName		= "Aerial Faith Plate"
@@ -14,6 +14,8 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Bool", 2, "Enable" )
 	self:NetworkVar( "Bool", 3, "Toggle" )
 	self:NetworkVar( "Bool", 4, "StartEnabled" )
+	self:NetworkVar( "Float", 5, "TimeOfFlight" )
+	self:NetworkVar( "Vector", 6, "LaunchVector" )
 
 end
 
@@ -23,15 +25,19 @@ function ENT:Draw()
 	
 end
 
--- no more client side
-if ( CLIENT ) then return end
-
 function ENT:Initialize()
+
+	self.BaseClass.Initialize( self )
+
+	-- no more client side
+	if ( CLIENT ) then return end
 
 	self:PhysicsInit( SOLID_VPHYSICS )
 	self:SetMoveType( MOVETYPE_VPHYSICS )
 	self:SetSolid( SOLID_VPHYSICS )
 
+	self:AddInput( "Enable", function( value ) self:ToggleEnable( value ) end )
+	
 	self.GASL_Cooldown = 0
 	self.GASL_LaunchedEntities = { }
 	self.GASL_TrajectoryCurve = { }
@@ -45,6 +51,8 @@ end
 function ENT:Think()
 
 	self:NextThink( CurTime() + 0.1 )
+	
+	if ( CLIENT ) then return end
 
 	if ( self:GetLandPoint() == Vector() ) then return end
 	
@@ -101,6 +109,9 @@ function ENT:Think()
 	
 end
 
+-- no more client side
+if ( CLIENT ) then return end
+
 function ENT:CalculateTrajectoryForceAng( )
 
 	local pos = self:GetPos()
@@ -109,7 +120,7 @@ function ENT:CalculateTrajectoryForceAng( )
     local locZ = destination.z - pos.z
 	local Gravity = -physenv.GetGravity().z
 	
-	local force = 2000 -- start force
+	local force = self:GetLaunchHeight() --start force
 	local dist = 0
 	local angle = 0
 	local time = 0
@@ -117,14 +128,11 @@ function ENT:CalculateTrajectoryForceAng( )
 	local velY = 0
 	local maxY = 0
 	
-	while math.sqrt ( ( dist - locXY ) * ( dist - locXY ) ) > 1 do
-
-		-- if doesn't found add force
-		if ( angle > 360 ) then
-			angle = angle - 360
-			force = force + 100
-		end
-
+	local isReversed = false
+	
+	local brkr = 0
+	while math.abs( dist - locXY ) > 1 do
+	
 		angle = angle + ( locXY - dist ) / 5000
 		
 		velX = math.cos( ( 90 - angle ) * math.pi / 180 ) * force
@@ -135,13 +143,63 @@ function ENT:CalculateTrajectoryForceAng( )
 		time = time + math.sqrt( ( ( maxY - locZ ) * 2 ) / Gravity )
 		dist = velX * time
 		
+		-- if doesn't found add force
+		if ( angle > 360 || dist ~= dist ) then
+			//print( force )
+			angle = angle - 360
+			force = force + 100
+			dist = 0
+		end		
+		
 	end
 	
-	print("VelX: ", math.Round( velX ),"  VelY: ", math.Round( velY ), "  MaxY: ", math.Round( maxY ), "  Time: ", math.Round( time * 100 ) / 100, " Force: ", force )
+	if ( time == 0 ) then
+		
+		isReversed = true
+		
+		while math.abs( dist - locXY ) > 1 do
+		
+			angle = angle + ( locXY - dist ) / 5000
+			
+			velX = math.cos( angle * math.pi / 180 ) * force
+			velY = math.sin( angle * math.pi / 180 ) * force
+			time = velY / Gravity -- time to lift up
+			maxY = ( velY * velY ) / ( 2 * Gravity )
+			
+			time = time + math.sqrt( ( ( maxY - locZ ) * 2 ) / Gravity )
+			dist = velX * time
+			
+			-- if doesn't found add force
+			if ( angle > 360 || dist ~= dist ) then
+				//print( force )
+				angle = angle - 360
+				force = force + 100
+				dist = 0
+			end		
+			
+		end
+		
+	end
+	
+	print( "VelX: ", math.Round( velX ),"  VelY: ", math.Round( velY ), "  MaxY: ", math.Round( maxY ), "  Time: ", math.Round( time * 100 ) / 100, " Force: ", force )
 	
 	self.GASL_LaunchAngle = angle
 	self.GASL_LaunchForce = force
 	self.GASL_FlyTime = time
+
+	local destination = self:GetLandPoint()
+	local direction = Angle()
+	
+	if ( isReversed ) then
+		direction = Angle( -angle, ( destination - self:GetPos() ):Angle().y, 0 )
+	else
+		direction = Angle( -90 + angle, ( destination - self:GetPos() ):Angle().y, 0 )
+	end
+	
+	local velocity = direction:Forward() * force
+		
+	self:SetTimeOfFlight( time )
+	self:SetLaunchVector( velocity )
 
 	return angle, force, time
 	
@@ -153,10 +211,7 @@ function ENT:LaunchEntity( entity )
 	local force = self.GASL_LaunchForce
 	local time = self.GASL_FlyTime
 	
-	local destination = self:GetLandPoint()
-	local direction = Angle( -90 + angle, ( destination - self:GetPos() ):Angle().y, 0 )
-
-	local velocity = direction:Forward() * force
+	local velocity = self:GetLaunchVector()
 	
 	velocity = velocity + ( self:GetPos() - entity:GetPos() ) / time
 	

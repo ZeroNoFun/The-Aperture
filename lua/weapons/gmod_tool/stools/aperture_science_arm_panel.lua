@@ -21,7 +21,7 @@ end
 function TOOL:LeftClick( trace )
 
 	-- Ignore if place target is Alive
-	if ( trace.Entity && trace.Entity:IsPlayer() && APERTURESCIENCE:IsValidEntity( trace.Entity ) ) then return false end
+	if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then return false end
 	
 	if ( CLIENT ) then return true end
 	
@@ -30,7 +30,7 @@ function TOOL:LeftClick( trace )
 	local key_enable = self:GetClientNumber( "keyenable" )
 	local toggle = self:GetClientNumber( "toggle" )
 	local startenabled = self:GetClientNumber( "startenabled" )
-	local pos = self:Convert2Grid( trace.HitPos + trace.HitNormal * 10, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), 64 )
+	local pos = self:Convert2Grid( trace.HitPos + trace.HitNormal * 20, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), 64 )
 	
 	MakeArmPanel( ply, pos, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), startenabled, toggle, key_enable )
 	
@@ -41,7 +41,7 @@ end
 function TOOL:RightClick( trace )
 	
 	-- Ignore if place target is Alive
-	if ( trace.Entity && trace.Entity:IsPlayer() && APERTURESCIENCE:IsValidEntity( trace.Entity ) ) then return false end
+	if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then return false end
 
 	if ( CLIENT ) then return true end
 	
@@ -77,7 +77,7 @@ if ( SERVER ) then
 
 	function MakeArmPanel( pl, pos, ang, startenabled, toggle, key_enable )
 			
-		local arm_panel = ents.Create( "prop_arm_panel" )
+		local arm_panel = ents.Create( "ent_arm_panel" )
 		arm_panel:SetPos( pos )
 		arm_panel:SetAngles( ang )
 		arm_panel:Spawn()

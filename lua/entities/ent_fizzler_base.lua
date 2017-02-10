@@ -12,17 +12,42 @@ function ENT:SetupDataTables()
 	
 end
 
-function ENT:Draw()
-
-	self:DrawModel()
-
-	local secondField = self:GetNWEntity( "GASL_ConnectedField" )
-	if ( !secondField:IsValid() ) then return end
+function ENT:DrawFizzler( material, stretch )
 	
-	local min, max = self:GetRenderBounds() 
-	local dis = secondField:GetPos():Distance( self:GetPos() )
+	if ( !self:GetEnable() ) then return end
+	
+	local secondField = self:GetNWEntity( "GASL_ConnectedField" )
+	if ( !IsValid( secondField ) ) then return end
+	
+	local Height = 120
+	
+	local halfHeight = Height / 2
+	
+	local division = 1
+	local DivSize = 120
+	
+	if ( !stretch ) then
+		division = math.ceil( self:GetPos():Distance( secondField:GetPos() ) / DivSize )
+	end
 
-	self:SetRenderBounds( min, max, Vector( 0, dis, 0 ) )
+	for i = 1, division do
+	
+		local offset = self:ModelToInfo().offset 
+		
+		local pos1 = self:LocalToWorld( Vector( 0, 0, halfHeight ) + offset )
+		local pos2 = secondField:LocalToWorld( Vector( 0, 0, halfHeight ) + offset )
+		local pos3 = secondField:LocalToWorld( Vector( 0, 0, -halfHeight ) + offset )
+		local pos4 = self:LocalToWorld( Vector( 0, 0, -halfHeight ) + offset )
+
+		local p1 = pos1 + ( ( pos2 - pos1 ) / division ) * ( i - 1 )
+		local p2 = pos1 + ( ( pos2 - pos1 ) / division ) * i
+		local p3 = pos4 + ( ( pos3 - pos4 ) / division ) * i
+		local p4 = pos4 + ( ( pos3 - pos4 ) / division ) * ( i - 1 )
+		
+		render.SetMaterial( material )
+		render.DrawQuad( p1, p2, p3, p4, Color( 255, 255, 255 ) )
+		
+	end
 	
 end
 
@@ -41,6 +66,14 @@ if ( CLIENT ) then
 
 	function ENT:Think()
 		
+		local secondField = self:GetNWEntity( "GASL_ConnectedField" )
+		if ( !IsValid( secondField ) ) then return end
+		
+		local min, max = self:GetRenderBounds() 
+		local dis = secondField:GetPos():Distance( self:GetPos() )
+
+		self:SetRenderBounds( min, max + Vector( 0, dis, 0 ) )
+		
 	end
 	
 	return
@@ -58,9 +91,10 @@ function ENT:Initialize()
 	
 	self.GASL_AllreadyHandled = { }
 	
+	APERTURESCIENCE:PlaySequence( self, "closeidle", 1.0 )
+	
 	if ( !WireAddon ) then return end
 	self.Inputs = Wire_CreateInputs( self, { "Enable" } )
-	APERTURESCIENCE:PlaySequence( self, "closeidle", 1.0 )
 	
 end
 
@@ -72,11 +106,16 @@ end
 
 function ENT:Think()
 
-	self:NextThink( CurTime() )
+	self:NextThink( CurTime() + 0.05 )
 
+	-- if ( !IsValid( self:GetNWEntity( "GASL_ConnectedField" ) ) ) then
+		-- self:Remove()
+		-- return
+	-- end
+	
 	if ( !self:GetEnable() ) then return end
 	
-	local DivCount = 20
+	local DivCount = 10
 	local Height = 110
 	
 	self.GASL_AllreadyHandled = { }
@@ -84,10 +123,11 @@ function ENT:Think()
 	for i = 0, DivCount do
 	
 		local pos = self:LocalToWorld( Vector( 0, 0, -Height / 2 + i * ( Height / DivCount ) ) + self:ModelToInfo().offset )
+		local pos2 = self:GetNWEntity( "GASL_ConnectedField" ):LocalToWorld( Vector( 0, 0, -Height / 2 + i * ( Height / DivCount ) ) + self:ModelToInfo().offset )
 		
 		local tracer = util.TraceHull( {
 			start = pos,
-			endpos = pos + ( self:GetNWEntity( "GASL_ConnectedField" ):GetPos() - self:GetPos() ) * self:GetPos():Distance( self:GetNWEntity( "GASL_ConnectedField" ):GetPos() ),
+			endpos = pos2,
 			filter = function( ent ) 
 				if ( ( APERTURESCIENCE:IsValidEntity( ent ) || ent:IsPlayer() || ent:IsNPC() ) && !self.GASL_AllreadyHandled[ ent:EntIndex() ] ) then
 					return true
@@ -117,31 +157,49 @@ function ENT:TriggerInput( iname, value )
 	
 	if ( iname == "Enable" ) then
 		self:ToggleEnable( tobool( value ) )
-		self:GetNWEntity( "GASL_ConnectedField" ):ToggleEnable( tobool( value ) )
 	end
 	
 end
 
-function ENT:ToggleEnable( bDown )
-
-	if ( self:GetStartEnabled() ) then bDown = !bDown end
-
-	if ( self:GetToggle() ) then
+function ENT:SetEnableE( activate, noloop )
 	
-		if ( !bDown ) then return end
-		
-		self:SetEnable( !self:GetEnable() )
-		
-	else
-		self:SetEnable( bDown )
-	end
+	if ( noloop == nil ) then noloop = true end
+
+	self:SetEnable( activate )
 	
-	if ( self:GetEnable() ) then
+	if ( activate ) then
 		APERTURESCIENCE:PlaySequence( self, "open", 1.0 )
-		EmitSound( "vfx/fizzler_start_01.wav", self:LocalToWorld( Vector( 0, 20, 0 ) ), 1, CHAN_AUTO, 1, 50, 0, 100 )
+		self:EmitSound( "vfx/fizzler_start_01.wav" )
+		EmitSound( "vfx/fizzler_start_01.wav", self:LocalToWorld( Vector( 0, 20, 0 ) ), self:EntIndex(), CHAN_AUTO, 1, 50, 0, 100 )
+		
+		if ( IsValid( self:GetNWEntity( "GASL_ConnectedField" ) ) && noloop ) then
+			self:GetNWEntity( "GASL_ConnectedField" ):SetEnableE( true, false )
+		end
+		
 	else
 		APERTURESCIENCE:PlaySequence( self, "close", 1.0 )
-		EmitSound( "vfx/fizzler_shutdown_01.wav", self:LocalToWorld( Vector( 0, 20, 0 ) ), 1, CHAN_AUTO, 1, 50, 0, 100 )
+		self:EmitSound( "vfx/fizzler_shutdown_01.wav" )
+		EmitSound( "vfx/fizzler_shutdown_01.wav", self:LocalToWorld( Vector( 0, 20, 0 ) ), self:EntIndex(), CHAN_AUTO, 1, 50, 0, 100 )
+
+		if ( IsValid( self:GetNWEntity( "GASL_ConnectedField" ) ) && noloop ) then
+			self:GetNWEntity( "GASL_ConnectedField" ):SetEnableE( false, false )
+		end
+
+	end
+	
+end
+
+function ENT:ToggleEnable( bDown, reverse, noloop )
+
+	if ( reverse == nil ) then reverse = self:GetStartEnabled() end
+	if ( reverse ) then bDown = !bDown end
+	
+	if ( self:GetToggle() ) then
+		if ( !bDown ) then return end
+		self:SetEnableE( !self:GetEnable(), noloop )
+		
+	else
+		self:SetEnableE( bDown, noloop )
 	end
 	
 end
@@ -150,7 +208,7 @@ numpad.Register( "aperture_science_fizzler_enable", function( pl, ent, keydown, 
 
 	if ( !IsValid( ent ) ) then return false end
 
-	if ( keydown ) then ent:ToggleEnable( true ) end
+	if ( keydown ) then ent:ToggleEnable( true, ent:GetStartEnabled(), false ) end
 	return true
 
 end )
@@ -159,7 +217,7 @@ numpad.Register( "aperture_science_fizzler_disable", function( pl, ent, keydown 
 
 	if ( !IsValid( ent ) ) then return false end
 
-	if ( keydown ) then ent:ToggleEnable( false ) end
+	if ( keydown ) then ent:ToggleEnable( false, ent:GetStartEnabled(), false ) end
 	return true
 
 end )

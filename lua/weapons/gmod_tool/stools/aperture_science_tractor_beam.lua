@@ -45,7 +45,7 @@ if ( SERVER ) then
 
 	function MakeTractorBeam( pl, ang, pos, startenabled, startreverse, toggle, key_enable, key_reverse )
 		
-		local tractor_beam = ents.Create( "prop_tractor_beam" )
+		local tractor_beam = ents.Create( "ent_tractor_beam" )
 		tractor_beam:SetPos( pos )
 		tractor_beam:SetAngles( ang )
 		tractor_beam:SetMoveType( MOVETYPE_NONE )

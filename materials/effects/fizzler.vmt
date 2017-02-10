@@ -1,16 +1,16 @@
-VertexlitGeneric
+UnlitGeneric
 {
 $basetexture "effects/fizzler_ripples_dim"
 $detailscale 1
 $detail "effects/fizzler_noise"
 $detailblendmode 2
-$color2 "[.3 .8 1]"
+$color "[.3 .8 1]"
 $surfaceprop glass
 "%keywords" Portal2
 $translucent 1
-$additive 1
+$alpha 1
 $selfillum 1
-$basescale "[1 1]"
+$model 1
 
 Proxies
 {

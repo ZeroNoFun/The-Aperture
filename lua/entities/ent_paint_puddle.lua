@@ -231,9 +231,7 @@ function ENT:Think()
 		
 		if ( trace.Hit && ( !traceEnt:IsValid() || traceEnt:IsValid() && traceEnt:GetClass() != "prop_portal" ) ) then
 		
-			local ply = self:GetOwner()
-			
-			self:PaintGel( ply, trace.HitPos, trace.HitNormal, self:GetGelRadius() )
+			self:PaintGel( NULL, trace.HitPos, trace.HitNormal, self:GetGelRadius() )
 			self:SetColor( Color( 0, 0, 0, 0 ) )
 			self:GetPhysicsObject():EnableMotion( false )
 

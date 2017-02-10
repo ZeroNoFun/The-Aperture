@@ -72,7 +72,7 @@ function MakeCatapult( pl, model, pos, ang, startenabled, toggle, key_enable )
 	
 	if ( !util.IsValidModel( model ) ) then return false end
 	
-	local catapult = ents.Create( "prop_catapult" )
+	local catapult = ents.Create( "ent_catapult" )
 	if ( !IsValid( catapult ) ) then return false end
 	
 	catapult:SetPos( pos )
@@ -100,19 +100,20 @@ function TOOL:RightClick( trace )
 	
 	if ( CLIENT ) then return end
 	
-	if ( self.GASL_PointerGrab ) then
+	if ( IsValid( self.GASL_PointerGrab ) ) then
 	
-		if ( self.GASL_PointerGrab:IsValid() ) then
-			self.GASL_PointerGrab.GASL_CatapultUpdate = Vector()
-		end
+		self.GASL_PointerGrab.GASL_CatapultUpdate = Vector()
 		
+		//print( self.GASL_PointerGrab:GetLaunchHeight() )
+		
+		self.GASL_PointerGrab:CalculateTrajectoryForceAng()
 		self.GASL_PointerGrab = nil
-	
+
 	else
 	
 		local PointerCaptureRadius = 20
 		
-		for k, catapult in pairs( ents.FindByClass( "prop_catapult" ) ) do
+		for k, catapult in pairs( ents.FindByClass( "ent_catapult" ) ) do
 		
 			-- Break if Pointer allready grabbed
 			if ( self.GASL_PointerGrab ) then break end
@@ -139,21 +140,20 @@ function TOOL:Think()
 
 	if ( CLIENT ) then return end
 
-	if ( self.GASL_PointerGrab ) then
-		
-		local catapult = self.GASL_PointerGrab
-		local owner = self:GetOwner()
-		local heightPointerPos = ( catapult:GetPos() + catapult:GetLandPoint() ) / 2
-		local playerToHeightPointerDist = Vector( heightPointerPos.x, heightPointerPos.y, 0 ):Distance( Vector( owner:GetShootPos().x, owner:GetShootPos().y, 0 ) )
-		local height = playerToHeightPointerDist * math.tan( -owner:EyeAngles().pitch * math.pi / 180 ) + ( owner:GetShootPos().z - ( catapult:GetPos().z + catapult:GetLandPoint().z ) / 2 )
-		
-		catapult:SetLaunchHeight( math.max( 100, height ) )
+	if ( !IsValid( self.GASL_PointerGrab ) ) then return end
 	
-		if ( !self.GASL_PointerGrab:IsValid() ) then
-			self.GASL_PointerGrab.GASL_CatapultUpdate = Vector()
-			self.GASL_PointerGrab = nil
-		end
-		
+	local catapult = self.GASL_PointerGrab
+	
+	local owner = self:GetOwner()
+	local heightPointerPos = ( catapult:GetPos() + catapult:GetLandPoint() ) / 2
+	local playerToHeightPointerDist = Vector( heightPointerPos.x, heightPointerPos.y, 0 ):Distance( Vector( owner:GetShootPos().x, owner:GetShootPos().y, 0 ) )
+	local height = playerToHeightPointerDist * math.tan( -owner:EyeAngles().pitch * math.pi / 180 ) + ( owner:GetShootPos().z - ( catapult:GetPos().z + catapult:GetLandPoint().z ) / 2 )
+	
+	catapult:SetLaunchHeight( math.max( 100, height ) )
+
+	if ( !self.GASL_PointerGrab:IsValid() ) then
+		self.GASL_PointerGrab.GASL_CatapultUpdate = Vector()
+		self.GASL_PointerGrab = nil
 	end
 
 end

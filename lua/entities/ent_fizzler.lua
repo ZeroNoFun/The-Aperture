@@ -35,6 +35,8 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	firstFizzler:SetNWEntity( "GASL_ConnectedField", secondFizzler )
 	secondFizzler:SetNWEntity( "GASL_ConnectedField", firstFizzler )
 	
+	constraint.Weld( secondFizzler, firstFizzler, 0, 0, 0, true, true )
+	
 	undo.Create( "LaserField" )
 		undo.AddEntity( firstFizzler )
 		undo.AddEntity( secondFizzler )
@@ -47,38 +49,83 @@ end
 
 function ENT:Draw()
 
-	self.BaseClass.Draw( self )
+	self:DrawModel()
 	
 	if ( !self:GetEnable() ) then return end
+
+	self:DrawFizzler( Material( "effects/fizzler" ), false )
 	
 	local secondField = self:GetNWEntity( "GASL_ConnectedField" )
-	if ( !secondField:IsValid() ) then return end
+	if ( !IsValid( secondField ) ) then return end
+
+	-- close objects field effect
 	
 	local Height = 110
+	local Offset = self:ModelToInfo().offset
 	
-	local halfHeight = Height / 2
-	local pos1 = self:LocalToWorld( Vector( 0, 0, halfHeight ) + self:ModelToOffset() )
-	local pos2 = secondField:LocalToWorld( Vector( 0, 0, halfHeight ) + self:ModelToOffset() )
-	local pos3 = secondField:LocalToWorld( Vector( 0, 0, -halfHeight ) + self:ModelToOffset() )
-	local pos4 = self:LocalToWorld( Vector( 0, 0, -halfHeight ) + self:ModelToOffset() )
+	local closesEntities = { }
+	local tracer = util.TraceHull( {
+		start = self:LocalToWorld( Offset ),
+		endpos = secondField:LocalToWorld( Offset ),
+		filter = function( ent ) 
+			if ( APERTURESCIENCE:IsValidEntity( ent ) && ent != self && ent != secondField && !ent:IsPlayer() && !ent:IsNPC() ) then
+				table.insert( closesEntities, table.Count( closesEntities ) + 1, ent )
+			end
+
+			return false
+		end,
+		ignoreworld = true,
+		mins = -Vector( 1, 1, 1 ) * Height,
+		maxs = Vector( 1, 1, 1 ) * Height,
+		mask = MASK_SHOT_HULL
+	} )
 	
-	render.SetMaterial( Material( "effects/fizzler" ) )
-	render.DrawQuad( pos1 , pos2, pos3, pos4, Color( 255, 255, 255 ) ) 
+	for _, ent in pairs( closesEntities ) do
+		
+		local localEntPos = self:WorldToLocal( ent:GetPos() )
+		local distToField = math.abs( localEntPos.x )
+		localEntPos = Vector( 0, localEntPos.y, localEntPos.z )
+		
+		if ( localEntPos.y < 0 ) then return end
+		
+		local rad = math.min( Height, ent:GetModelRadius() * 3 )
+		local p1 = self:LocalToWorld( localEntPos + Vector( 0, -1, -1 ) * rad )
+		local p2 = self:LocalToWorld( localEntPos + Vector( 0, 1, -1 ) * rad )
+		local p3 = self:LocalToWorld( localEntPos + Vector( 0, 1, 1 ) * rad )
+		local p4 = self:LocalToWorld( localEntPos + Vector( 0, -1, 1 ) * rad )
+		
+		local alpha = math.max( 0, math.min( 1, ( 50 + 50 - distToField ) / 50 ) ) * 255
+		render.SetMaterial( Material( "effects/fizzler_approach" ) )
+		render.DrawQuad( p1, p2, p3, p4, Color( 255, 255, 255, alpha ) )
+	
+	end
 
 end
 
 if ( CLIENT ) then
 
 	function ENT:Think()
-		
+	
+		self.BaseClass.Think( self )
+	
 	end
 	
+	function ENT:Initialize()
+
+		self.BaseClass.Initialize( self )
+		//self.BaseClass.BaseClass.Initialize( self )
+		
+	end
+
 	return
 end
 
 function ENT:Initialize()
 
 	self.BaseClass.Initialize( self )
+	self.BaseClass.BaseClass.Initialize( self )
+	
+	self:AddInput( "Enable", function( value ) self:ToggleEnable( value ) end )
 	
 end
 
@@ -99,8 +146,6 @@ if ( CLIENT ) then return end
 
 function ENT:Think()
 
-	self:NextThink( CurTime() )
-	
 	self.BaseClass.Think( self )
 
 	return true

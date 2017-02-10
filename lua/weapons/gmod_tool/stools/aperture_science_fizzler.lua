@@ -23,7 +23,7 @@ end
 function TOOL:LeftClick( trace )
 
 	-- Ignore if place target is Alive
-	if ( trace.Entity && trace.Entity:IsPlayer() ) then return false end
+	if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then return false end
 	
 	if ( CLIENT ) then return true end
 	
@@ -43,9 +43,11 @@ function TOOL:LeftClick( trace )
 
 	firstFizzler:SetAngles( firstFizzler:LocalToWorldAngles( firstFizzler:ModelToInfo().angle ) )
 	secondFizzler:SetAngles( secondFizzler:LocalToWorldAngles( secondFizzler:ModelToInfo().angle ) )
-
+	
 	firstFizzler:SetNWEntity( "GASL_ConnectedField", secondFizzler )
 	secondFizzler:SetNWEntity( "GASL_ConnectedField", firstFizzler )
+
+	constraint.Weld( secondFizzler, firstFizzler, 0, 0, 0, true, true )
 
 	undo.Create( "Fizzler" )
 		undo.AddEntity( firstFizzler )
@@ -101,7 +103,7 @@ function TOOL:UpdateGhostFizzler( ent, ply )
 	if ( !IsValid( ent ) ) then return end
 
 	local trace = ply:GetEyeTrace()
-	if ( !trace.Hit || trace.Entity && ( trace.Entity:GetClass() == "ent_fizzler" || trace.Entity:IsPlayer() ) ) then
+	if ( !trace.Hit || trace.Entity && ( trace.Entity:GetClass() == "ent_fizzler" || trace.Entity:IsNPC() || trace.Entity:IsPlayer() ) ) then
 
 		ent:SetNoDraw( true )
 		return

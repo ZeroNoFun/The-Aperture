@@ -44,6 +44,8 @@ if ( CLIENT ) then
 
 	function ENT:Initialize()
 		
+		self.BaseClass.Initialize( self )
+
 		local min, max = self:GetRenderBounds() 
 		self.GASL_RenderBounds = { mins = min, maxs = max }
 		self.GASL_UpdateRenderBounds = { mins = Vector(), maxs = Vector() }
@@ -163,9 +165,7 @@ function ENT:DoLaser( startpos, ang, ignore )
 		if ( traceEnt && traceEnt:IsValid() && ( traceEnt:GetModel() == "models/props/reflection_cube.mdl" ) ) then
 			
 			if ( CLIENT ) then
-			
 				self:DrawMuzzleEffect( traceEnt:GetPos(), traceEnt:GetForward() )
-
 			end
 
 			self.GASL_AllreadyHandled[ traceEnt:EntIndex() ] = true
@@ -221,10 +221,14 @@ if ( CLIENT ) then return end
 
 function ENT:Initialize()
 
+	self.BaseClass.Initialize( self )
+	
 	self:PhysicsInit( SOLID_VPHYSICS )
 	self:SetMoveType( MOVETYPE_VPHYSICS )
 	self:SetSolid( SOLID_VPHYSICS )
 	self:GetPhysicsObject():EnableMotion( false )
+
+	self:AddInput( "Enable", function( value ) self:ToggleEnable( value ) end )
 
 	--
 	if ( !WireAddon ) then return end
@@ -247,14 +251,13 @@ function ENT:Think()
 	if ( !self:GetEnable() ) then return end
 	
 	if ( !timer.Exists( "GASL_LaserDamaging"..self:EntIndex() ) ) then 
-			timer.Create( "GASL_LaserDamaging"..self:EntIndex(), 0.1, 1, function() end )
+		timer.Create( "GASL_LaserDamaging"..self:EntIndex(), 0.1, 1, function() end )
 			
 		self.GASL_AllreadyHandled = { }
 		local endtrace = self:DoLaser( self:LocalToWorld( self:ModelToStartCoord() ), self:GetAngles(), self )
 		local endentity = endtrace.Entity
 		
 		if ( IsValid( endentity ) && endentity:GetClass() == "env_laser_catcher" ) then
-
 			endentity.GASL_LastHittedByLaser = CurTime()
 			return
 		end

@@ -16,7 +16,7 @@ end
 function TOOL:LeftClick( trace )
 
 	-- Ignore if place target is Alive
-	if ( trace.Entity && trace.Entity:IsPlayer() ) then return false end
+	if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then return false end
 	
 	if ( CLIENT ) then return true end
 	
@@ -47,9 +47,9 @@ if ( SERVER ) then
 		
 		local entclass = ""
 		if ( model == "models/props/laser_receptacle.mdl" ) then
-			entclass = "env_laser_relay"
+			entclass = "ent_laser_relay"
 		else
-			entclass = "env_laser_catcher"
+			entclass = "ent_laser_catcher"
 		end
 		
 		local laser_catcher = ents.Create( entclass )
@@ -73,7 +73,7 @@ function TOOL:UpdateGhostLaserField( ent, ply )
 	if ( !IsValid( ent ) ) then return end
 
 	local trace = ply:GetEyeTrace()
-	if ( !trace.Hit || trace.Entity && ( trace.Entity:GetClass() == "ent_LaserField" || trace.Entity:IsPlayer() ) ) then
+	if ( !trace.Hit || trace.Entity && ( trace.Entity:GetClass() == "ent_laser_cather" || trace.Entity:IsPlayer() ) ) then
 
 		ent:SetNoDraw( true )
 		return

@@ -18,6 +18,7 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	ent:SetModel( "models/props/laser_catcher_center.mdl" )
 	ent:SetAngles( trace.HitNormal:Angle() )
 	ent:Spawn()
+	ent:Activate()
 
 	return ent
 
@@ -30,17 +31,54 @@ function ENT:SetupDataTables()
 end
 
 if ( CLIENT ) then
-
-	function ENT:Initialize()
-				
-	end
 	
 	function ENT:Think()
 		
-		self:NextThink( CurTime() )
-		return true
+	end
+	
+end
+
+function ENT:Draw()
+
+	self:DrawModel()
+	
+	if ( self:GetEnableUpdate() ) then
+	
+		local radius = 64
+		radius = radius * math.Rand( 0.9, 1.1 )
+		render.SetMaterial( Material( "particle/laser_beam_glow" ) )
+		render.DrawSprite( self:LocalToWorld( self:ModelToStartCoord() + Vector( 20, 0, 0 ) ), radius, radius, Color( 255, 255, 255 ) )
+	
+	end
+
+end
+
+function ENT:Initialize()
+	
+	self.BaseClass.Initialize( self )
+	
+	if ( SERVER ) then
+	
+		self:PhysicsInit( SOLID_VPHYSICS )
+		self:SetMoveType( MOVETYPE_VPHYSICS )
+		self:SetSolid( SOLID_VPHYSICS )
+		self:GetPhysicsObject():EnableMotion( false )
+		
+		self.GASL_Actiaved = false
+		self.GASL_LastHittedByLaser = 0
+
+		self:AddOutput( "Actiaved", false )
+		
+		if ( !WireAddon ) then return end
+		self.Outputs = WireLib.CreateSpecialOutputs( self, { "Enabled" }, { "NORMAL" } )
 		
 	end
+	
+	if ( CLIENT ) then
+	
+	end
+	
+	return true
 	
 end
 
@@ -55,42 +93,12 @@ function ENT:ModelToStartCoord()
 	
 end
 
-function ENT:Draw()
-
-	self:DrawModel()
-	
-	if ( self:GetEnableUpdate() ) then
-	
-		local radius = 64
-		radius = radius * math.Rand( 0.9, 1.1 )
-		render.SetMaterial( Material( "particle/laser_beam_glow" ) )
-		render.DrawSprite( self:LocalToWorld( Vector( 0, 0, 20 ) ), radius, radius, Color( 255, 255, 255 ) )
-	
-	end
-	
-end
-
 -- no more client side
 if ( CLIENT ) then return end
 
-function ENT:Initialize()
-
-	self:PhysicsInit( SOLID_VPHYSICS )
-	self:SetMoveType( MOVETYPE_VPHYSICS )
-	self:SetSolid( SOLID_VPHYSICS )
-	self:GetPhysicsObject():EnableMotion( false )
-	
-	self.GASL_Actiaved = false
-	self.GASL_LastHittedByLaser = 0
-
-	if ( !WireAddon ) then return end
-	self.Outputs = WireLib.CreateSpecialOutputs( self, { "Enabled" }, { "NORMAL" } )
-
-end
-
 function ENT:Think()
 
-	self:NextThink( CurTime() )
+	self:NextThink( CurTime() + 0.1 )
 	
 	if ( CurTime() < self.GASL_LastHittedByLaser + 0.2 ) then
 	
@@ -101,6 +109,8 @@ function ENT:Think()
 			self:EmitSound( "GASL.LaserCatcherLoop" )
 			APERTURESCIENCE:PlaySequence( self, "spin", 1.0 )
 			
+			self:UpdateOutput( "Actiaved", true )
+			
 			Wire_TriggerOutput( self, "Enabled", 1 )
 		end
 		
@@ -110,6 +120,8 @@ function ENT:Think()
 		self:EmitSound( "GASL.LaserCatcherOff" )
 		self:StopSound( "GASL.LaserCatcherLoop" )
 		APERTURESCIENCE:PlaySequence( self, "idle", 1.0 )
+
+		self:UpdateOutput( "Actiaved", false )
 		
 		Wire_TriggerOutput( self, "Enabled", 0 )
 	end

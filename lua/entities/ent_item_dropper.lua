@@ -3,6 +3,10 @@ AddCSLuaFile( )
 ENT.Type 			= "anim"
 ENT.Base 			= "gasl_base_ent"
 
+ENT.Editable		= true
+ENT.PrintName		= "Item Dropper"
+ENT.AutomaticFrameAdvance = true
+
 function ENT:SetupDataTables()
 
 	self:NetworkVar( "Bool", 0, "Respawn" )
@@ -11,6 +15,12 @@ function ENT:SetupDataTables()
 end
 
 if ( CLIENT ) then
+	
+	function ENT:Initialize()
+	
+		self.BaseClass.Initialize( self )
+		
+	end
 	
 	function ENT:Think()
 		
@@ -44,6 +54,62 @@ end
 -- No more client side
 if ( CLIENT ) then return end
 
+function ENT:Initialize()
+	
+	self.BaseClass.Initialize( self )
+
+	self:SetModel( "models/prop_backstage/item_dropper.mdl" )
+	self:PhysicsInit( SOLID_VPHYSICS )
+	self:SetMoveType( MOVETYPE_NONE )
+	self:SetSolid( SOLID_VPHYSICS )
+	self:GetPhysicsObject():EnableMotion( false )
+	self:DrawShadow( false )
+	
+	self:AddInput( "Enable", function( value )
+		if ( tobool( value ) ) then self:Drop() end
+	end )
+
+	if ( !WireAddon ) then return end
+	self.Inputs = Wire_CreateInputs( self, { "Drop" } )
+	
+end
+
+function ENT:Think()
+	
+	self.BaseClass.Think( self )
+
+	self:NextThink( CurTime() + 0.5 )
+	
+	-- skip if item dropper allready drops item
+	if ( timer.Exists( "GASL_ItemDroper_Reset"..self:EntIndex() ) ) then return true end
+
+	-- if item inside dropper was missing spawing another one
+	if ( !IsValid( self.GASL_ItemDropper_LastSpawnedItem ) ) then
+		local item = self:CreateItem()
+		if ( !IsValid( self.GASL_ItemDropper_LastDropperItem ) ) then self.GASL_ItemDropper_LastDropperItem = item end
+	end
+	
+	-- if item is missing spawn another and if this function enabled
+	if ( !IsValid( self.GASL_ItemDropper_LastDropperItem ) && self:GetRespawn() ) then
+		self:Drop()
+	end
+	
+	-- Epic fall animation
+	local FallZ = 120
+	local StartZ = 100
+	local lastSpawnedItem = self.GASL_ItemDropper_LastSpawnedItem
+	local itemfall = self.GASL_ItemDropper_Fall
+
+	if ( itemfall < FallZ ) then
+		self:NextThink( CurTime() )
+		self.GASL_ItemDropper_Fall = itemfall + math.max( 3, itemfall / 20 )
+	elseif( itemfall > FallZ ) then self.GASL_ItemDropper_Fall = FallZ end
+	lastSpawnedItem:SetPos( self:LocalToWorld( Vector( 0, 0, StartZ - itemfall ) ) )
+	
+	return true
+	
+end
+
 function ENT:CreateItem()
 
 	local info = self:DropTypeToInfo()
@@ -55,6 +121,8 @@ function ENT:CreateItem()
 	item:SetMoveType( MOVETYPE_NONE )
 	item:Spawn()
 	item:GetPhysicsObject():EnableMotion( false )
+	constraint.NoCollide( item, self, 0, 0 )
+	
 	if ( info.skin ) then item:SetSkin( info.skin ) end
 	if ( info.class == "prop_monster_box" ) then item.GASL_Monsterbox_cubemode = true end
 	if ( info.class == "ent_portal_bomb" ) then item.GASL_Bomb_disabled = true end
@@ -65,66 +133,16 @@ function ENT:CreateItem()
 	
 end
 
-function ENT:Initialize()
-	
-	self:SetModel( "models/props_backstage/item_dropper.mdl" )
-	self:PhysicsInit( SOLID_VPHYSICS )
-	self:SetMoveType( MOVETYPE_NONE )
-	self:SetSolid( SOLID_VPHYSICS )
-	self:GetPhysicsObject():EnableCollisions( false )
-	self:DrawShadow( false )
-	
-	if ( !WireAddon ) then return end
-	self.Inputs = Wire_CreateInputs( self, { "Drop" } )
-	
-end
-
-
-function ENT:Think()
-	
-	self.BaseClass.Think( self )
-
-	self:NextThink( CurTime() + 0.01 )
-	
-	-- skip if item dropper allready drops item
-	if ( timer.Exists( "GASL_ItemDroper"..self:EntIndex() ) ) then return true end
-
-	-- if item is missing spawn another
-	if ( !IsValid( self.GASL_ItemDropper_LastSpawnedItem ) ) then
-		local item = self:CreateItem()
-		if ( !IsValid( self.GASL_ItemDropper_LastDropperItem ) ) then self.GASL_ItemDropper_LastDropperItem = item end
-	end
-	
-	if ( !IsValid( self.GASL_ItemDropper_LastDropperItem ) ) then
-		self:Drop()
-	end
-
-	local lastSpawnedItem = self.GASL_ItemDropper_LastSpawnedItem
-	local itemfall = self.GASL_ItemDropper_Fall
-	
-	-- Epic fall animation
-	local FallZ = 120
-	if ( itemfall < FallZ ) then
-		self.GASL_ItemDropper_Fall = itemfall + math.max( 3, itemfall / 20 )
-	elseif( itemfall > FallZ ) then self.GASL_ItemDropper_Fall = FallZ end
-	lastSpawnedItem:SetPos( self:LocalToWorld( Vector( 0, 0, 100 - itemfall ) ) )
-	
-	return true
-	
-end
-
-function ENT:TriggerInput( iname, value )
-	if ( !WireAddon ) then return end
-
-	if ( iname == "Drop" && tobool( value ) ) then self:Drop() end
-	
-end
-
 function ENT:Drop()
 
 	-- skip if item dropper allready drops item
-	if ( timer.Exists( "GASL_ItemDroper"..self:EntIndex() ) ) then return end
+	if ( timer.Exists( "GASL_ItemDroper_Reset"..self:EntIndex() ) ) then return end
 	
+	-- dissolve old entitie
+	if ( IsValid( self.GASL_ItemDropper_LastDropperItem ) && self.GASL_ItemDropper_LastDropperItem != self.GASL_ItemDropper_LastSpawnedItem ) then 
+		APERTURESCIENCE:DissolveEnt( self.GASL_ItemDropper_LastDropperItem )
+	end
+
 	APERTURESCIENCE:PlaySequence( self, "item_dropper_open", 1.0 )
 	self:SetSkin( 1 )
 	self:EmitSound( "GASL.ItemDropperOpen" )
@@ -136,13 +154,14 @@ function ENT:Drop()
 		local lastSpawnedItemPhys = lastSpawnedItem:GetPhysicsObject()
 		lastSpawnedItemPhys:EnableMotion( true )
 		lastSpawnedItemPhys:Wake()
+		
 		if ( lastSpawnedItem:GetClass() == "ent_portal_bomb" ) then lastSpawnedItem.GASL_Bomb_disabled = false end
 		self.GASL_ItemDropper_LastSpawnedItem = nil
 		self.GASL_ItemDropper_LastDropperItem = lastSpawnedItem
 		
 	end )
 
-	-- Droping close iris
+	-- Close iris
 	timer.Simple( 1.5, function()
 	
 		if ( !IsValid( self ) ) then return end
@@ -154,7 +173,7 @@ function ENT:Drop()
 	end )
 
 	-- Spawn new item
-	timer.Create( "GASL_ItemDroper"..self:EntIndex(), 2.5, 1, function()
+	timer.Create( "GASL_ItemDroper_Reset"..self:EntIndex(), 2.5, 1, function()
 	
 		if ( !IsValid( self ) ) then return end
 		
@@ -165,15 +184,18 @@ function ENT:Drop()
 	
 end
 
-numpad.Register( "aperture_science_dropper_drop", function( pl, ent, keydown )
+function ENT:TriggerInput( iname, value )
+	if ( !WireAddon ) then return end
+
+	if ( iname == "Drop" && tobool( value ) ) then self:Drop() end
+	
+end
+
+numpad.Register( "aperture_science_item_dropper_drop", function( pl, ent, keydown )
 
 	if ( !IsValid( ent ) ) then return false end
 
 	if ( keydown ) then
-		-- dissolve old entitie
-		if ( IsValid( ent.GASL_ItemDropper_LastDropperItem ) && ent.GASL_ItemDropper_LastDropperItem != ent.GASL_ItemDropper_LastSpawnedItem ) then 
-			APERTURESCIENCE:DissolveEnt( ent.GASL_ItemDropper_LastDropperItem )
-		end
 		ent:Drop( )
 	end
 	
@@ -185,5 +207,7 @@ function ENT:OnRemove()
 
 	if ( IsValid( self.GASL_ItemDropper_LastSpawnedItem ) ) then self.GASL_ItemDropper_LastSpawnedItem:Remove() end
 	if ( IsValid( self.GASL_ItemDropper_LastDropperItem ) ) then self.GASL_ItemDropper_LastDropperItem:Remove() end
+	
+	timer.Remove( "GASL_ItemDroper_Reset"..self:EntIndex() )
 
 end

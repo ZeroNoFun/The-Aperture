@@ -23,7 +23,7 @@ end
 function TOOL:LeftClick( trace )
 
 	-- Ignore if place target is Alive
-	if ( trace.Entity && trace.Entity:IsPlayer() ) then return false end
+	if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then return false end
 	
 	if ( CLIENT ) then return true end
 	
@@ -41,13 +41,16 @@ function TOOL:LeftClick( trace )
 
 	local secondLaserField = MakeLaserField( ply, model, angle, 90, trace.HitPos, startenabled, toggle, keyenable )
 
-	print( firstLaserField.BaseClass.ModelToInfo( firstLaserField ) )
+	print( firstLaserField, 123 )
+	print( firstLaserField:ModelToInfo() )
 	firstLaserField:SetAngles( firstLaserField:LocalToWorldAngles( firstLaserField:ModelToInfo().angle ) )
 	secondLaserField:SetAngles( secondLaserField:LocalToWorldAngles( secondLaserField:ModelToInfo().angle ) )
 
 	firstLaserField:SetNWEntity( "GASL_ConnectedField", secondLaserField )
 	secondLaserField:SetNWEntity( "GASL_ConnectedField", firstLaserField )
-		
+	
+	constraint.Weld( secondLaserField, firstLaserField, 0, 0, 0, true, true )
+
 	undo.Create( "LaserField" )
 		undo.AddEntity( firstLaserField )
 		undo.AddEntity( secondLaserField )
@@ -103,11 +106,9 @@ function TOOL:UpdateGhostLaserField( ent, ply )
 	if ( !IsValid( ent ) ) then return end
 
 	local trace = ply:GetEyeTrace()
-	if ( !trace.Hit || trace.Entity && ( trace.Entity:GetClass() == "ent_LaserField" || trace.Entity:IsPlayer() ) ) then
-
+	if ( !trace.Hit || trace.Entity && ( trace.Entity:GetClass() == "ent_laser_field" || trace.Entity:IsPlayer() ) ) then
 		ent:SetNoDraw( true )
 		return
-
 	end
 	
 	local CurPos = ent:GetPos()

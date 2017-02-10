@@ -22,7 +22,7 @@ end
 function TOOL:LeftClick( trace )
 
 	-- Ignore if place target is Alive
-	if ( trace.Entity && trace.Entity:IsPlayer() ) then return false end
+	if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then return false end
 	
 	if ( CLIENT ) then return true end
 	
@@ -43,7 +43,7 @@ if ( SERVER ) then
 
 	function MakeLaserEmitter( pl, model, pos, ang, startenabled, toggle, key_enable )
 			
-		local laser_emitter = ents.Create( "env_portal_laser" )
+		local laser_emitter = ents.Create( "ent_portal_laser" )
 		laser_emitter:SetPos( pos )
 		laser_emitter:SetModel( model )
 		laser_emitter:SetAngles( ang )

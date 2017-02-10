@@ -28,8 +28,6 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	secondLaserField:SetAngles( traceSecond.HitNormal:Angle() )
 	secondLaserField:Spawn()
 	secondLaserField:SetAngles( secondLaserField:LocalToWorldAngles( Angle( 0, -90, 0 ) ) )
-
-	print( secondLaserField.BaseClass.ModelToInfo( secondLaserField ), 123 )
 	
 	firstLaserField:SetAngles( firstLaserField:LocalToWorldAngles( firstLaserField:ModelToInfo().angle ) )
 	secondLaserField:SetAngles( secondLaserField:LocalToWorldAngles( secondLaserField:ModelToInfo().angle ) )
@@ -37,6 +35,8 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	firstLaserField:SetNWEntity( "GASL_ConnectedField", secondLaserField )
 	secondLaserField:SetNWEntity( "GASL_ConnectedField", firstLaserField )
 	
+	constraint.Weld( secondLaserField, firstLaserField, 0, 0, 0, true, true )
+
 	undo.Create( "LaserField" )
 		undo.AddEntity( firstLaserField )
 		undo.AddEntity( secondLaserField )
@@ -49,23 +49,12 @@ end
 
 function ENT:Draw()
 
-	self.BaseClass.Draw( self )
+	self:DrawModel()
 	
 	if ( !self:GetEnable() ) then return end
-	
-	local secondField = self:GetNWEntity( "GASL_ConnectedField" )
-	if ( !secondField:IsValid() ) then return end
-	
-	local Height = 110
-	
-	local halfHeight = Height / 2
-	local pos1 = self:LocalToWorld( Vector( 0, 0, halfHeight ) + self:ModelToOffset() )
-	local pos2 = secondField:LocalToWorld( Vector( 0, 0, halfHeight ) + self:ModelToOffset() )
-	local pos3 = secondField:LocalToWorld( Vector( 0, 0, -halfHeight ) + self:ModelToOffset() )
-	local pos4 = self:LocalToWorld( Vector( 0, 0, -halfHeight ) + self:ModelToOffset() )
-	
-	render.SetMaterial( Material( "effects/laserplane" ) )
-	render.DrawQuad( pos1 , pos2, pos3, pos4, Color( 255, 255, 255 ) ) 
+
+	self:DrawFizzler( Material( "effects/laserplane" ) )
+
 
 end
 
@@ -73,14 +62,26 @@ if ( CLIENT ) then
 
 	function ENT:Think()
 		
+		self.BaseClass.Think( self )
+
 	end
 	
+	function ENT:Initialize()
+
+		self.BaseClass.Initialize( self )
+		//self.BaseClass.BaseClass.Initialize( self )
+
+	end
+
 	return
 end
 
 function ENT:Initialize()
 
 	self.BaseClass.Initialize( self )
+	self.BaseClass.BaseClass.Initialize( self )
+
+	self:AddInput( "Enable", function( value ) self:ToggleEnable( value ) end )
 	
 end
 
@@ -101,8 +102,6 @@ if ( CLIENT ) then return end
 
 function ENT:Think()
 
-	self:NextThink( CurTime() )
-	
 	self.BaseClass.Think( self )
 
 	return true

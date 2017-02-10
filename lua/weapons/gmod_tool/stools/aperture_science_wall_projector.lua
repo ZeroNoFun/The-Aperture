@@ -40,8 +40,8 @@ end
 if ( SERVER ) then
 
 	function MakeWallProjector( pl, pos, ang, startenabled, toggle, key_enable )
-			
-		local wall_projector = ents.Create( "prop_wall_projector" )
+		
+		local wall_projector = ents.Create( "ent_wall_projector" )
 		wall_projector:SetPos( pos )
 		wall_projector:SetAngles( ang )
 		wall_projector:Spawn()

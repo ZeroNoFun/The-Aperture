@@ -8,6 +8,14 @@ AddCSLuaFile( )
 
 APERTURESCIENCE = { }
 
+-- Main 
+APERTURESCIENCE.DRAW_HALOS = true
+
+-- Funnel
+APERTURESCIENCE.FUNNEL_MOVE_SPEED = 173
+APERTURESCIENCE.FUNNEL_COLOR = Color( 0, 150, 255 )
+APERTURESCIENCE.FUNNEL_REVERSE_COLOR = Color( 255, 150, 0 )
+
 -- Gel
 APERTURESCIENCE.GEL_QUALITY = 1
 APERTURESCIENCE.GEL_BOX_SIZE = 47
@@ -31,6 +39,7 @@ include( "aperture/sounds/monster_box_sounds.lua" )
 include( "aperture/sounds/fizzler_sounds.lua" )
 include( "aperture/sounds/laser_sounds.lua" )
 include( "aperture/sounds/item_dropper_sounds.lua" )
+include( "aperture/sounds/portal_button_sounds.lua" )
 
 function APERTURESCIENCE:PlaySequence( self, seq, rate )
 
@@ -46,25 +55,45 @@ function APERTURESCIENCE:PlaySequence( self, seq, rate )
 	
 end
 
+function APERTURESCIENCE:ConnectableStuff( ent )
+
+	if ( IsValid( ent ) &&
+		( ent:GetClass() == "ent_paint_dropper"
+		|| ent:GetClass() == "ent_tractor_beam"
+		|| ent:GetClass() == "ent_wall_projector"
+		|| ent:GetClass() == "ent_laser_field"
+		|| ent:GetClass() == "ent_fizzler"
+		|| ent:GetClass() == "ent_portal_laser"
+		|| ent:GetClass() == "ent_laser_catcher"
+		|| ent:GetClass() == "ent_laser_relay"
+		|| ent:GetClass() == "ent_item_dropper"
+		|| ent:GetClass() == "ent_portal_button"
+		|| ent:GetClass() == "sent_portalbutton_box"
+		|| ent:GetClass() == "sent_portalbutton_ball"
+		|| ent:GetClass() == "sent_portalbutton_normal"
+		|| ent:GetClass() == "sent_portalbutton_old" ) ) then return true end
+		
+	return false
+end
+
 function APERTURESCIENCE:IsValidEntity( ent )
 
-	if ( ent:IsValid() && !ent.GASL_Ignore 
-		&& ( !ent:GetPhysicsObject():IsValid() || ent:GetPhysicsObject():IsValid() && ent:GetPhysicsObject():IsMotionEnabled() )
-		&& ent:GetClass() != "ent_gel_paint" 
-		&& ent:GetClass() != "ent_gel_puddle"
-		&& ent:GetClass() != "prop_gel_dropper"
-		&& ent:GetClass() != "prop_tractor_beam"
-		&& ent:GetClass() != "prop_wall_projector"
+	if ( IsValid( ent ) && !ent.GASL_Ignore 
+		&& ( !IsValid( ent:GetPhysicsObject() ) || IsValid( ent:GetPhysicsObject() ) && ent:GetPhysicsObject():IsMotionEnabled() )
+		&& ent:GetClass() != "env_paint_paint" 
+		&& ent:GetClass() != "env_paint_puddle"
+		&& ent:GetClass() != "ent_paint_dropper"
+		&& ent:GetClass() != "ent_tractor_beam"
+		&& ent:GetClass() != "ent_wall_projector"
 		&& ent:GetClass() != "ent_laser_field"
 		&& ent:GetClass() != "ent_fizzler"
-		&& ent:GetClass() != "env_portal_laser"
-		&& ent:GetClass() != "env_laser_catcher"
-		&& ent:GetClass() != "env_laser_relay"
+		&& ent:GetClass() != "ent_portal_laser"
+		&& ent:GetClass() != "ent_laser_catcher"
+		&& ent:GetClass() != "ent_laser_relay"
+		&& ent:GetClass() != "ent_item_dropper"
+		&& ent:GetClass() != "ent_portal_button"
 		&& ent:GetClass() != "ent_portal_bomb"
-		&& ent:GetClass() != "env_dropper"
-		&& ent:GetClass() != "prop_catapult" ) then 
-		return true
-	end
+		&& ent:GetClass() != "ent_catapult" ) then  return true end
 	
 	return false
 end
@@ -130,6 +159,14 @@ function APERTURESCIENCE:CalcParabolCurve(  )
 
 end
 
+hook.Add( "Initialize", "GASL_Initialize", function()
+
+	if ( SERVER ) then
+		util.AddNetworkString( "GASL_LinkConnection" ) 
+	end
+
+end )
+
 hook.Add( "PreDrawHUD", "GASL_HUDRender", function()
 
 	cam.Start3D()
@@ -139,7 +176,7 @@ hook.Add( "PreDrawHUD", "GASL_HUDRender", function()
 		if ( ply:GetActiveWeapon():IsValid() && ply:GetActiveWeapon():GetClass() == "gmod_tool" 
 			&& ply:GetTool() && ply:GetTool().Mode && ply:GetTool().Mode == "aperture_science_catapult" ) then
 
-			for i, catapult in pairs( ents.FindByClass( "prop_catapult" ) ) do
+			for i, catapult in pairs( ents.FindByClass( "ent_catapult" ) ) do
 				
 				local tool = ply:GetTool( "aperture_science_catapult" )
 				
@@ -157,8 +194,8 @@ hook.Add( "PreDrawHUD", "GASL_HUDRender", function()
 				local endpos = catapult:GetLandPoint()
 				local height = catapult:GetLaunchHeight()
 				local middlepos = ( startpos + endpos ) / 2
-				local points, length = APERTURESCIENCE:CalcBezierCurvePoint( startpos, middlepos + Vector( 0, 0, height * 2 ), endpos, 10 )
-				local prevBeamPos = points[ 1 ]
+				//local points, length = APERTURESCIENCE:CalcBezierCurvePoint( startpos, middlepos + Vector( 0, 0, height * 2 ), endpos, 10 )
+				local prevBeamPos = startpos
 
 				-- -- Drawing Rotation
 				-- render.SetMaterial( Material( "effects/wheel_ring" ) )
@@ -167,11 +204,27 @@ hook.Add( "PreDrawHUD", "GASL_HUDRender", function()
 				-- Drawing land target
 				render.SetMaterial( Material( "signage/mgf_overlay_bullseye" ) )
 				render.DrawQuadEasy( endpos, Vector( 0, 0, 1 ), 80, 80, Color( 255, 255, 255 ), 0 )
-
+				
 				-- Drawing trajectory
 				render.SetMaterial( Material( "effects/trajectory_path" ) )
-				for inx, point in pairs( points ) do
+				local amount = math.max( 4, startpos:Distance( endpos ) / 200 )
 				
+				local Iterrations = 20
+				
+				local timeofFlight = catapult:GetTimeOfFlight()
+				local launchVector = catapult:GetLaunchVector()
+
+				local dTime = timeofFlight / ( Iterrations )
+				local dVector = launchVector * dTime
+				
+				local point = catapult:GetPos()
+				local Gravity = math.abs( physenv.GetGravity().z ) * timeofFlight / ( Iterrations - 1 )
+				
+				for i = 1, Iterrations do
+				
+					point = point + dVector
+					dVector = dVector - Vector( 0, 0, Gravity * dTime )
+					
 					render.DrawBeam( prevBeamPos, point, 120, 0, 1, Color( 255, 255, 255 ) )
 					prevBeamPos = point
 					

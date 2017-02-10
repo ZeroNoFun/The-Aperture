@@ -9,10 +9,9 @@ if ( SERVER ) then return end
 
 surface.CreateFont( "GASL_SecFont", {
 	font = "Arial",
-	size = 17,
-	weight = 1000,
+	size = 32,
+	weight = 100000,
 	antialias = true,
-	italic = true,
 } )
 
 local function GASL_BuildPanel( Panel )
@@ -290,7 +289,7 @@ local function GASL_BuildPanel( Panel )
 	-- Panel:AddItem(CrosLine)
 	//
 	
-	if !GASL_Panel then
+	if ( !GASL_Panel ) then
 		GASL_Panel = Panel
 	end
 end
@@ -304,19 +303,19 @@ function GASL_SMO()
 	
 end
 
-hook.Add("SpawnMenuOpen","GASL_SpawnMenuOpen", GASL_SMO)
+hook.Add("SpawnMenuOpen","GASL_SpawnMenuOpen", GASL_SMO )
 
 hook.Add( "PopulateToolMenu", "GASL_PopulateToolMenu", function()
 
-	spawnmenu.AddToolMenuOption( "Utilities", "GMOD Aperture Science Laboratories", "Menu", "GMOD Aperture Science Laboratories", "", "", GASL_BuildPanel )
+	spawnmenu.AddToolMenuOption( "Utilities", "GMOD Aperture Science Laboratories", "GASLMenu", "Allowing", "", "", GASL_BuildPanel )
 	
 end )
 
 /// ULX Integr 
 /// Don't remove this if you not use ULX !
-for name,data in pairs(hook.GetTable()) do
-	if name=="UCLChanged" then
-		hook.Add("UCLChanged","GASL_Update",GASL_SMO)
+for name, data in pairs( hook.GetTable() ) do
+	if ( name == "UCLChanged" ) then
+		hook.Add( "UCLChanged", "GASL_Update", GASL_SMO )
 		break
 	end
 end

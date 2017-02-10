@@ -19,11 +19,178 @@ end
 
 function ENT:Initialize()
 
+	self.GASL_LinkInputs = { }
+	self.GASL_LinkOutputs = { }
+	self.GASL_LinkConnections = { }
+	
+	if ( SERVER ) then
+
+		self.GASL_LinkConnectionsFrom = { }
+
+	end
+
+	if ( CLIENT ) then
+	
+		net.Start( "GASL_LinkConnection" )
+		net.WriteString( "init" )
+		net.WriteEntity( self )
+		net.SendToServer()
+		
+	end
+	
+end
+
+----------------------------------------
+------------- IO System ----------------
+----------------------------------------
+
+function ENT:AddInput( name, func )
+
+	if ( !self.GASL_LinkInputs ) then return end
+	
+	self.GASL_LinkInputs[ name ] = func
+	
+end
+
+function ENT:AddOutput( name, value )
+
+	if ( !self.GASL_LinkOutputs ) then return end
+	
+	self.GASL_LinkOutputs[ name ] = value
+	print( name, value , "ADD" )
+	
+end
+
+function ENT:InitIO()
+
+	local tempInps = { }
+	
+	if ( !self.GASL_LinkInputs ) then return end
+	
+	for k, v in pairs( self.GASL_LinkInputs ) do
+		tempInps[ k ] = true
+	end
+	
+	print( self, self.GASL_LinkOutputs, table.Count( self.GASL_LinkOutputs ) )
+	PrintTable( self.GASL_LinkOutputs )
+	
+	net.Start( "GASL_LinkConnection" )
+		net.WriteString( "initIO" )
+		net.WriteEntity( self )
+		net.WriteTable( tempInps )
+		net.WriteTable( self.GASL_LinkOutputs )
+	net.Broadcast()
+
+end
+
+function ENT:ActiveInput( name, value )
+
+	self.GASL_LinkInputs[ name ]( value )
+
+end
+
+function ENT:AddConnection( connectToEnt, inputname, outputname )
+
+	if ( !self.GASL_LinkConnections ) then return end
+	if ( !connectToEnt.GASL_LinkConnectionsFrom ) then return end
+	self.GASL_LinkConnections[ inputname ] = { ent = connectToEnt, outputname = outputname }
+	connectToEnt.GASL_LinkConnectionsFrom[ self:EntIndex().."|"..connectToEnt:EntIndex().."|"..inputname.."|"..outputname ] = { ent = self, inputname = inputname, outputname = outputname }
+		
+	net.Start( "GASL_LinkConnection" )
+		net.WriteString( "addConnection" )
+		net.WriteEntity( self )
+		net.WriteEntity( connectToEnt )
+		net.WriteString( inputname )
+	net.Broadcast()
+
+end
+
+function ENT:RemoveConnection( inputname )
+
+	if ( !self.GASL_LinkConnections ) then return end
+	local connection = self.GASL_LinkConnections[ inputname ]
+	local ent = connection.ent
+	local outputname = connection.outputname
+	self.GASL_LinkConnections[ inputname ] = nil
+
+	if ( IsValid( ent ) && ent.GASL_LinkConnectionsFrom ) then
+		ent.GASL_LinkConnectionsFrom[ self:EntIndex().."|"..ent:EntIndex().."|"..inputname.."|"..outputname ] = nil
+	end
+		
+	net.Start( "GASL_LinkConnection" )
+		net.WriteString( "removeConnection" )
+		net.WriteEntity( self )
+		net.WriteString( inputname )
+	net.Broadcast()
+
+end
+
+function ENT:UpdateOutput( name, value )
+
+	if ( !self.GASL_LinkOutputs || self.GASL_LinkOutputs[ name ] == nil ) then return end
+	
+	self.GASL_LinkOutputs[ name ] = value
+	
+	for k, v in pairs( self.GASL_LinkConnectionsFrom ) do
+		
+		local ent = v.ent
+		local inputname = v.inputname
+		local outputname = v.outputname
+		
+		if ( !IsValid( ent ) ) then
+			self.GASL_LinkConnectionsFrom[ k ] = nil
+			break
+		end
+		
+		if ( name == outputname ) then
+			ent:ActiveInput( inputname, value )
+		end
+	
+	end
+
+end
+
+net.Receive( "GASL_LinkConnection", function( len, pl )
+
+	local mType = net.ReadString()
+	local mEnt = net.ReadEntity()
+
+	print( mEnt, mType )
+	if ( !mType || !IsValid( mEnt ) ) then return end
+
+	if ( mType == "init" ) then
+		mEnt:InitIO()
+		
+	elseif ( mType == "initIO" ) then
+		local mInputs = net.ReadTable()
+		local mOutputs = net.ReadTable()
+		mEnt.GASL_LinkInputs = mInputs
+		mEnt.GASL_LinkOutputs = mOutputs
+		
+	elseif ( mType == "addConnection" ) then
+		local mConnectTo = net.ReadEntity()
+		local mName = net.ReadString()
+		mEnt.GASL_LinkConnections[ mName ] = mConnectTo
+		
+	elseif ( mType == "removeConnection" ) then
+		local mName = net.ReadString()
+		mEnt.GASL_LinkConnections[ mName ] = nil
+		
+	end
+	
+end )
+
+----------------------------------------
+------------- PEFFECT ------------------
+----------------------------------------
+
+function ENT:PEffectSpawnInit()
+
 	if ( SERVER ) then
 
 		// Portal Gun integration: activation ignore for portals
 		self.isClone = true
-		self.GASL_Portals = { }
+		self.GASL_PortalsInfo = { }
 		self.GASL_PassagesPrev = 0
 		self.GASL_EntInfo = { }
 		self.GASL_EntitiesEffects = { }
@@ -34,9 +201,10 @@ function ENT:Initialize()
 	
 	end
 	
-	self.GASL_BridgeUpdate = { }
+	self.GASL_PortalEffectUpdate = { }
 	
 end
+
 
 function ENT:Draw()
 
@@ -46,9 +214,9 @@ end
 
 function ENT:GetAllPortalPassages( pos, angle )
 
-	-- If wall projector detect portal update bridge
-	local bridgeBuildPos = pos
-	local bridgeBuildAng = angle
+	-- If pEffect projector detect portal update pEffect
+	local pEffectBuildPos = pos
+	local pEffectBuildAng = angle
 	local portalLoop = true
 	local hitPortal = nil
 	local hitPortalExit = nil
@@ -56,22 +224,22 @@ function ENT:GetAllPortalPassages( pos, angle )
 	local passages = 1
 
 	local points = { }
-	local a = 0
+	
 	while ( portalLoop ) do
-		a = a + 1
+	
 		portalLoop = false
 		
 		-- Prev Hendling
 		if ( hitPortal && hitPortal:IsValid() ) then
 			
 			-- Getting new position info of next trace test
-			local bridgeOffsetPos = hitPortal:WorldToLocal( tracePrevHitPos )
-			local bridgeOffsetAngle = hitPortal:WorldToLocalAngles( bridgeBuildAng )
-			bridgeOffsetPos.y = -bridgeOffsetPos.y
+			local pEffectOffsetPos = hitPortal:WorldToLocal( tracePrevHitPos )
+			local pEffectOffsetAngle = hitPortal:WorldToLocalAngles( pEffectBuildAng )
+			pEffectOffsetPos.y = -pEffectOffsetPos.y
 			
-			bridgeOffsetPos.x = 0
-			bridgeBuildPos = hitPortal:GetNWBool( "Potal:Other" ):LocalToWorld( bridgeOffsetPos )
-			bridgeBuildAng = hitPortal:GetNWBool( "Potal:Other" ):LocalToWorldAngles( bridgeOffsetAngle + Angle( 0, 180, 0 ) )
+			pEffectOffsetPos.x = 0
+			pEffectBuildPos = hitPortal:GetNWBool( "Potal:Other" ):LocalToWorld( pEffectOffsetPos )
+			pEffectBuildAng = hitPortal:GetNWBool( "Potal:Other" ):LocalToWorldAngles( pEffectOffsetAngle + Angle( 0, 180, 0 ) )
 
 			hitPortalExit = hitPortal:GetNWBool( "Potal:Other" )
 			hitPortal = nil
@@ -79,14 +247,14 @@ function ENT:GetAllPortalPassages( pos, angle )
 		end
 		
 		local trace = util.TraceLine( {
-			start = bridgeBuildPos,
-			endpos = bridgeBuildPos + bridgeBuildAng:Forward() * 100000,
+			start = pEffectBuildPos,
+			endpos = pEffectBuildPos + pEffectBuildAng:Forward() * 100000,
 			filter = function( ent )
 				if ( ent == self || ent:GetClass() == "prop_portal" || ent:IsPlayer() || ent:IsNPC() || ent:GetPhysicsObject() && ent:GetPhysicsObject():IsValid() ) then return false end
 			end
 		} )
 		
-		table.insert( points, table.Count( points ) + 1, { startpos = bridgeBuildPos, endpos = trace.HitPos } )
+		table.insert( points, table.Count( points ) + 1, { startpos = pEffectBuildPos, endpos = trace.HitPos } )
 		
 		-- Portal loop if trace hit portal
 		for k, v in pairs( ents.FindByClass( "prop_portal" ) ) do
@@ -105,7 +273,6 @@ function ENT:GetAllPortalPassages( pos, angle )
 					
 					break
 				end
-				
 			end
 			
 		end
@@ -116,11 +283,11 @@ function ENT:GetAllPortalPassages( pos, angle )
 
 end
 
-function ENT:MakeBridges( )
+function ENT:MakePEffect( )
 
-	-- If wall projector detect portal update bridge
-	local bridgeBuildPos = self:LocalToWorld( Vector( 0, 0, -1 ) )
-	local bridgeBuildAng = self:LocalToWorldAngles( Angle( 0, 0, 0 ) )
+	-- If pEffect projector detect portal update pEffect
+	local pEffectBuildPos = self:LocalToWorld( Vector( 0, 0, -1 ) )
+	local pEffectBuildAng = self:LocalToWorldAngles( Angle( 0, 0, 0 ) )
 	local portalLoop = true
 	local hitPortal = nil
 	local hitPortalExit = nil
@@ -128,7 +295,7 @@ function ENT:MakeBridges( )
 	local passages = 1
 	local passagesPrev = self.GASL_PassagesPrev
 	
-	self:BridgeCheckUpdate( )
+	self:PEffectCheckUpdate( )
 	
 	while ( portalLoop ) do
 	
@@ -138,12 +305,12 @@ function ENT:MakeBridges( )
 		if ( hitPortal && hitPortal:IsValid() ) then
 			
 			-- Getting new position info of next trace test
-			local bridgeOffsetPos = hitPortal:WorldToLocal( tracePrevHitPos )
-			local bridgeOffsetAngle = hitPortal:WorldToLocalAngles( bridgeBuildAng )
-			bridgeOffsetPos.y = -bridgeOffsetPos.y
-			bridgeOffsetPos.x = 0
-			bridgeBuildPos = hitPortal:GetNWBool( "Potal:Other" ):LocalToWorld( bridgeOffsetPos )
-			bridgeBuildAng = hitPortal:GetNWBool( "Potal:Other" ):LocalToWorldAngles( bridgeOffsetAngle + Angle( 0, 180, 0 ) )
+			local pEffectOffsetPos = hitPortal:WorldToLocal( tracePrevHitPos )
+			local pEffectOffsetAngle = hitPortal:WorldToLocalAngles( pEffectBuildAng )
+			pEffectOffsetPos.y = -pEffectOffsetPos.y
+			pEffectOffsetPos.x = 0
+			pEffectBuildPos = hitPortal:GetNWBool( "Potal:Other" ):LocalToWorld( pEffectOffsetPos )
+			pEffectBuildAng = hitPortal:GetNWBool( "Potal:Other" ):LocalToWorldAngles( pEffectOffsetAngle + Angle( 0, 180, 0 ) )
 
 			hitPortalExit = hitPortal:GetNWBool( "Potal:Other" )
 			hitPortal = nil
@@ -151,8 +318,8 @@ function ENT:MakeBridges( )
 		end
 		
 		local trace = util.TraceLine( {
-			start = bridgeBuildPos,
-			endpos = bridgeBuildPos + bridgeBuildAng:Forward() * 100000,
+			start = pEffectBuildPos,
+			endpos = pEffectBuildPos + pEffectBuildAng:Forward() * 100000,
 			filter = function( ent )
 				if ( ent == self || ent:GetClass() == "prop_portal" || ent:IsPlayer() || ent:IsNPC() || ent:GetPhysicsObject() && ent:GetPhysicsObject():IsValid() ) then return false end
 			end
@@ -168,15 +335,16 @@ function ENT:MakeBridges( )
 
 				if ( v:GetNWBool( "Potal:Other" ) && v:GetNWBool( "Potal:Other" ):IsValid() ) then
 
-					if ( !self.GASL_Portals[ v:EntIndex().."_"..( passages + 1 ) ] ) then
+					if ( !self.GASL_PortalsInfo[ v:EntIndex().."_"..( passages + 1 ) ] ) then
 					
 						-- Saving info about portals, each portal contain their passages and location info
 						local portalExit = v:GetNWBool( "Potal:Other" )
-						self.GASL_Portals[ v:EntIndex().."_"..( passages + 1 ) ] = { ent = v, pos = v:GetPos(), ang = v:GetAngles(), thrC = passages }
-						self.GASL_Portals[ portalExit:EntIndex().."_"..passages ] = { ent = portalExit, pos = portalExit:GetPos(), ang = portalExit:GetAngles(), thrC = passages + 1 }
+						self.GASL_PortalsInfo[ v:EntIndex().."_"..( passages + 1 ) ] = { ent = v, pos = v:GetPos(), ang = v:GetAngles(), thrC = passages }
+						self.GASL_PortalsInfo[ portalExit:EntIndex().."_"..passages ] = { ent = portalExit, pos = portalExit:GetPos(), ang = portalExit:GetAngles(), thrC = passages + 1 }
 
-						self.GASL_BridgeUpdate.lastPos = Vector( )
-						self.GASL_BridgeUpdate.lastAngle = Angle( )
+						self.GASL_PortalEffectUpdate.lastPos = Vector( )
+						self.GASL_PortalEffectUpdate.lastAngle = Angle( )
+
 					end
 					
 					hitPortal = v
@@ -188,11 +356,11 @@ function ENT:MakeBridges( )
 		end
 		
 		-- Handling changes position or angles
-		if ( self.GASL_BridgeUpdate.lastPos != self:GetPos() or self.GASL_BridgeUpdate.lastAngle != self:GetAngles() ) then
+		if ( self.GASL_PortalEffectUpdate.lastPos != self:GetPos() or self.GASL_PortalEffectUpdate.lastAngle != self:GetAngles() ) then
 		
-			-- Rebuilding bridge specific to this portal
-			local bridge = self:BridgeBuild( trace, bridgeBuildPos, bridgeBuildAng, passages )
-			self.GASL_EntitiesEffects[ passages ] = bridge
+			-- Rebuilding pEffect specific to this portal
+			local pEffect = self:PEffectBuild( trace, pEffectBuildPos, pEffectBuildAng, passages )
+			self.GASL_EntitiesEffects[ passages ] = pEffect
 			
 		end
 
@@ -209,25 +377,28 @@ function ENT:MakeBridges( )
 		end
 		
 		if ( passagesPrev > passages ) then
-			self:BridgeRemoveBridgesFromPortal2End( passages )
+			self:PEffectRemovePEffectFromPortal2End( passages )
 		end
 		
 		self.GASL_PassagesPrev = passages
 	end
+	
+	self.GASL_PortalEffectUpdate.lastPos = self:GetPos()
+	self.GASL_PortalEffectUpdate.lastAngle = self:GetAngles()
 
 end
 
 function ENT:ClearAllData()
 
-	self:RemoveBridges()
-	self.GASL_BridgeUpdate = { }
+	self:RemovePEffects()
+	self.GASL_PortalEffectUpdate = { }
 	self.GASL_EntitiesEffects = { }
-	self.GASL_Portals = { }
+	self.GASL_PortalsInfo = { }
 	self.GASL_PassagesPrev = 0
 
 end
 
-function ENT:RemoveBridge( index )
+function ENT:RemovePEffect( index )
 
 	for k, v in pairs( self.GASL_EntitiesEffects[ index ] ) do
 	
@@ -237,101 +408,100 @@ function ENT:RemoveBridge( index )
 
 end
 
-function ENT:RemoveBridges()
-	
+function ENT:RemovePEffects()
 	for k, v in pairs( self.GASL_EntitiesEffects ) do
 	
-		if ( v ) then self:RemoveBridge( k ) end
+		if ( v ) then self:RemovePEffect( k ) end
 		
 	end	
 
 end
 
-function ENT:BridgeRemoveBridgesFromPortal2End( index )
+function ENT:PEffectRemovePEffectFromPortal2End( index )
 
-	for k, portal in pairs( self.GASL_Portals ) do
+	for k, portal in pairs( self.GASL_PortalsInfo ) do
 		
 		if ( portal.thrC > index ) then
 			if ( portal.ent && portal.ent:IsValid() && portal.ent:GetNWBool( "Potal:Other" ) && portal.ent:GetNWBool( "Potal:Other" ):IsValid() ) then
 				
-				local index = self.GASL_Portals[ portal.ent:GetNWBool( "Potal:Other" ):EntIndex().."_"..portal.thrC ]
-				self:RemoveBridge( index.thrC )
-				self.GASL_Portals[ portal.ent:GetNWBool( "Potal:Other" ):EntIndex().."_"..portal.thrC ] = nil
+				local index = self.GASL_PortalsInfo[ portal.ent:GetNWBool( "Potal:Other" ):EntIndex().."_"..portal.thrC ]
+				self:RemovePEffect( index.thrC )
+				self.GASL_PortalsInfo[ portal.ent:GetNWBool( "Potal:Other" ):EntIndex().."_"..portal.thrC ] = nil
 			end
 
-			self:RemoveBridge( portal.thrC )
-			self.GASL_Portals[ k ] = nil
+			self:RemovePEffect( portal.thrC )
+			self.GASL_PortalsInfo[ k ] = nil
 		end
 		
 	end
 	
 end
 
-function ENT:BridgeCheckUpdate()
+function ENT:PEffectCheckUpdate()
 
 	---------------------------------
-	--------- BRIDGE UPDATE ---------
+	--------- PEFFECT UPDATE ---------
 	---------------------------------
 
 	local removeAllNext = false
 	
 	-- If portal changed update projector
-	for k, portal in pairs( self.GASL_Portals ) do
+	for k, portal in pairs( self.GASL_PortalsInfo ) do
 	
 		if ( !removeAllNext && !portal.ent:IsValid() 
 			|| portal.ent:IsValid() && portal.pos != portal.ent:GetPos() 
 			|| portal.ent:IsValid() && portal.ang != portal.ent:GetAngles() ) then
 			
 			removeAllNext = true
-			self.GASL_BridgeUpdate.lastPos = Vector( )
-			self.GASL_BridgeUpdate.lastAngle = Angle( )
+			self.GASL_PortalEffectUpdate.lastPos = Vector( )
+			self.GASL_PortalEffectUpdate.lastAngle = Angle( )
 			
 		end
 		
-		-- Removing all bridges from that brigde whick was removed to end 
+		-- Removing all PEffect from that brigde whick was removed to end 
 		if ( removeAllNext ) then
 		
 			if ( portal.ent && portal.ent:IsValid() && portal.ent:GetNWBool( "Potal:Other" ) && portal.ent:GetNWBool( "Potal:Other" ):IsValid() ) then
 				
-				local index = self.GASL_Portals[ portal.ent:GetNWBool( "Potal:Other" ):EntIndex().."_"..portal.thrC ]
+				local index = self.GASL_PortalsInfo[ portal.ent:GetNWBool( "Potal:Other" ):EntIndex().."_"..portal.thrC ]
 				if ( index ) then
-					self:RemoveBridge( index.thrC )
-					self.GASL_Portals[ portal.ent:GetNWBool( "Potal:Other" ):EntIndex().."_"..portal.thrC ] = nil
+					self:RemovePEffect( index.thrC )
+					self.GASL_PortalsInfo[ portal.ent:GetNWBool( "Potal:Other" ):EntIndex().."_"..portal.thrC ] = nil
 				end
 				
 			end
 
-			self:RemoveBridge( portal.thrC )
-			self.GASL_Portals[ k ] = nil
+			self:RemovePEffect( portal.thrC )
+			self.GASL_PortalsInfo[ k ] = nil
 		end
 	
 	end
 end
 
-function ENT:BridgeBuild( trace, bridgeBuildPos, bridgeBuildAng, passages )
+function ENT:PEffectBuild( trace, pEffectBuildPos, pEffectBuildAng, passages )
 
 	local disatance = 0
 	local hitPortal = nil
 	local hitPortalExit = nil
 	local tracePrevHitPos = Vector()
 	
-	-- Removing all prev walls
+	-- Removing all prev pEffects
 	if ( self.GASL_EntitiesEffects[ passages ] ) then
 	for k, v in pairs( self.GASL_EntitiesEffects[ passages ] ) do
 		if ( v:IsValid() ) then v:Remove() end
 	end
 	end
 	
-	disatance = bridgeBuildPos:Distance( trace.HitPos )
+	disatance = pEffectBuildPos:Distance( trace.HitPos )
 	
 	local addingDist = 0
-	local bridge = { }
+	local pEffect = { }
 	while ( disatance > addingDist ) do
 
 		local ent = ents.Create( "prop_physics" )
 		ent:SetModel( self.GASL_EntInfo.model )
-		ent:SetPos( bridgeBuildPos + bridgeBuildAng:Forward() * addingDist )
-		ent:SetAngles( bridgeBuildAng )
+		ent:SetPos( pEffectBuildPos + pEffectBuildAng:Forward() * addingDist )
+		ent:SetAngles( pEffectBuildAng )
 		ent:Spawn()
 		ent:SetColor( self.GASL_EntInfo.color )
 		ent:SetPersistent( true )
@@ -359,10 +529,10 @@ function ENT:BridgeBuild( trace, bridgeBuildPos, bridgeBuildAng, passages )
 			
 		end
 		
-		table.insert( bridge, table.Count( bridge ) + 1, ent )
+		table.insert( pEffect, table.Count( pEffect ) + 1, ent )
 		addingDist = addingDist + self.GASL_EntInfo.length
 	end
 	
-	return bridge
+	return pEffect
 	
 end

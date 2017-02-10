@@ -30,7 +30,7 @@ end
 function TOOL:LeftClick( trace )
 
 	-- Ignore if place target is Alive
-	if ( trace.Entity && trace.Entity:IsPlayer() ) then return false end
+	if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then return false end
 	
 	if ( CLIENT ) then return true end
 
@@ -56,7 +56,7 @@ if ( SERVER ) then
 
 	function MakePaintDropper( pl, pos, ang, gelType, gelRad, gelAmount, gelRandomizeSize, gelLaunchSpeed, startenabled, toggle, key_enable )
 		
-		local paint_dropper = ents.Create( "prop_gel_dropper" )
+		local paint_dropper = ents.Create( "ent_gel_dropper" )
 		paint_dropper:SetPos( pos )
 		paint_dropper:SetAngles( ang )
 		paint_dropper:SetMoveType( MOVETYPE_NONE )
@@ -74,7 +74,6 @@ if ( SERVER ) then
 		paint_dropper:SetStartEnabled( tobool( startenabled ) )
 		paint_dropper:ToggleEnable( false )
 		paint_dropper:SetToggle( tobool( toggle ) )
-		paint_dropper:SetOwner( pl )
 
 		undo.Create( "Gel Dropper" )
 			undo.AddEntity( paint_dropper )

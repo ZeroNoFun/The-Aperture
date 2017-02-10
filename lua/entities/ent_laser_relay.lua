@@ -2,7 +2,7 @@ AddCSLuaFile( )
 
 ENT.Base 			= "gasl_base_ent"
 
-ENT.PrintName 		= "Laser Catcher"
+ENT.PrintName 		= "Laser Relay"
 ENT.Category 		= "Aperture Science"
 ENT.Spawnable 		= true
 ENT.Editable		= true
@@ -15,7 +15,7 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	
 	local ent = ents.Create( ClassName )
 	ent:SetPos( trace.HitPos )
-	ent:SetModel( "models/props/laser_catcher_center.mdl" )
+	ent:SetModel( "models/props/laser_receptacle.mdl" )
 	ent:SetAngles( trace.HitNormal:Angle() )
 	ent:Spawn()
 
@@ -32,27 +32,17 @@ end
 if ( CLIENT ) then
 
 	function ENT:Initialize()
-				
+		
+		self.BaseClass.Initialize( self )
+
 	end
 	
 	function ENT:Think()
 		
 		self:NextThink( CurTime() )
-	
 		return true
 		
 	end
-	
-end
-
-function ENT:ModelToStartCoord()
-
-	local modelToStartCoord = {
-		["models/props/laser_catcher_center.mdl"] = Vector( 0, 0, 0 ),
-		["models/props/laser_catcher.mdl"] = Vector( 0, 0, -14 )
-	}
-	
-	return modelToStartCoord[ self:GetModel() ]
 	
 end
 
@@ -65,16 +55,18 @@ function ENT:Draw()
 		local radius = 64
 		radius = radius * math.Rand( 0.9, 1.1 )
 		render.SetMaterial( Material( "particle/laser_beam_glow" ) )
-		render.DrawSprite( self:LocalToWorld( self:ModelToStartCoord() + Vector( 20, 0, 0 ) ), radius, radius, Color( 255, 255, 255 ) )
+		render.DrawSprite( self:LocalToWorld( Vector( 0, 0, 20 ) ), radius, radius, Color( 255, 255, 255 ) )
 	
 	end
-
+	
 end
 
 -- no more client side
 if ( CLIENT ) then return end
 
 function ENT:Initialize()
+
+	self.BaseClass.Initialize( self )
 
 	self:PhysicsInit( SOLID_VPHYSICS )
 	self:SetMoveType( MOVETYPE_VPHYSICS )
@@ -83,6 +75,8 @@ function ENT:Initialize()
 	
 	self.GASL_Actiaved = false
 	self.GASL_LastHittedByLaser = 0
+
+	self:AddOutput( "Actiaved", false )
 
 	if ( !WireAddon ) then return end
 	self.Outputs = WireLib.CreateSpecialOutputs( self, { "Enabled" }, { "NORMAL" } )
@@ -102,6 +96,8 @@ function ENT:Think()
 			self:EmitSound( "GASL.LaserCatcherLoop" )
 			APERTURESCIENCE:PlaySequence( self, "spin", 1.0 )
 			
+			self:UpdateOutput( "Actiaved", true )
+			
 			Wire_TriggerOutput( self, "Enabled", 1 )
 		end
 		
@@ -111,6 +107,8 @@ function ENT:Think()
 		self:EmitSound( "GASL.LaserCatcherOff" )
 		self:StopSound( "GASL.LaserCatcherLoop" )
 		APERTURESCIENCE:PlaySequence( self, "idle", 1.0 )
+		
+		self:UpdateOutput( "Actiaved", false )
 		
 		Wire_TriggerOutput( self, "Enabled", 0 )
 	end
