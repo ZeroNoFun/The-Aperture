@@ -43,7 +43,7 @@ include( "aperture/sounds/portal_button_sounds.lua" )
 
 function APERTURESCIENCE:PlaySequence( self, seq, rate )
 
-	if ( !self:IsValid() ) then return end
+	if ( !IsValid( self ) ) then return end
 	
 	local sequence = self:LookupSequence( seq )
 	self:ResetSequence( sequence )

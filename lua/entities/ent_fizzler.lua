@@ -29,8 +29,9 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	secondFizzler:Spawn()
 	secondFizzler:SetAngles( secondFizzler:LocalToWorldAngles( Angle( 0, -90, 0 ) ) )
 	
-	firstFizzler:SetAngles( firstFizzler:LocalToWorldAngles( firstFizzler:ModelToInfo().angle ) )
-	secondFizzler:SetAngles( secondFizzler:LocalToWorldAngles( secondFizzler:ModelToInfo().angle ) )
+	local Angles = APERTURESCIENCE:FizzlerModelToInfo( firstFizzler ).angle
+	firstFizzler:SetAngles( firstFizzler:LocalToWorldAngles( Angles ) )
+	secondFizzler:SetAngles( secondFizzler:LocalToWorldAngles( Angles ) )
 
 	firstFizzler:SetNWEntity( "GASL_ConnectedField", secondFizzler )
 	secondFizzler:SetNWEntity( "GASL_ConnectedField", firstFizzler )
@@ -61,7 +62,7 @@ function ENT:Draw()
 	-- close objects field effect
 	
 	local Height = 110
-	local Offset = self:ModelToInfo().offset
+	local Offset = APERTURESCIENCE:FizzlerModelToInfo( self ).offset
 	
 	local closesEntities = { }
 	local tracer = util.TraceHull( {

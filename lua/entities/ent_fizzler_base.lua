@@ -30,10 +30,10 @@ function ENT:DrawFizzler( material, stretch )
 		division = math.ceil( self:GetPos():Distance( secondField:GetPos() ) / DivSize )
 	end
 
+	local offset = APERTURESCIENCE:FizzlerModelToInfo( self ).offset
+		
 	for i = 1, division do
 	
-		local offset = self:ModelToInfo().offset 
-		
 		local pos1 = self:LocalToWorld( Vector( 0, 0, halfHeight ) + offset )
 		local pos2 = secondField:LocalToWorld( Vector( 0, 0, halfHeight ) + offset )
 		local pos3 = secondField:LocalToWorld( Vector( 0, 0, -halfHeight ) + offset )
@@ -51,14 +51,14 @@ function ENT:DrawFizzler( material, stretch )
 	
 end
 
-function ENT:ModelToInfo()
+function APERTURESCIENCE:FizzlerModelToInfo( fizzler )
 
 	local modelsToInfo = {
 		["models/props/fizzler_dynamic.mdl"] = { offset = Vector( 0, 0, 0 ), angle = Angle( 0, 0, 0 ) },
 		["models/props_underground/underground_fizzler_wall.mdl"] = { offset = Vector( 0, 0, 70 ), angle = Angle( 0, 180, 0 ) }
 	}
 
-	return modelsToInfo[ self:GetModel() ]
+	return modelsToInfo[ fizzler:GetModel() ]
 	
 end
 
@@ -120,10 +120,11 @@ function ENT:Think()
 	
 	self.GASL_AllreadyHandled = { }
 	
-	for i = 0, DivCount do
+	local Offset = APERTURESCIENCE:FizzlerModelToInfo( self ).offset
 	
-		local pos = self:LocalToWorld( Vector( 0, 0, -Height / 2 + i * ( Height / DivCount ) ) + self:ModelToInfo().offset )
-		local pos2 = self:GetNWEntity( "GASL_ConnectedField" ):LocalToWorld( Vector( 0, 0, -Height / 2 + i * ( Height / DivCount ) ) + self:ModelToInfo().offset )
+	for i = 0, DivCount do
+		local pos = self:LocalToWorld( Vector( 0, 0, -Height / 2 + i * ( Height / DivCount ) ) + Offset )
+		local pos2 = self:GetNWEntity( "GASL_ConnectedField" ):LocalToWorld( Vector( 0, 0, -Height / 2 + i * ( Height / DivCount ) ) + Offset )
 		
 		local tracer = util.TraceHull( {
 			start = pos,

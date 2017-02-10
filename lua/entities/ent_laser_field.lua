@@ -29,8 +29,8 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	secondLaserField:Spawn()
 	secondLaserField:SetAngles( secondLaserField:LocalToWorldAngles( Angle( 0, -90, 0 ) ) )
 	
-	firstLaserField:SetAngles( firstLaserField:LocalToWorldAngles( firstLaserField:ModelToInfo().angle ) )
-	secondLaserField:SetAngles( secondLaserField:LocalToWorldAngles( secondLaserField:ModelToInfo().angle ) )
+	firstLaserField:SetAngles( firstLaserField:LocalToWorldAngles( APERTURESCIENCE:FizzlerModelToInfo( firstLaserField ) ) )
+	secondLaserField:SetAngles( secondLaserField:LocalToWorldAngles( APERTURESCIENCE:FizzlerModelToInfo( secondLaserField ) ) )
 
 	firstLaserField:SetNWEntity( "GASL_ConnectedField", secondLaserField )
 	secondLaserField:SetNWEntity( "GASL_ConnectedField", firstLaserField )

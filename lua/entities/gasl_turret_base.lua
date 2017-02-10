@@ -41,21 +41,44 @@ end
 
 if( CLIENT ) then
 
+	function ENT:Initialize()
+	
+		self.GASL_Turret_Deploy = 0
+	
+	end
+
 	function ENT:Think()
 	
-		if ( !IsValid( self:GetTargetEntity() ) ) then return end
-
-		local targetEnt = self:GetTargetEntity()
-		local angle = self:GetManipulateBoneAngles( 1 )
-
-		local angle = ( targetEnt:GetPos() - self:GetPos() ):Angle()
-		angle = self:WorldToLocalAngles( angle )
-		angle = Angle( math.max( -30, math.min( 30, angle.p ) ), math.max( -30, math.min( 30, angle.y ) ),0 )
-
-		self:ManipulateBoneAngles( 1, Angle( angle.y, angle.r, angle.p ) )
+		self:NextThink( CurTime() + 0.1 )
 		
-		self:ManipulateBonePosition( 3, Vector( -7, 0, 0 ) )
-		self:ManipulateBonePosition( 6, Vector( 7, 0, 0 ) )
+		local targetEnt = self:GetTargetEntity()
+		
+		if ( IsValid( targetEnt ) && timer.Exists( "GASL_Turret_DeployAnim" ) ) then
+			timer.Create( "GASL_Turret_DeployAnim", 1.0, 1.0, function() end )
+			
+		elseif( !IsValid( targetEnt ) && self.GASL_Turret_Deploy ) then
+			
+		end
+		
+		if ( IsValid( targetEnt ) ) then
+		
+			-- reseting searthing timer
+			timer.Create( "GASL_Turret_Searthing", 4.0, 1.0, function() end )
+
+		end
+		
+		-- local angle = self:GetManipulateBoneAngles( 1 )
+
+		-- local angle = ( targetEnt:GetPos() - self:GetPos() ):Angle()
+		-- angle = self:WorldToLocalAngles( angle )
+		-- angle = Angle( math.max( -30, math.min( 30, angle.p ) ), math.max( -30, math.min( 30, angle.y ) ),0 )
+
+		-- self:ManipulateBoneAngles( 1, Angle( angle.y, angle.r, angle.p ) )
+		
+		-- self:ManipulateBonePosition( 3, Vector( -7, 0, 0 ) )
+		-- self:ManipulateBonePosition( 6, Vector( 7, 0, 0 ) )
+		
+		return true
 		
 	end
 	
@@ -79,8 +102,8 @@ function ENT:Think()
 
 	self:NextThink( CurTime() + 0.1 )
 	
-	//local findEnts = ents.FindInCone( self:GetPos(), self:GetForward(), 1000.0, 30.0 ) 
-	local findEnts = ents.FindInSphere( self:GetPos(), 1000.0 ) 
+	//local findEnts = ents.FindInCone( Vector( ), Vector( 0, 0, 1 ), 10000.0, 90.0 ) 
+	local findEnts = ents.FindInSphere( self:GetPos(), 100.0 ) 
 	
 	local closest = -1
 	local closestEnt = NULL
