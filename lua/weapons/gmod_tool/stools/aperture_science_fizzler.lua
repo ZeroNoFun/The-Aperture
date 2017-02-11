@@ -41,7 +41,7 @@ function TOOL:LeftClick( trace )
 
 	local secondFizzler = MakeFizzler( ply, model, angle, 90, trace.HitPos, startenabled, toggle, keyenable )
 
-	local Angles = APERTURESCIENCE:FizzlerModelToInfo( firstFizzler ).angle
+	local Angles = APERTURESCIENCE:FizzlerModelToInfo( model ).angle
 	firstFizzler:SetAngles( firstFizzler:LocalToWorldAngles( Angles ) )
 	secondFizzler:SetAngles( secondFizzler:LocalToWorldAngles( Angles ) )
 	

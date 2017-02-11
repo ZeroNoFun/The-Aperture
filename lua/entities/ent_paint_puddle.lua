@@ -94,7 +94,7 @@ function ENT:PaintGel( pl, pos, normal, rad )
 			-- Skip if grided position is outside of the world
 			if ( !util.IsInWorld( gridPos ) ) then continue end
 			
-			local ent = ents.Create( "ent_gel_paint" )
+			local ent = ents.Create( "env_portal_paint" )
 			ent:SetPos( gridPos )
 			ent:SetAngles( trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
 			ent:SetMoveType( MOVETYPE_NONE )

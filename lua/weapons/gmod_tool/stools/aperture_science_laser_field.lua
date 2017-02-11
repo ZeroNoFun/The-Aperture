@@ -41,7 +41,8 @@ function TOOL:LeftClick( trace )
 
 	local secondLaserField = MakeLaserField( ply, model, angle, 90, trace.HitPos, startenabled, toggle, keyenable )
 
-	local Angles = APERTURESCIENCE:FizzlerModelToInfo( firstLaserField ).angle
+	PrintTable( APERTURESCIENCE:FizzlerModelToInfo( model ) )
+	local Angles = APERTURESCIENCE:FizzlerModelToInfo( model ).angle
 	firstLaserField:SetAngles( firstLaserField:LocalToWorldAngles( Angles ) )
 	secondLaserField:SetAngles( secondLaserField:LocalToWorldAngles( Angles ) )
 

@@ -13,9 +13,11 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 
 	if ( !trace.Hit ) then return end
 	
+	local mdl = "models/props/fizzler_dynamic.mdl"
+	
 	local firstFizzler = ents.Create( ClassName )
 	firstFizzler:SetPos( trace.HitPos )
-	firstFizzler:SetModel( "models/props/fizzler_dynamic.mdl" )
+	firstFizzler:SetModel( mdl )
 	firstFizzler:SetAngles( trace.HitNormal:Angle() )
 	firstFizzler:Spawn()
 	firstFizzler:SetAngles( firstFizzler:LocalToWorldAngles( Angle( 0, -90, 0 ) ) )
@@ -24,12 +26,12 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	
 	local secondFizzler = ents.Create( ClassName )
 	secondFizzler:SetPos( traceSecond.HitPos )
-	secondFizzler:SetModel( "models/props/fizzler_dynamic.mdl" )
-	secondFizzler:SetAngles( traceSecond.HitNormal:Angle() )
+	secondFizzler:SetModel( mdl )
+	secondFizzler:SetAngles( firstFizzler:GetAngles() )
 	secondFizzler:Spawn()
-	secondFizzler:SetAngles( secondFizzler:LocalToWorldAngles( Angle( 0, -90, 0 ) ) )
+	secondFizzler:SetAngles( secondFizzler:LocalToWorldAngles( Angle( 0, 180, 0 ) ) )
 	
-	local Angles = APERTURESCIENCE:FizzlerModelToInfo( firstFizzler ).angle
+	local Angles = APERTURESCIENCE:FizzlerModelToInfo( mdl ).angle
 	firstFizzler:SetAngles( firstFizzler:LocalToWorldAngles( Angles ) )
 	secondFizzler:SetAngles( secondFizzler:LocalToWorldAngles( Angles ) )
 

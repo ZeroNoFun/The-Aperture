@@ -30,8 +30,8 @@ function ENT:DrawFizzler( material, stretch )
 		division = math.ceil( self:GetPos():Distance( secondField:GetPos() ) / DivSize )
 	end
 
-	local offset = APERTURESCIENCE:FizzlerModelToInfo( self ).offset
-		
+	local offset = APERTURESCIENCE:FizzlerModelToInfo( self:GetModel() ).offset
+	
 	for i = 1, division do
 	
 		local pos1 = self:LocalToWorld( Vector( 0, 0, halfHeight ) + offset )
@@ -51,14 +51,16 @@ function ENT:DrawFizzler( material, stretch )
 	
 end
 
-function APERTURESCIENCE:FizzlerModelToInfo( fizzler )
+function APERTURESCIENCE:FizzlerModelToInfo( model )
 
 	local modelsToInfo = {
 		["models/props/fizzler_dynamic.mdl"] = { offset = Vector( 0, 0, 0 ), angle = Angle( 0, 0, 0 ) },
 		["models/props_underground/underground_fizzler_wall.mdl"] = { offset = Vector( 0, 0, 70 ), angle = Angle( 0, 180, 0 ) }
 	}
 
-	return modelsToInfo[ fizzler:GetModel() ]
+	if ( !modelsToInfo[ modelsToInfo[ model ] ] ) then return { offset = Vector(), angle = Angle() } end
+	
+	return modelsToInfo[ model ]
 	
 end
 

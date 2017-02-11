@@ -56,7 +56,7 @@ if ( SERVER ) then
 
 	function MakePaintDropper( pl, pos, ang, gelType, gelRad, gelAmount, gelRandomizeSize, gelLaunchSpeed, startenabled, toggle, key_enable )
 		
-		local paint_dropper = ents.Create( "ent_gel_dropper" )
+		local paint_dropper = ents.Create( "ent_paint_dropper" )
 		paint_dropper:SetPos( pos )
 		paint_dropper:SetAngles( ang )
 		paint_dropper:SetMoveType( MOVETYPE_NONE )

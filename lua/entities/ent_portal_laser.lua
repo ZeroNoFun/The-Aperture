@@ -96,8 +96,8 @@ function ENT:DoLaser( startpos, ang, ignore )
 			endpos = v.endpos + offset,
 			filter = function( ent )
 				if ( ent:GetClass() == "prop_portal" || ( ent:IsPlayer() || ent:IsNPC() ) && CLIENT || ent == ignore ) then return false end
-				if ( ent:GetClass() == "env_laser_relay" ) then ent.GASL_LastHittedByLaser = CurTime() end
-				if ( APERTURESCIENCE:IsValidEntity( ent ) || ent:GetClass() == "env_laser_catcher" ) then return true end
+				if ( ent:GetClass() == "ent_laser_relay" ) then ent.GASL_LastHittedByLaser = CurTime() end
+				if ( APERTURESCIENCE:IsValidEntity( ent ) || ent:GetClass() == "ent_laser_catcher" ) then return true end
 			end
 		} )
 		
@@ -116,7 +116,7 @@ function ENT:DoLaser( startpos, ang, ignore )
 
 		if ( CLIENT ) then
 			
-			if ( IsValid( traceEnt ) && traceEnt:GetClass() == "env_laser_catcher" ) then
+			if ( IsValid( traceEnt ) && traceEnt:GetClass() == "ent_laser_catcher" ) then
 				endpos = traceEnt:LocalToWorld( traceEnt:ModelToStartCoord() )
 			end
 			
@@ -199,7 +199,7 @@ function ENT:Draw()
 	
 	local pos = self:WorldToLocal( endpos )
 	
-	if ( IsValid( endentity ) && endentity:GetClass() == "env_laser_catcher" ) then
+	if ( IsValid( endentity ) && endentity:GetClass() == "ent_laser_catcher" ) then
 		return
 	end
 	
@@ -257,7 +257,7 @@ function ENT:Think()
 		local endtrace = self:DoLaser( self:LocalToWorld( self:ModelToStartCoord() ), self:GetAngles(), self )
 		local endentity = endtrace.Entity
 		
-		if ( IsValid( endentity ) && endentity:GetClass() == "env_laser_catcher" ) then
+		if ( IsValid( endentity ) && endentity:GetClass() == "ent_laser_catcher" ) then
 			endentity.GASL_LastHittedByLaser = CurTime()
 			return
 		end

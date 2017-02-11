@@ -35,14 +35,73 @@ end
 function ENT:Draw()
 
 	self:DrawModel()
+	
+end
 
-			
+function ENT:MovePanel( pos, ang )
+
+	self:SetArmPos( pos )
+	self:SetArmAng( ang )
+
+end
+
+function ENT:Initialize()
+
+	self.BaseClass.Initialize( self )
+	
+	if ( SERVER ) then
+
+		self:SetModel( "models/anim_wp/arm_panel/arm_panel.mdl" )
+		self:PhysicsInit( SOLID_VPHYSICS )
+		self:SetMoveType( MOVETYPE_VPHYSICS )
+		self:SetSolid( SOLID_VPHYSICS )
+		self:SetSkin( 2 )
+		self:GetPhysicsObject():EnableMotion( false )
+		self:GetPhysicsObject():EnableCollisions( false )
+		
+		local ent = ents.Create( "prop_physics" )
+		ent:SetModel( "models/hunter/plates/plate1x1.mdl" )
+		ent:SetPos( self:LocalToWorld( Vector( -30, 0, 50 ) )  )
+		ent:SetAngles( self:LocalToWorldAngles( Angle( 0, 0, 0 ) ) )
+		ent:SetMoveType( MOVETYPE_NONE )
+		ent:Spawn()
+		ent:SetRenderMode( RENDERMODE_TRANSALPHA )
+		ent:SetColor( Color( 0, 0, 0, 0 ) )
+		ent:GetPhysicsObject():SetMass( 10000000 )
+		ent:GetPhysicsObject():EnableGravity( false )
+		self:SetBasePanel( ent )
+		if ( !IsValid( ent ) ) then self:Remove() end
+		
+		self:SetArmPos( ent:GetPos() )
+		self:SetArmAng( ent:GetAngles() )
+		self.GASL_SlowArmPos = self:GetArmPos()
+		self.GASL_SlowArmAng = self:GetArmAng()
+		
+		if ( !WireAddon ) then return end
+		self.Inputs = Wire_CreateInputs( self, { "Enable", "Arm Position", "Arm Angle" } )
+		
+		self:ManipulateBoneAngles( 0, Angle( 0, 0, 0 ) )
+		
+		self:SetSubMaterial( 1, "hunter/myplastic" )
+	end
+
+	if ( CLIENT ) then
+	end
+	
+end
+
+if ( CLIENT ) then
+
+	function ENT:Think()
+
 		local panel = self:GetBasePanel()
 
 		local baseDofLength1 = 40
 		local baseDofLength2 = 64
 		local baseDofsLength = ( baseDofLength1 + baseDofLength2 )
 		local pointer = self.GASL_Pointer
+		
+		if ( !IsValid( panel ) ) then return end
 		
 		local offset = Vector( -45, 0, 0 )
 		local endPos = panel:LocalToWorld( Vector( -23, 0, -12 ) )
@@ -89,62 +148,6 @@ function ENT:Draw()
 		local angles = self:GetManipulateBoneAngles( bonePanelInx )
 		local angle = self:LocalToWorldAngles( Angle( -localPanelAng.p, angles.p, -b * 2 ) )
 		
-end
-
-function ENT:MovePanel( pos, ang )
-
-	self:SetArmPos( pos )
-	self:SetArmAng( ang )
-
-end
-
-function ENT:Initialize()
-
-	self.BaseClass.Initialize( self )
-	
-	if ( SERVER ) then
-
-		self:SetModel( "models/anim_wp/arm_panel/arm_panel.mdl" )
-		self:PhysicsInit( SOLID_VPHYSICS )
-		self:SetMoveType( MOVETYPE_VPHYSICS )
-		self:SetSolid( SOLID_VPHYSICS )
-		self:SetSkin( 2 )
-		self:GetPhysicsObject():EnableMotion( false )
-		self:GetPhysicsObject():EnableCollisions( false )
-		
-		local ent = ents.Create( "prop_physics" )
-		ent:SetModel( "models/hunter/plates/plate1x1.mdl" )
-		ent:SetPos( self:LocalToWorld( Vector( -30, 0, 50 ) )  )
-		ent:SetAngles( self:LocalToWorldAngles( Angle( 0, 0, 0 ) ) )
-		ent:SetMoveType( MOVETYPE_NONE )
-		ent:Spawn()
-		ent:SetRenderMode( RENDERMODE_TRANSALPHA )
-		ent:SetColor( Color( 0, 0, 0, 0 ) )
-		ent:GetPhysicsObject():SetMass( 10000000 )
-		ent:GetPhysicsObject():EnableGravity( false )
-		self:SetBasePanel( ent )
-		
-		self:SetArmPos( ent:GetPos() )
-		self:SetArmAng( ent:GetAngles() )
-		self.GASL_SlowArmPos = self:GetArmPos()
-		self.GASL_SlowArmAng = self:GetArmAng()
-		
-		if ( !WireAddon ) then return end
-		self.Inputs = Wire_CreateInputs( self, { "Enable", "Arm Position", "Arm Angle" } )
-		
-		self:ManipulateBoneAngles( 0, Angle( 0, 0, 0 ) )
-		
-	end
-
-	if ( CLIENT ) then
-	end
-	
-end
-
-if ( CLIENT ) then
-
-	function ENT:Think()
-
 	end
 	
 end
@@ -158,6 +161,11 @@ function ENT:Think()
 	
 	local PanelMaxSpeed = 5 -- default 1
 	local panel = self:GetBasePanel()
+	
+	if ( !IsValid( panel ) ) then
+		self:Remove()
+		return
+	end
 	
 	local length = math.min( PanelMaxSpeed, ( self:GetArmPos() - self.GASL_SlowArmPos ):Length() / 4 )
 	self.GASL_SlowArmPos = panel:GetPos() + ( self:GetArmPos() - panel:GetPos() ):GetNormalized() * length
@@ -230,5 +238,7 @@ numpad.Register( "aperture_science_arm_panel_disable", function( pl, ent, keydow
 end )
 
 function ENT:OnRemove()
-	self:GetBasePanel():Remove()
+
+	if ( IsValid( self:GetBasePanel() ) ) then self:GetBasePanel():Remove() end
+	
 end

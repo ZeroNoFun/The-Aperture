@@ -72,7 +72,7 @@ end
 
 function ENT:MakePuddle( )
 
-	local ent = ents.Create( "ent_gel_puddle" )
+	local ent = ents.Create( "ent_paint_puddle" )
 	ent:SetPos( self:LocalToWorld( ( Vector( 0, 0, -1 ) + VectorRand() ) * 5 ) )
 	ent:SetMoveType( MOVETYPE_NONE )
 	ent:Spawn()

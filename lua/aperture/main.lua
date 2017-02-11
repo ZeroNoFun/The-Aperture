@@ -31,6 +31,14 @@ APERTURESCIENCE.GELLED_ENTITIES = { }
 APERTURESCIENCE.DISSOLVE_SPEED = 150
 APERTURESCIENCE.DISSOLVE_ENTITIES = { }
 
+-- Achievement
+APERTURESCIENCE.ACHIEVEMENTS = {
+	[1] = { img = "sprites/sent_ball", text = "Make An Opera" },
+	[2] = { img = "sprites/sent_ball", text = "Fried Potato" },
+	[3] = { img = "sprites/sent_ball", text = "Turrets Can Fly" },
+}
+APERTURESCIENCE.HUD_ACHIEVEMENTS = { }
+
 include( "aperture/sounds/gel_sounds.lua" )
 include( "aperture/sounds/tractor_beam_sounds.lua" )
 include( "aperture/sounds/catapult_sounds.lua" )
@@ -40,6 +48,9 @@ include( "aperture/sounds/fizzler_sounds.lua" )
 include( "aperture/sounds/laser_sounds.lua" )
 include( "aperture/sounds/item_dropper_sounds.lua" )
 include( "aperture/sounds/portal_button_sounds.lua" )
+include( "aperture/sounds/portal_turret_sounds.lua" )
+include( "aperture/sounds/portal_turret_different_sounds.lua" )
+include( "aperture/sounds/portal_turret_defective_sounds.lua" )
 
 function APERTURESCIENCE:PlaySequence( self, seq, rate )
 
@@ -81,7 +92,7 @@ function APERTURESCIENCE:IsValidEntity( ent )
 	if ( IsValid( ent ) && !ent.GASL_Ignore 
 		&& ( !IsValid( ent:GetPhysicsObject() ) || IsValid( ent:GetPhysicsObject() ) && ent:GetPhysicsObject():IsMotionEnabled() )
 		&& ent:GetClass() != "env_paint_paint" 
-		&& ent:GetClass() != "env_paint_puddle"
+		&& ent:GetClass() != "ent_paint_puddle"
 		&& ent:GetClass() != "ent_paint_dropper"
 		&& ent:GetClass() != "ent_tractor_beam"
 		&& ent:GetClass() != "ent_wall_projector"
@@ -126,45 +137,117 @@ function APERTURESCIENCE:GetColorByGelType( gelType )
 	
 end
 
-function APERTURESCIENCE:CalcBezierCurvePoint( startpos, middlepos, endpos, segmentsCount )
-
-	local points = { }
-	local totalLength = 0
-	
-	table.insert( points, table.Count( points ) + 1, startpos )
-
-	local prevPos = startpos
-	for inx = 1, segmentsCount do
-
-		local i = inx / segmentsCount
-		
-		local NX = math.pow( 1 - i, 2 ) * startpos.x + 2 * i * ( 1 - i ) * middlepos.x + math.pow( i, 2 ) * endpos.x
-		local NY = math.pow( 1 - i, 2 ) * startpos.y + 2 * i * ( 1 - i ) * middlepos.y + math.pow( i, 2 ) * endpos.y
-		local NZ = math.pow( 1 - i, 2 ) * startpos.z + 2 * i * ( 1 - i ) * middlepos.z + math.pow( i, 2 ) * endpos.z
-		
-		table.insert( points, table.Count( points ) + 1, Vector( NX, NY, NZ ) )
-		
-		totalLength = totalLength + Vector( NX, NY, NZ ):Distance( prevPos )
-		prevPos = Vector( NX, NY, NZ )
-		
-	end
-	
-	return points, totalLength
-	
-end
-
-function APERTURESCIENCE:CalcParabolCurve(  )
-
-	
-
-end
-
 hook.Add( "Initialize", "GASL_Initialize", function()
 
 	if ( SERVER ) then
+		util.AddNetworkString( "GASL_NW_Player_Achievements" ) 
 		util.AddNetworkString( "GASL_LinkConnection" ) 
+		util.AddNetworkString( "GASL_Turrets_Activation" ) 
 	end
 
+end )
+
+function APERTURESCIENCE:GiveAchievement( ply, achievementInx )
+	
+	if ( CLIENT ) then return end
+	
+	if ( !IsValid( ply ) ) then return end
+	
+	net.Start( "GASL_NW_Player_Achievements" )
+		net.WriteString( "giveach" )
+		net.WriteEntity( ply )
+		net.WriteInt( achievementInx, 16 )
+	net.Send( ply )
+end
+
+net.Receive( "GASL_NW_Player_Achievements", function( len, pl )
+
+	local task = net.ReadString()
+	
+	pl = net.ReadEntity()
+
+	print( pl, "CHECK", task )
+
+	if ( !IsValid( pl ) ) then return end
+
+	if ( task == "giveach" ) then
+		local achievementInx = net.ReadInt( 16 )
+		if ( !pl.GASL_Player_Achievements ) then pl.GASL_Player_Achievements = {} end
+		
+		-- achievement allready gotted
+		//if ( pl.GASL_Player_Achievements[ achievementInx ] ) then return end
+		pl.GASL_Player_Achievements[ achievementInx ] = 1
+		 
+		if ( !pl.GASL_Player_HUD_Achievements ) then pl.GASL_Player_HUD_Achievements = {} end
+	
+		table.insert( pl.GASL_Player_HUD_Achievements, table.Count( pl.GASL_Player_HUD_Achievements ) + 1, 
+			{ achievementInx = achievementInx, ply = pl, init = false, posY = 0, timeToHide = 2000 } )
+			
+	end
+
+end )
+
+hook.Add( "PostDrawHUD", "GASL_HUDPaint", function()
+	
+	local AchivmentHeight = 100
+	local AchivmentWidth = 300
+	local ShadowX = 10
+	local ShadowY = 10
+	local ImgSize = 80
+	local ImgXOffset = 10
+	local TextXOffset = 10
+	local TextYOffset = 10
+	
+	// print( LocalPlayer().GASL_Player_HUD_Achievements )
+	
+	if ( !LocalPlayer().GASL_Player_HUD_Achievements ) then return end
+	
+	local itter = 0
+	
+	for k, v in pairs( LocalPlayer().GASL_Player_HUD_Achievements ) do
+		
+		if ( v.ply != LocalPlayer() ) then continue end
+		
+		if ( !v.init ) then
+			LocalPlayer().GASL_Player_HUD_Achievements[ k ].init = true
+			LocalPlayer():EmitSound( "garrysmod/save_load1.wav" )
+		end
+		
+		local achievementInfo = APERTURESCIENCE.ACHIEVEMENTS[ v.achievementInx ]
+
+		LocalPlayer().GASL_Player_HUD_Achievements[ k ].timeToHide = v.timeToHide - 1
+		
+		if ( v.posY < AchivmentHeight && v.timeToHide > AchivmentHeight ) then
+			LocalPlayer().GASL_Player_HUD_Achievements[ k ].posY = v.posY + 1
+		else
+			LocalPlayer().GASL_Player_HUD_Achievements[ k ].posY = math.min( AchivmentHeight, v.timeToHide )
+		end
+
+		local panelX = ScrW() - AchivmentWidth
+		local panelY = v.posY + itter * AchivmentHeight - AchivmentHeight
+
+		-- shadow
+		surface.SetDrawColor( 0, 0, 0, 100 )
+		surface.DrawRect( panelX - ShadowX, panelY + ShadowY, AchivmentWidth, AchivmentHeight ) 
+
+		-- achievement background
+		surface.SetDrawColor( 200, 200, 200, 255 )
+		surface.DrawRect( panelX, panelY, AchivmentWidth, AchivmentHeight ) 
+		
+		surface.SetMaterial( Material( achievementInfo.img ) ) -- If you use Material, cache it!
+		surface.DrawTexturedRect( panelX + ImgXOffset, panelY + AchivmentHeight / 2 - ImgSize / 2, ImgSize, ImgSize )
+		
+		surface.SetFont( "GASL_SecFont" )
+		surface.SetTextColor( 255, 255, 255, 255 )
+		local _, txtHeight = surface.GetTextSize( "" )
+		surface.SetTextPos( panelX + ImgXOffset + ImgSize + TextXOffset, panelY + TextYOffset )
+		surface.DrawText( achievementInfo.text )
+		if ( v.timeToHide <= 0 ) then LocalPlayer().GASL_Player_HUD_Achievements[ k ] = nil end
+		
+		itter = itter + 1
+		
+	end
+	
 end )
 
 hook.Add( "PreDrawHUD", "GASL_HUDRender", function()
@@ -245,7 +328,7 @@ function APERTURESCIENCE:CheckForGel( startpos, dir )
 		start = startpos,
 		endpos = startpos + dir,
 		ignoreworld = true,
-		filter = function( ent ) if ( ent:GetClass() == "ent_gel_paint" ) then return true end end
+		filter = function( ent ) if ( ent:GetClass() == "env_portal_paint" ) then return true end end
 	} )
 	
 	return trace

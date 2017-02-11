@@ -13,9 +13,11 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 
 	if ( !trace.Hit ) then return end
 	
+	local mdl = "models/props/fizzler_dynamic.mdl"
+	
 	local firstLaserField = ents.Create( ClassName )
 	firstLaserField:SetPos( trace.HitPos )
-	firstLaserField:SetModel( "models/props/fizzler_dynamic.mdl" )
+	firstLaserField:SetModel( mdl )
 	firstLaserField:SetAngles( trace.HitNormal:Angle() )
 	firstLaserField:Spawn()
 	firstLaserField:SetAngles( firstLaserField:LocalToWorldAngles( Angle( 0, -90, 0 ) ) )
@@ -24,13 +26,14 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 
 	local secondLaserField = ents.Create( ClassName )
 	secondLaserField:SetPos( traceSecond.HitPos )
-	secondLaserField:SetModel( "models/props/fizzler_dynamic.mdl" )
-	secondLaserField:SetAngles( traceSecond.HitNormal:Angle() )
+	secondLaserField:SetModel( mdl )
+	secondLaserField:SetAngles( firstLaserField:GetAngles() )
 	secondLaserField:Spawn()
-	secondLaserField:SetAngles( secondLaserField:LocalToWorldAngles( Angle( 0, -90, 0 ) ) )
+	secondLaserField:SetAngles( secondLaserField:LocalToWorldAngles( Angle( 0, 180, 0 ) ) )
 	
-	firstLaserField:SetAngles( firstLaserField:LocalToWorldAngles( APERTURESCIENCE:FizzlerModelToInfo( firstLaserField ) ) )
-	secondLaserField:SetAngles( secondLaserField:LocalToWorldAngles( APERTURESCIENCE:FizzlerModelToInfo( secondLaserField ) ) )
+	local Angles = APERTURESCIENCE:FizzlerModelToInfo( mdl ).angle
+	secondLaserField:SetAngles( secondLaserField:LocalToWorldAngles( Angles ) )
+	secondLaserField:SetAngles( secondLaserField:LocalToWorldAngles( Angles ) )
 
 	firstLaserField:SetNWEntity( "GASL_ConnectedField", secondLaserField )
 	secondLaserField:SetNWEntity( "GASL_ConnectedField", firstLaserField )

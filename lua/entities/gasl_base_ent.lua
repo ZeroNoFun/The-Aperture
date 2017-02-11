@@ -40,6 +40,12 @@ function ENT:Initialize()
 	
 end
 
+function ENT:Draw()
+
+	self:DrawModel()
+	
+end
+
 ----------------------------------------
 ------------- IO System ----------------
 ----------------------------------------
@@ -205,13 +211,6 @@ function ENT:PEffectSpawnInit()
 	
 end
 
-
-function ENT:Draw()
-
-	self:DrawModel()
-	
-end
-
 function ENT:GetAllPortalPassages( pos, angle )
 
 	-- If pEffect projector detect portal update pEffect
@@ -236,8 +235,8 @@ function ENT:GetAllPortalPassages( pos, angle )
 			local pEffectOffsetPos = hitPortal:WorldToLocal( tracePrevHitPos )
 			local pEffectOffsetAngle = hitPortal:WorldToLocalAngles( pEffectBuildAng )
 			pEffectOffsetPos.y = -pEffectOffsetPos.y
-			
 			pEffectOffsetPos.x = 0
+
 			pEffectBuildPos = hitPortal:GetNWBool( "Potal:Other" ):LocalToWorld( pEffectOffsetPos )
 			pEffectBuildAng = hitPortal:GetNWBool( "Potal:Other" ):LocalToWorldAngles( pEffectOffsetAngle + Angle( 0, 180, 0 ) )
 
