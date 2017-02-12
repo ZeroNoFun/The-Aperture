@@ -56,7 +56,6 @@ hook.Add("SpawnMenuOpen","GASL_SpawnMenuOpen", GASL_SMO )
 hook.Add( "PopulateToolMenu", "GASL_PopulateToolMenu", function()
 
 	spawnmenu.AddToolMenuOption( "Utilities", "GMOD Aperture Science Laboratories", "GASLMenu", "Allowing", "", "", GASL_AllowingPanel )
-	spawnmenu.AddToolMenuOption( "Utilities", "GMOD Aperture Science Laboratories", "GASLMenu", "Draw Settings", "", "", GASL_DrawPanel )
 	
 end )
 
