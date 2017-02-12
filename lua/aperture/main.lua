@@ -33,9 +33,11 @@ APERTURESCIENCE.DISSOLVE_ENTITIES = { }
 
 -- Achievement
 APERTURESCIENCE.ACHIEVEMENTS = {
-	[1] = { img = "sprites/sent_ball", text = "Thay are Singing" },
-	[2] = { img = "sprites/sent_ball", text = "Fried Potato" },
-	[3] = { img = "sprites/sent_ball", text = "It's a bird\nIt's a plane\nNo! it's a turret" },
+	[1] = { img = "achievement/turret_sing", text = "The Turret Song!" },
+	[2] = { img = "achievement/fried_potato", text = "Fried Potato" },
+	[3] = { img = "achievement/turret_fly", text = "Turret can fly" },
+	[4] = { img = "achievement/cake", text = "Cake is not a lie!" },
+	[5] = { img = "achievement/radio", text = "Strange channel" },
 }
 APERTURESCIENCE.HUD_ACHIEVEMENTS = { }
 
@@ -68,22 +70,25 @@ include( "aperture/sounds/portal_button_sounds.lua" )
 include( "aperture/sounds/portal_turret_sounds.lua" )
 include( "aperture/sounds/portal_turret_different_sounds.lua" )
 include( "aperture/sounds/portal_turret_defective_sounds.lua" )
+include( "aperture/sounds/potatoos_sounds.lua" )
+include( "aperture/sounds/radio_sounds.lua" )
 
 -- Console commands
 APERTURESCIENCE.Convars = {}
 APERTURESCIENCE.Convars[ "aperture_science_allow_arm_panel" ] = CreateConVar( "aperture_science_allow_arm_panel", "1", FCVAR_NONE, "Allowing Arm Panel" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_button" ] = CreateConVar( "aperture_science_allow_button", "1", FCVAR_NONE, "Allowing Arm Panel" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_catapult" ] = CreateConVar( "aperture_science_allow_catapult", "1", FCVAR_NONE, "Allowing Arm Panel" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_fizzler" ] = CreateConVar( "aperture_science_allow_fizzler", "1", FCVAR_NONE, "Allowing Arm Panel" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_item_dropper" ] = CreateConVar( "aperture_science_allow_item_dropper", "1", FCVAR_NONE, "Allowing Arm Panel" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_laser_catcher" ] = CreateConVar( "aperture_science_allow_laser_catcher", "1", FCVAR_NONE, "Allowing Arm Panel" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_laser" ] = CreateConVar( "aperture_science_allow_laser", "1", FCVAR_NONE, "Allowing Arm Panel" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_laser_field" ] = CreateConVar( "aperture_science_allow_laser_field", "1", FCVAR_NONE, "Allowing Arm Panel" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_linker" ] = CreateConVar( "aperture_science_allow_linker", "1", FCVAR_NONE, "Allowing Arm Panel" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_paint" ] = CreateConVar( "aperture_science_allow_paint", "1", FCVAR_NONE, "Allowing Arm Panel" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_tractor_beam" ] = CreateConVar( "aperture_science_allow_tractor_beam", "1", FCVAR_NONE, "Allowing Arm Panel" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_wall_projector" ] = CreateConVar( "aperture_science_allow_wall_projector", "1", FCVAR_NONE, "Allowing Arm Panel" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_turret" ] = CreateConVar( "aperture_science_allow_turret", "1", FCVAR_NONE, "Allowing Arm Panel" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_button" ] = CreateConVar( "aperture_science_allow_button", "1", FCVAR_NONE, "Allowing Button" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_catapult" ] = CreateConVar( "aperture_science_allow_catapult", "1", FCVAR_NONE, "Allowing Catapult" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_fizzler" ] = CreateConVar( "aperture_science_allow_fizzler", "1", FCVAR_NONE, "Allowing Fizzler" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_item_dropper" ] = CreateConVar( "aperture_science_allow_item_dropper", "1", FCVAR_NONE, "Allowing Item Dropper" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_laser_catcher" ] = CreateConVar( "aperture_science_allow_laser_catcher", "1", FCVAR_NONE, "Allowing Laser Catcher" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_laser" ] = CreateConVar( "aperture_science_allow_laser", "1", FCVAR_NONE, "Allowing Laser Emiter" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_laser_field" ] = CreateConVar( "aperture_science_allow_laser_field", "1", FCVAR_NONE, "Allowing Laser Field" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_linker" ] = CreateConVar( "aperture_science_allow_linker", "1", FCVAR_NONE, "Allowing Linker" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_paint" ] = CreateConVar( "aperture_science_allow_paint", "1", FCVAR_NONE, "Allowing Gel" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_tractor_beam" ] = CreateConVar( "aperture_science_allow_tractor_beam", "1", FCVAR_NONE, "Allowing Excursion Funnel" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_wall_projector" ] = CreateConVar( "aperture_science_allow_wall_projector", "1", FCVAR_NONE, "Allowing Hard Light Bridge" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_turret" ] = CreateConVar( "aperture_science_allow_turret", "1", FCVAR_NONE, "Allowing Arm Turrets" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_floor_button" ] = CreateConVar( "aperture_science_allow_floor_button", "1", FCVAR_NONE, "Allowing Floor Button" )
 
 function APERTURESCIENCE:IsValid() return true end
 
@@ -102,9 +107,20 @@ function APERTURESCIENCE:UpdateParameters()
 	APERTURESCIENCE.ALLOWING.tractor_beam = tobool( self.Convars[ "aperture_science_allow_tractor_beam" ]:GetInt() )
 	APERTURESCIENCE.ALLOWING.wall_projector = tobool( self.Convars[ "aperture_science_allow_wall_projector" ]:GetInt() )
 	APERTURESCIENCE.ALLOWING.turret = tobool( self.Convars[ "aperture_science_allow_turret" ]:GetInt() )
+	APERTURESCIENCE.ALLOWING.floor_button = tobool( self.Convars[ "aperture_science_allow_floor_button" ]:GetInt() )
 	
 end
 hook.Add( "Think", APERTURESCIENCE, APERTURESCIENCE.UpdateParameters )
+
+function APERTURESCIENCE:ConvertToGridWithoutZ( pos, angle, rad )
+
+	local WTL = WorldToLocal( pos, Angle( ), Vector( ), angle ) 
+	WTL = Vector( math.Round( WTL.x / rad ) * rad, math.Round( WTL.y / rad ) * rad, WTL.z )
+	pos = LocalToWorld( WTL, Angle( ), Vector( ), angle )
+	
+	return pos
+	
+end
 
 function APERTURESCIENCE:PlaySequence( self, seq, rate )
 
@@ -144,7 +160,7 @@ end
 function APERTURESCIENCE:GASLStuff( ent )
 
 	return ( IsValid( ent ) && (
-		ent:GetClass() == "env_paint_paint" 
+		ent:GetClass() == "env_portal_paint" 
 		|| ent:GetClass() == "ent_paint_puddle"
 		|| ent:GetClass() == "ent_paint_dropper"
 		|| ent:GetClass() == "ent_tractor_beam"
@@ -225,9 +241,6 @@ net.Receive( "GASL_NW_Player_Achievements", function( len, pl )
 	local task = net.ReadString()
 	
 	pl = net.ReadEntity()
-
-	print( pl, "CHECK", task )
-
 	if ( !IsValid( pl ) ) then return end
 
 	if ( task == "giveach" ) then
@@ -235,13 +248,13 @@ net.Receive( "GASL_NW_Player_Achievements", function( len, pl )
 		if ( !pl.GASL_Player_Achievements ) then pl.GASL_Player_Achievements = {} end
 		
 		-- achievement allready gotted
-		//if ( pl.GASL_Player_Achievements[ achievementInx ] ) then return end
+		if ( pl.GASL_Player_Achievements[ achievementInx ] ) then return end
 		pl.GASL_Player_Achievements[ achievementInx ] = 1
 		 
 		if ( !pl.GASL_Player_HUD_Achievements ) then pl.GASL_Player_HUD_Achievements = {} end
 	
 		table.insert( pl.GASL_Player_HUD_Achievements, table.Count( pl.GASL_Player_HUD_Achievements ) + 1, 
-			{ achievementInx = achievementInx, ply = pl, init = false, posY = 0, timeToHide = 2000 } )
+			{ achievementInx = achievementInx, ply = pl, init = false, posY = 0, timeToHide = CurTime() + 10 } )
 			
 	end
 
@@ -258,8 +271,6 @@ hook.Add( "PostDrawHUD", "GASL_HUDPaint", function()
 	local TextXOffset = 10
 	local TextYOffset = 10
 	
-	// print( LocalPlayer().GASL_Player_HUD_Achievements )
-	
 	if ( !LocalPlayer().GASL_Player_HUD_Achievements ) then return end
 	
 	local itter = 0
@@ -275,12 +286,12 @@ hook.Add( "PostDrawHUD", "GASL_HUDPaint", function()
 		
 		local achievementInfo = APERTURESCIENCE.ACHIEVEMENTS[ v.achievementInx ]
 
-		LocalPlayer().GASL_Player_HUD_Achievements[ k ].timeToHide = v.timeToHide - 1
+		local timeToHide = ( v.timeToHide - CurTime() ) * 100
 		
-		if ( v.posY < AchivmentHeight && v.timeToHide > AchivmentHeight ) then
-			LocalPlayer().GASL_Player_HUD_Achievements[ k ].posY = v.posY + 1
+		if ( v.posY < AchivmentHeight && timeToHide > AchivmentHeight ) then
+			LocalPlayer().GASL_Player_HUD_Achievements[ k ].posY = math.min( AchivmentHeight, 1000 - timeToHide )
 		else
-			LocalPlayer().GASL_Player_HUD_Achievements[ k ].posY = math.min( AchivmentHeight, v.timeToHide )
+			LocalPlayer().GASL_Player_HUD_Achievements[ k ].posY = math.min( AchivmentHeight, timeToHide )
 		end
 
 		local panelX = ScrW() - AchivmentWidth
@@ -302,7 +313,7 @@ hook.Add( "PostDrawHUD", "GASL_HUDPaint", function()
 		local _, txtHeight = surface.GetTextSize( "" )
 		surface.SetTextPos( panelX + ImgXOffset + ImgSize + TextXOffset, panelY + TextYOffset )
 		surface.DrawText( achievementInfo.text )
-		if ( v.timeToHide <= 0 ) then LocalPlayer().GASL_Player_HUD_Achievements[ k ] = nil end
+		if ( timeToHide <= 0 ) then LocalPlayer().GASL_Player_HUD_Achievements[ k ] = nil end
 		
 		itter = itter + 1
 		
@@ -333,54 +344,6 @@ function APERTURESCIENCE:CheckForGel( startpos, dir, skipprops )
 	end
 	
 	return trace.Entity, paintType
-	
-end
-
-function APERTURESCIENCE:IK_Leg_two_dof( parentAngle, startPos, endPos, dofLength1, dofLength2 )
-	
-	local distStartEnd = startPos:Distance( endPos )
-	local rad2deg = 180 / math.pi
-	
-	// Getting Angles
-
-	// Dof 1
-	local a = math.pow( distStartEnd, 2 ) + math.pow( dofLength1, 2 ) - math.pow( dofLength2, 2 )
-	local aa = a / ( 2 * distStartEnd * dofLength1 )
-	aa = math.max( -1, math.min( 1, aa ) )
-	
-	local firstDofAng = math.acos( aa ) * rad2deg
-	
-	local WTLP, WTLA = WorldToLocal( Vector(), ( endPos - startPos ):Angle(), startPos, parentAngle )
-	WTLA1 = Angle( WTLA.pitch - firstDofAng, WTLA.yaw, 0 )
-	local LTWP, LTWA1 = LocalToWorld( Vector(), WTLA1, startPos, parentAngle )
-
-	local firstDofPos = startPos + LTWA1:Forward() * dofLength1
-	
-	// Dof 2
-	local b = math.pow( dofLength1, 2 ) + math.pow( dofLength2, 2 ) - math.pow( distStartEnd, 2 )
-	local bb = b / ( 2 * dofLength1 * dofLength2 )
-	bb = math.max( -1, math.min( 1, bb ) )
-	
-	local secondDofAng = math.acos( bb ) * rad2deg
-	
-	WTLA2 = Angle( WTLA.pitch - firstDofAng - secondDofAng + 180, WTLA.yaw, 0 )
-	local LTWP, LTWA2 = LocalToWorld( Vector( 0, 0, 0 ), WTLA2, startPos, parentAngle )
-
-	local secondDofPos = firstDofPos + LTWA2:Forward() * dofLength2
-	
-	local debugBoxSize = Vector( 3, 3, 3 )
-	
-	// Debug render
-	if ( CLIENT ) then
-		render.SetMaterial(Material("models/wireframe"))
-		render.DrawBox(firstDofPos, LTWA1, -debugBoxSize, debugBoxSize, Color(255, 255, 255), 0) 
-		render.DrawBox(secondDofPos, LTWA2, -debugBoxSize, debugBoxSize, Color(255, 255, 255), 0) 
-		
-		render.DrawBox((startPos + firstDofPos) / 2, LTWA1, -Vector(dofLength1 / 2, 2, 2), Vector(dofLength1 / 2, 2, 2), Color(255, 255, 255), 0) 
-		render.DrawBox((firstDofPos + secondDofPos) / 2, LTWA2, -Vector(dofLength2 / 2, 2, 2), Vector(dofLength2 / 2, 2, 2), Color(255, 255, 255), 0) 
-	end
-	
-	return firstDofPos, WTLA1, LTWA1, secondDofPos, WTLA2, LTWA2
 	
 end
 

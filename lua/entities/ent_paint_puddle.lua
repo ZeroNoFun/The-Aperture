@@ -39,16 +39,6 @@ function ENT:Initialize()
 	
 end
 
-function ENT:Convert2Grid( pos, angle, rad )
-
-	local WTL = WorldToLocal( pos, Angle( ), Vector( ), angle ) 
-	WTL = Vector( math.Round( WTL.x / rad ) * rad, math.Round( WTL.y / rad ) * rad, WTL.z )
-	pos = LocalToWorld( WTL, Angle( ), Vector( ), angle )
-	
-	return pos
-	
-end
-
 function ENT:PaintGel( pl, pos, normal, rad )
 
 	local maxseg = math.floor( rad / APERTURESCIENCE.GEL_BOX_SIZE )
@@ -89,7 +79,7 @@ function ENT:PaintGel( pl, pos, normal, rad )
 			-- Skip if tracer doesn't hit anything or it in the world
 			if ( !trace.Hit || !util.IsInWorld( trace.HitPos ) ) then continue end
 			
-			local gridPos = self:Convert2Grid( trace.HitPos, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), APERTURESCIENCE.GEL_BOX_SIZE )
+			local gridPos = APERTURESCIENCE:ConvertToGridWithoutZ( trace.HitPos, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), APERTURESCIENCE.GEL_BOX_SIZE )
 			
 			-- Skip if grided position is outside of the world
 			if ( !util.IsInWorld( gridPos ) ) then continue end

@@ -60,14 +60,13 @@ function ENT:Draw()
 	-- close objects field effect
 	
 	local Height = 110
-	local Offset = APERTURESCIENCE:FizzlerModelToInfo( self ).offset
 	
 	local closesEntities = { }
 	local tracer = util.TraceHull( {
-		start = self:LocalToWorld( Offset ),
-		endpos = secondField:LocalToWorld( Offset ),
+		start = self:LocalToWorld( Vector() ),
+		endpos = secondField:LocalToWorld( Vector() ),
 		filter = function( ent ) 
-			if ( APERTURESCIENCE:IsValidEntity( ent ) && ent != self && ent != secondField && !ent:IsPlayer() && !ent:IsNPC() ) then
+			if ( !APERTURESCIENCE:GASLStuff( ent ) && ent != self && ent != secondField && !ent:IsPlayer() && !ent:IsNPC() ) then
 				table.insert( closesEntities, table.Count( closesEntities ) + 1, ent )
 			end
 

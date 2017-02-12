@@ -41,13 +41,64 @@ function ENT:MovePanel( pos, ang )
 
 	self:SetArmPos( pos )
 	self:SetArmAng( ang )
+	
+	self.GASL_ArmPos = pos
+	self.GASL_ArmAng = ang
 
 	if ( !timer.Exists( "GASL_Timer_ArmPanel"..self:EntIndex() ) ) then
 	
 		self:EmitSound( "world/interior_robot_arm/interior_arm_platform_open_01.wav" )
-		timer.Create( "GASL_Timer_ArmPanel"..self:EntIndex(), 1.0, 1, function() end )
+		timer.Create( "GASL_Timer_ArmPanel"..self:EntIndex(), 2.0, 1, function() end )
 		
 	end
+	
+end
+
+function ENT:IK_Leg_two_dof( parentAngle, startPos, endPos, dofLength1, dofLength2 )
+	
+	local distStartEnd = startPos:Distance( endPos )
+	local rad2deg = 180 / math.pi
+	
+	// Getting Angles
+
+	// Dof 1
+	local a = math.pow( distStartEnd, 2 ) + math.pow( dofLength1, 2 ) - math.pow( dofLength2, 2 )
+	local aa = a / ( 2 * distStartEnd * dofLength1 )
+	aa = math.max( -1, math.min( 1, aa ) )
+	
+	local firstDofAng = math.acos( aa ) * rad2deg
+	
+	local WTLP, WTLA = WorldToLocal( Vector(), ( endPos - startPos ):Angle(), startPos, parentAngle )
+	WTLA1 = Angle( WTLA.pitch - firstDofAng, WTLA.yaw, 0 )
+	local LTWP, LTWA1 = LocalToWorld( Vector(), WTLA1, startPos, parentAngle )
+
+	local firstDofPos = startPos + LTWA1:Forward() * dofLength1
+	
+	// Dof 2
+	local b = math.pow( dofLength1, 2 ) + math.pow( dofLength2, 2 ) - math.pow( distStartEnd, 2 )
+	local bb = b / ( 2 * dofLength1 * dofLength2 )
+	bb = math.max( -1, math.min( 1, bb ) )
+	
+	local secondDofAng = math.acos( bb ) * rad2deg
+	
+	WTLA2 = Angle( WTLA.pitch - firstDofAng - secondDofAng + 180, WTLA.yaw, 0 )
+	local LTWP, LTWA2 = LocalToWorld( Vector( 0, 0, 0 ), WTLA2, startPos, parentAngle )
+
+	local secondDofPos = firstDofPos + LTWA2:Forward() * dofLength2
+	
+	local debugBoxSize = Vector( 3, 3, 3 )
+	
+	// Debug render
+	if ( CLIENT ) then
+		render.SetMaterial(Material("models/wireframe"))
+		render.DrawBox(firstDofPos, LTWA1, -debugBoxSize, debugBoxSize, Color(255, 255, 255), 0) 
+		render.DrawBox(secondDofPos, LTWA2, -debugBoxSize, debugBoxSize, Color(255, 255, 255), 0) 
+		
+		render.DrawBox((startPos + firstDofPos) / 2, LTWA1, -Vector(dofLength1 / 2, 2, 2), Vector(dofLength1 / 2, 2, 2), Color(255, 255, 255), 0) 
+		render.DrawBox((firstDofPos + secondDofPos) / 2, LTWA2, -Vector(dofLength2 / 2, 2, 2), Vector(dofLength2 / 2, 2, 2), Color(255, 255, 255), 0) 
+	end
+	
+	return firstDofPos, WTLA1, LTWA1, secondDofPos, WTLA2, LTWA2
 	
 end
 
@@ -82,7 +133,7 @@ if ( CLIENT ) then
 		local pitch = 140
 		
 		local skip, LTWPitch = LocalToWorld( Vector(), Angle( pitch, 0, 0 ), Vector(), self:GetAngles() )
-		local midpos, lang1, ang1, endpos, lang2, ang2 = APERTURESCIENCE:IK_Leg_two_dof( LTWPitch, startPos, endPos, baseDofLength1, baseDofLength2 + addingLength )
+		local midpos, lang1, ang1, endpos, lang2, ang2 = self:IK_Leg_two_dof( LTWPitch, startPos, endPos, baseDofLength1, baseDofLength2 + addingLength )
 		
 		local pitch1 = 200 - pitch
 		local pitch2 = -50
@@ -144,20 +195,20 @@ function ENT:Initialize()
 	self:SetBasePanel( ent )
 	if ( !IsValid( ent ) ) then self:Remove() end
 	
-	self:SetArmPos( Vector( -30, 0, 45 ) )
+	self:SetArmPos( Vector( -30, 0, 140 ) )
 	self:SetArmAng( Angle( 0, 0, 0 ) )
-	self.GASL_ArmPos = self:GetArmPos()
-	self.GASL_ArmAng = self:GetArmAng()
-	self.GASL_SlowArmPos = self:GetArmPos()
-	self.GASL_SlowArmAng = self:GetArmAng()
+	self.GASL_ArmPos = Vector( -30, 0, 45 )
+	self.GASL_ArmAng = Angle( 0, 0, 0 )
+	self.GASL_SlowArmPos = self.GASL_ArmPos
+	self.GASL_SlowArmAng = self.GASL_ArmAng
 	self:ManipulateBoneAngles( 0, Angle( 0, 0, 0 ) )
 	self:SetSubMaterial( 1, "hunter/myplastic" )
 
 	self:AddInput( "Enable", function( value ) self:ToggleEnable( value ) end )
 
 	if ( !WireAddon ) then return end
-	self.Inputs = Wire_CreateInputs( self, { "Enable", "Arm Position", "Arm Angle" } )
-		
+	self.Inputs = Wire_CreateInputs( self, { "Enable", "Arm Position [VECTOR]", "Arm Angle [ANGLE]" } )
+	
 end
 
 function ENT:Think()
@@ -172,6 +223,13 @@ function ENT:Think()
 	if ( !IsValid( panel ) ) then
 		self:Remove()
 		return
+	end
+	
+	if ( self:GetMaterial() != "" ) then
+		
+		self:SetSubMaterial( 1, self:GetMaterial() )
+		self:SetMaterial( "" )
+		
 	end
 	
 	local length = math.min( PanelMaxSpeed, ( armPos - self.GASL_SlowArmPos ):Length() / 4 )
@@ -194,8 +252,8 @@ end
 function ENT:TriggerInput( iname, value )
 	if ( !WireAddon ) then return end
 	
-	if ( iname == "Enable" ) then self:ToggleEnable( tobool( value ) ) end
-	if ( iname == "Arm Position" ) then self:SetArmPos( value, self:GetArmAng() ) end
+	if ( iname == "Enable" ) then self:ToggleEnable( tobool( value ) )end
+	if ( iname == "Arm Position" ) then self:MovePanel( value, self:GetArmAng() ) end
 	if ( iname == "Arm Angle" ) then self:MovePanel( self:GetArmPos(), value ) end
 
 end

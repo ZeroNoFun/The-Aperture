@@ -49,6 +49,8 @@ function ENT:Think()
 	
 	self:NextThink( CurTime() + 0.1 )
 	
+	self:ExplodeWhenOnFire( 2 )
+	
 	if ( !self.GASL_Turret_Opera ) then return end
 	
 	if ( table.Count( self.GASL_Turret_Opera ) < 4 ) then

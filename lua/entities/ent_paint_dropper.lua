@@ -96,7 +96,7 @@ function ENT:MakePuddle( )
 	ent:GetPhysicsObject():EnableCollisions( false )
 	ent:GetPhysicsObject():Wake()
 	ent:GetPhysicsObject():SetVelocity( -self:GetUp() * self.GASL_GelLaunchSpeed )
-	if ( IsValid( self.GASL_ENT_Owner ) && self.GASL_ENT_Owner:IsPlayer() ) then ent:SetOwner( self.GASL_ENT_Owner ) end
+	if ( IsValid( self.Owner ) && self.Owner:IsPlayer() ) then ent:SetOwner( self.Owner ) end
 
 	ent.GASL_GelType = self.GASL_GelType
 	-- Randomize makes random size between maxsize and minsize by selected procent

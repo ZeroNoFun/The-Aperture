@@ -38,10 +38,6 @@ function TOOL:LeftClick( trace )
 	trace = util.QuickTrace( firstFizzler:GetPos(), -firstFizzler:GetRight() * maxrad, firstFizzler )
 
 	local secondFizzler = MakeFizzler( ply, model, angle, 90, trace.HitPos, startenabled, toggle, keyenable )
-
-	local Angles = APERTURESCIENCE:FizzlerModelToInfo( model ).angle
-	firstFizzler:SetAngles( firstFizzler:LocalToWorldAngles( Angles ) )
-	secondFizzler:SetAngles( secondFizzler:LocalToWorldAngles( Angles ) )
 	
 	firstFizzler:SetNWEntity( "GASL_ConnectedField", secondFizzler )
 	secondFizzler:SetNWEntity( "GASL_ConnectedField", firstFizzler )

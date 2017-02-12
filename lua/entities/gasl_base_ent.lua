@@ -63,7 +63,6 @@ function ENT:AddOutput( name, value )
 	if ( !self.GASL_LinkOutputs ) then return end
 	
 	self.GASL_LinkOutputs[ name ] = value
-	print( name, value , "ADD" )
 	
 end
 
@@ -76,10 +75,7 @@ function ENT:InitIO()
 	for k, v in pairs( self.GASL_LinkInputs ) do
 		tempInps[ k ] = true
 	end
-	
-	print( self, self.GASL_LinkOutputs, table.Count( self.GASL_LinkOutputs ) )
-	PrintTable( self.GASL_LinkOutputs )
-	
+		
 	net.Start( "GASL_LinkConnection" )
 		net.WriteString( "initIO" )
 		net.WriteEntity( self )
@@ -161,7 +157,6 @@ net.Receive( "GASL_LinkConnection", function( len, pl )
 	local mType = net.ReadString()
 	local mEnt = net.ReadEntity()
 
-	print( mEnt, mType )
 	if ( !mType || !IsValid( mEnt ) ) then return end
 
 	if ( mType == "init" ) then

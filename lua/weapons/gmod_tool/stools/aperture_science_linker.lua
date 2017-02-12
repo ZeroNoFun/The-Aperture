@@ -10,7 +10,6 @@ if ( CLIENT ) then
 	language.Add( "tool.aperture_science_linker.1", "Right Click to connect to selected object" )
 	language.Add( "tool.aperture_science_linker.2", "Resets selected key" )
 	
-		
 	surface.CreateFont( "GASL_LinkerFont", {
 		font = "Calibri Light",
 		size = 32,

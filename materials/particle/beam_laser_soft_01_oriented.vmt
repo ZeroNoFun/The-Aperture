@@ -1,0 +1,11 @@
+UnlitGeneric
+{
+$basetexture "particle/beam_laser_soft_01.vtf"
+$addself 4
+$overbrightfactor 6
+$translucent 1
+$addective 1
+$selfillum 1
+$splinetype 1
+$orientation 3
+}

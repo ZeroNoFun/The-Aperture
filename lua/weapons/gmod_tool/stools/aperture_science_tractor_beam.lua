@@ -67,6 +67,44 @@ function TOOL:RightClick( trace )
 
 end
 
+
+function TOOL:UpdateGhostWallProjector( ent, ply )
+
+	if ( !IsValid( ent ) ) then return end
+
+	local trace = ply:GetEyeTrace()
+
+	if ( !trace.Hit || trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:GASLStuff( trace.Entity ) ) ) then
+
+		ent:SetNoDraw( true )
+		return
+
+	end
+	
+	local CurPos = ent:GetPos()
+	
+	local ang = trace.HitNormal:Angle()
+	local pos = trace.HitPos + trace.HitNormal * 31
+
+	ent:SetPos( pos )
+	ent:SetAngles( ang )
+	ent:SetNoDraw( false )
+
+end
+
+function TOOL:Think()
+
+	local mdl = "models/props/tractor_beam_emitter.mdl"
+	if ( !util.IsValidModel( mdl ) ) then self:ReleaseGhostEntity() return end
+
+	if ( !IsValid( self.GhostEntity ) || self.GhostEntity:GetModel() != mdl ) then
+		self:MakeGhostEntity( mdl, Vector( 0, 0, 0 ), Angle( 0, 0, 0 ) )
+	end
+
+	self:UpdateGhostWallProjector( self.GhostEntity, self:GetOwner() )
+
+end
+
 local ConVarsDefault = TOOL:BuildConVarList()
 
 function TOOL.BuildCPanel( CPanel )

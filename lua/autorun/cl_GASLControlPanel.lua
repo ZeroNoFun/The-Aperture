@@ -33,6 +33,7 @@ local function GASL_AllowingPanel( Panel )
 		Panel:CheckBox( "Allow Excursion Funnel", "aperture_science_allow_tractor_beam" )
 		Panel:CheckBox( "Allow Hard Light Bridge", "aperture_science_allow_wall_projector" )
 		Panel:CheckBox( "Allow Turrets", "aperture_science_allow_turret" )
+		Panel:CheckBox( "Allow Floor Button", "aperture_science_allow_floor_button" )
 
 	end
 	

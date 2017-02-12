@@ -3,7 +3,7 @@ TOOL.Name = "#tool.aperture_science_arm_panel.name"
 
 TOOL.ClientConVar[ "startenabled" ] = "0"
 TOOL.ClientConVar[ "armangle" ] = "0"
-TOOL.ClientConVar[ "armforward" ] = "0"
+TOOL.ClientConVar[ "armforward" ] = "-45"
 TOOL.ClientConVar[ "armup" ] = "100"
 
 if ( CLIENT ) then
@@ -16,7 +16,7 @@ if ( CLIENT ) then
 	language.Add( "tool.aperture_science_arm_panel.startenabled", "Start Enabled" )
 	language.Add( "tool.aperture_science_arm_panel.armangle", "Arm Angle" )
 	language.Add( "tool.aperture_science_arm_panel.armforward", "Arm Forward" )
-	language.Add( "tool.aperture_science_arm_panel.armangle", "Arm Up" )
+	language.Add( "tool.aperture_science_arm_panel.armup", "Arm Up" )
 
 end
 
@@ -37,7 +37,7 @@ function TOOL:LeftClick( trace )
 		local armangle = math.max( -90, math.min( 90, self:GetClientNumber( "armang" ) ) )
 		local armforward = math.max( 50, math.min( 100, self:GetClientNumber( "armforward" ) ) )
 		local armup = math.max( 0, math.min( 140, self:GetClientNumber( "armup" ) ) )
-		local pos = self:Convert2Grid( trace.HitPos + trace.HitNormal * 20, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), 64 )
+		local pos = APERTURESCIENCE:ConvertToGridWithoutZ( trace.HitPos + trace.HitNormal * 20, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), 64 )
 		
 		local arm_panel = MakeArmPanel( ply, pos, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), startenabled, armangle, armforward, armup )
 		local normal = trace.HitNormal
@@ -78,7 +78,7 @@ function TOOL:RightClick( trace )
 		local ply = self:GetOwner()
 		local startenabled = self:GetClientNumber( "startenabled" )
 		local armangle = math.max( -90, math.min( 90, self:GetClientNumber( "armang" ) ) )
-		local armforward = math.max( 50, math.min( 100, self:GetClientNumber( "armforward" ) ) )
+		local armforward = math.max( -50, math.min( 100, self:GetClientNumber( "armforward" ) ) )
 		local armup = math.max( 0, math.min( 140, self:GetClientNumber( "armup" ) ) )
 		local boxSize = WorldToLocal( self.GASL_LastPos, Angle(), trace.HitPos, trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
 		
@@ -86,7 +86,7 @@ function TOOL:RightClick( trace )
 		for y = 0, math.abs( math.Round( boxSize.y / 64 ) ) do
 			local vec = Vector( x * ( boxSize.x / math.abs( boxSize.x ) ), y * ( boxSize.y / math.abs( boxSize.y ) ), 0 ) * 64
 			local pos = LocalToWorld( vec, Angle(), trace.HitPos + trace.HitNormal * 10, trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
-			local gridPos = self:Convert2Grid( pos, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), 64 )
+			local gridPos = APERTURESCIENCE:ConvertToGridWithoutZ( pos, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), 64 )
 			local arm_panel = MakeArmPanel( ply, gridPos, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), startenabled, armangle, armforward, armup )
 		end
 		end
@@ -118,16 +118,6 @@ if ( SERVER ) then
 	end
 end
 
-function TOOL:Convert2Grid( pos, angle, rad )
-
-	local WTL = WorldToLocal( pos, Angle( ), Vector( ), angle ) 
-	WTL = Vector( math.Round( WTL.x / rad ) * rad, math.Round( WTL.y / rad ) * rad, WTL.z )
-	pos = LocalToWorld( WTL, Angle( ), Vector( ), angle )
-	
-	return pos
-	
-end
-
 function TOOL:UpdateGhostArmPanel( ent, ply )
 
 	if ( !IsValid( ent ) ) then return end
@@ -144,7 +134,7 @@ function TOOL:UpdateGhostArmPanel( ent, ply )
 	local CurPos = ent:GetPos()
 	
 	local ang = trace.HitNormal:Angle() + Angle( 0, 0, 0 )
-	local pos = self:Convert2Grid( trace.HitPos + trace.HitNormal * 70, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), 64 )
+	local pos = APERTURESCIENCE:ConvertToGridWithoutZ( trace.HitPos + trace.HitNormal * 70, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), 64 )
 
 	ent:SetPos( pos + trace.HitNormal:Angle():Up() * 30 )
 	ent:SetAngles( ang )
@@ -185,6 +175,7 @@ function TOOL:Think()
 
 end
 
+
 local ConVarsDefault = TOOL:BuildConVarList()
 
 function TOOL.BuildCPanel( CPanel )
@@ -192,7 +183,7 @@ function TOOL.BuildCPanel( CPanel )
 	CPanel:AddControl( "Header", { Description = "#tool.aperture_science_arm_panel.tooldesc" } )
 	CPanel:NumSlider( "#tool.aperture_science_arm_panel.armang", "aperture_science_arm_panel_armangle", -90, 90 )
 	CPanel:NumSlider( "#tool.aperture_science_arm_panel.armforward", "aperture_science_arm_panel_armforward", -50, 100 )
-	CPanel:NumSlider( "#tool.aperture_science_arm_panel.armup", "aperture_science_arm_panel_armup", 0, 130 )
+	CPanel:NumSlider( "#tool.aperture_science_arm_panel.armup", "aperture_science_arm_panel_armup", 0, 140 )
 	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_arm_panel.startenabled", Command = "aperture_science_arm_panel_startenabled" } )
 
 end

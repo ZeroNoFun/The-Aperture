@@ -56,12 +56,12 @@ function ENT:Draw()
 	local trace = util.TraceLine( {
 		start = self:GetPos(),
 		endpos = self:LocalToWorld( Vector( 10000, 0, 0 ) ),
-		filter = function( ent ) if ( ent == self or ent:GetClass() == "player" or ent:GetClass() == "prop_physics" ) then return false end end
+		filter = function( ent ) if ( ent == self || ent:GetClass() == "player" || ent:GetClass() == "prop_physics" ) then return false end end
 	} )
 	
 	local totalDistance = self:GetPos():Distance( trace.HitPos )
 	
-	if ( self.GASL_BridgeUpdate.lastPos != self:GetPos() or self.GASL_BridgeUpdate.lastAngle != self:GetAngles() ) then
+	if ( self.GASL_BridgeUpdate.lastPos != self:GetPos() || self.GASL_BridgeUpdate.lastAngle != self:GetAngles() ) then
 		self.GASL_BridgeUpdate.lastPos = self:GetPos()
 		self.GASL_BridgeUpdate.lastAngle = self:GetAngles()
 		

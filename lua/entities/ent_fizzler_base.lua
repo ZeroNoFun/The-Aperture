@@ -30,14 +30,12 @@ function ENT:DrawFizzler( material, stretch )
 		division = math.ceil( self:GetPos():Distance( secondField:GetPos() ) / DivSize )
 	end
 
-	local offset = APERTURESCIENCE:FizzlerModelToInfo( self:GetModel() ).offset
-	
 	for i = 1, division do
 	
-		local pos1 = self:LocalToWorld( Vector( 0, 0, halfHeight ) + offset )
-		local pos2 = secondField:LocalToWorld( Vector( 0, 0, halfHeight ) + offset )
-		local pos3 = secondField:LocalToWorld( Vector( 0, 0, -halfHeight ) + offset )
-		local pos4 = self:LocalToWorld( Vector( 0, 0, -halfHeight ) + offset )
+		local pos1 = self:LocalToWorld( Vector( 0, 0, halfHeight )  )
+		local pos2 = secondField:LocalToWorld( Vector( 0, 0, halfHeight ) )
+		local pos3 = secondField:LocalToWorld( Vector( 0, 0, -halfHeight ) )
+		local pos4 = self:LocalToWorld( Vector( 0, 0, -halfHeight ) )
 
 		local p1 = pos1 + ( ( pos2 - pos1 ) / division ) * ( i - 1 )
 		local p2 = pos1 + ( ( pos2 - pos1 ) / division ) * i
@@ -48,19 +46,6 @@ function ENT:DrawFizzler( material, stretch )
 		render.DrawQuad( p1, p2, p3, p4, Color( 255, 255, 255 ) )
 		
 	end
-	
-end
-
-function APERTURESCIENCE:FizzlerModelToInfo( model )
-
-	local modelsToInfo = {
-		["models/props/fizzler_dynamic.mdl"] = { offset = Vector( 0, 0, 0 ), angle = Angle( 0, 0, 0 ) },
-		["models/props_underground/underground_fizzler_wall.mdl"] = { offset = Vector( 0, 0, 70 ), angle = Angle( 0, 180, 0 ) }
-	}
-
-	if ( !modelsToInfo[ modelsToInfo[ model ] ] ) then return { offset = Vector(), angle = Angle() } end
-	
-	return modelsToInfo[ model ]
 	
 end
 
@@ -122,11 +107,9 @@ function ENT:Think()
 	
 	self.GASL_AllreadyHandled = { }
 	
-	local Offset = APERTURESCIENCE:FizzlerModelToInfo( self ).offset
-	
 	for i = 0, DivCount do
-		local pos = self:LocalToWorld( Vector( 0, 0, -Height / 2 + i * ( Height / DivCount ) ) + Offset )
-		local pos2 = self:GetNWEntity( "GASL_ConnectedField" ):LocalToWorld( Vector( 0, 0, -Height / 2 + i * ( Height / DivCount ) ) + Offset )
+		local pos = self:LocalToWorld( Vector( 0, 0, -Height / 2 + i * ( Height / DivCount ) ) )
+		local pos2 = self:GetNWEntity( "GASL_ConnectedField" ):LocalToWorld( Vector( 0, 0, -Height / 2 + i * ( Height / DivCount ) ) )
 		
 		local tracer = util.TraceHull( {
 			start = pos,

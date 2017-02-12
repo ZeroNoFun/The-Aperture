@@ -253,6 +253,7 @@ if( CLIENT ) then
 		timer.Remove( "GASL_Turret_DeployAnim"..self:EntIndex() )
 		timer.Remove( "GASL_Turret_Searthing"..self:EntIndex() )
 		timer.Remove( "GASL_Turret_SearthingPing"..self:EntIndex() )
+		timer.Remove( "GASL_Turret_ExplodeIn"..self:EntIndex() )
 	end
 	
 end
@@ -423,6 +424,48 @@ function ENT:Think()
 	elseif( timer.Exists( "GASL_Turret_TotalDisableIn"..self:EntIndex() ) ) then
 		timer.Remove( "GASL_Turret_TotalDisableIn"..self:EntIndex() )
 	end
+	
+	return true
+	
+end
+
+function ENT:ExplodeWhenOnFire( turretType )
+
+	if ( !self:IsOnFire() || timer.Exists( "GASL_Turret_ExplodeIn"..self:EntIndex() ) ) then return end
+	
+	timer.Create( "GASL_Turret_ExplodeIn"..self:EntIndex(), 2, 1.0, function()
+	
+		if ( !IsValid( self ) ) then return end
+	
+		for i = 0, 5 do
+			local ent = ents.Create( "prop_physics" )
+			ent:SetPos( self:LocalToWorld( Vector( 0, 0, 50 ) ) )
+
+			if ( turretType == 1 ) then
+				ent:SetModel( "models/npcs/turret/turret_fx_break_gib"..( 14 + i )..".mdl" )
+			else
+				ent:SetModel( "models/npcs/turret/turret_fx_break_gib"..( 4 + i - math.ceil( i / 3 ) * 3 )..".mdl" )
+			end
+			
+			if ( !IsValid( ent ) ) then continue end
+			
+			ent:SetAngles( self:GetAngles() )
+			ent:Spawn()
+			ent:SetCollisionGroup( COLLISION_GROUP_DEBRIS )
+			ent:Activate()
+			ent:GetPhysicsObject():SetVelocity( VectorRand() * 1000 )
+			timer.Simple( 5.0, function() if ( IsValid( ent ) ) then ent:Remove() end end )
+			
+		end
+		
+		local effectdata = EffectData()
+		effectdata:SetOrigin( self:GetPos() )
+		effectdata:SetNormal( Vector( 0, 0, 1 ) )
+		util.Effect( "Explosion", effectdata )
+		util.BlastDamage( self, self, self:GetPos(), 50, 20 ) 
+		self:Remove()
+		
+	end )
 	
 	return true
 	

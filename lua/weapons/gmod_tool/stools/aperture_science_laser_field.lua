@@ -36,12 +36,7 @@ function TOOL:LeftClick( trace )
 	trace = util.QuickTrace( firstLaserField:GetPos(), -firstLaserField:GetRight() * maxrad, firstLaserField )
 
 	local secondLaserField = MakeLaserField( ply, model, angle, 90, trace.HitPos, startenabled )
-
-	PrintTable( APERTURESCIENCE:FizzlerModelToInfo( model ) )
-	local Angles = APERTURESCIENCE:FizzlerModelToInfo( model ).angle
-	firstLaserField:SetAngles( firstLaserField:LocalToWorldAngles( Angles ) )
-	secondLaserField:SetAngles( secondLaserField:LocalToWorldAngles( Angles ) )
-
+	
 	firstLaserField:SetNWEntity( "GASL_ConnectedField", secondLaserField )
 	secondLaserField:SetNWEntity( "GASL_ConnectedField", firstLaserField )
 	

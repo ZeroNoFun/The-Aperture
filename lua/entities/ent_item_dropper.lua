@@ -35,7 +35,7 @@ function ENT:DropTypeToInfo( )
 	local dropTypeToinfo = {
 		[0] = { model = "models/portal_custom/metal_box_custom.mdl", class = "prop_physics" },
 		[1] = { model = "models/portal_custom/metal_box_custom.mdl", class = "prop_physics", skin = 1 },
-		[2] = { model = "models/props_gameplay/mp_ball.mdl", class = "prop_physics" },
+		[2] = { model = "models/portal_custom/metal_ball_custom.mdl", class = "prop_physics" },
 		[3] = { model = "models/props/reflection_cube.mdl", class = "prop_physics" },
 		[4] = { class = "prop_monster_box" },
 		[5] = { class = "ent_portal_bomb" }
@@ -78,7 +78,7 @@ function ENT:Think()
 	
 	self.BaseClass.Think( self )
 
-	self:NextThink( CurTime() + 0.5 )
+	self:NextThink( CurTime() + 0.1 )
 	
 	-- skip if item dropper allready drops item
 	if ( timer.Exists( "GASL_ItemDroper_Reset"..self:EntIndex() ) ) then return true end
@@ -96,15 +96,19 @@ function ENT:Think()
 	
 	-- Epic fall animation
 	local FallZ = 120
-	local StartZ = 100
+	local StartZ = 80
 	local lastSpawnedItem = self.GASL_ItemDropper_LastSpawnedItem
+	
+	if ( !self.GASL_ItemDropper_Fall ) then self.GASL_ItemDropper_Fall = 0 end
+	if ( !IsValid( lastSpawnedItem ) ) then return end
+	
 	local itemfall = self.GASL_ItemDropper_Fall
 
 	if ( itemfall < FallZ ) then
 		self:NextThink( CurTime() )
 		self.GASL_ItemDropper_Fall = itemfall + math.max( 3, itemfall / 20 )
 	elseif( itemfall > FallZ ) then self.GASL_ItemDropper_Fall = FallZ end
-	lastSpawnedItem:SetPos( self:LocalToWorld( Vector( 0, 0, StartZ - itemfall ) ) )
+	lastSpawnedItem:SetPos( self:LocalToWorld( Vector( 0, 0, math.max( -20, StartZ - itemfall ) ) ) )
 	
 	return true
 	
@@ -115,12 +119,13 @@ function ENT:CreateItem()
 	local info = self:DropTypeToInfo()
 	
 	local item = ents.Create( info.class )
+	if ( !IsValid( item ) ) then return end
+	
 	if ( info.model ) then item:SetModel( info.model ) end
 	item:SetPos( self:LocalToWorld( Vector( 0, 0, 120 ) ) )
 	item:SetAngles( self:GetAngles() )
-	item:SetMoveType( MOVETYPE_NONE )
 	item:Spawn()
-	item:GetPhysicsObject():EnableMotion( false )
+	if ( IsValid( item:GetPhysicsObject() ) ) then item:GetPhysicsObject():EnableMotion( false ) end
 	constraint.NoCollide( item, self, 0, 0 )
 	
 	if ( info.skin ) then item:SetSkin( info.skin ) end
@@ -150,8 +155,12 @@ function ENT:Drop()
 	-- Droping item
 	timer.Simple( 0.5, function()
 	
+		if ( !IsValid( self.GASL_ItemDropper_LastSpawnedItem ) ) then return end
 		local lastSpawnedItem = self.GASL_ItemDropper_LastSpawnedItem
+		
+		if ( !IsValid( lastSpawnedItem:GetPhysicsObject() ) ) then return end
 		local lastSpawnedItemPhys = lastSpawnedItem:GetPhysicsObject()
+		
 		lastSpawnedItemPhys:EnableMotion( true )
 		lastSpawnedItemPhys:Wake()
 		

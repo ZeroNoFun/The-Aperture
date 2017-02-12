@@ -101,6 +101,11 @@ function ENT:Think()
 		self:LaunchEntity( ent )
 		self.GASL_Cooldown = 10
 
+		if ( ent:GetClass() == "ent_portal_floor_turret"
+			|| ent:GetClass() == "ent_portal_defective_turret"
+			|| ent:GetClass() == "ent_portal_turret_different" ) then
+				APERTURESCIENCE:GiveAchievement( ent.Owner, 3 )
+			end
 	end
 	
 	-- Reseting cooldown
@@ -184,7 +189,7 @@ function ENT:CalculateTrajectoryForceAng( )
 		
 	end
 	
-	print( "VelX: ", math.Round( velX ),"  VelY: ", math.Round( velY ), "  MaxY: ", math.Round( maxY ), "  Time: ", math.Round( time * 100 ) / 100, " Force: ", force )
+	//print( "VelX: ", math.Round( velX ),"  VelY: ", math.Round( velY ), "  MaxY: ", math.Round( maxY ), "  Time: ", math.Round( time * 100 ) / 100, " Force: ", force )
 	
 	self.GASL_LaunchAngle = angle
 	self.GASL_LaunchForce = force

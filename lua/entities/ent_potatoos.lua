@@ -30,6 +30,7 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	ent:SetAngles( trace.HitNormal:Angle() )
 	ent:Spawn()
 	ent:Activate()
+	ent.Owner = ply
 
 	return ent
 
@@ -50,8 +51,27 @@ end
 
 function ENT:Think()
 
-	self:NextThink( CurTime() + 0.05 )
+	self:NextThink( CurTime() + 1 )
+	
+	if ( !self:IsOnFire() ) then
+	
+		if ( !timer.Exists( "GASL_Timer_PotatoOS_Chat"..self:EntIndex() ) ) then
+		
+			timer.Create( "GASL_Timer_PotatoOS_Chat"..self:EntIndex(), 10.0, 1, function() end )
+			self:EmitSound( "GASL.PotatoOSChat" )
+			
+		end
+
+	else
+		APERTURESCIENCE:GiveAchievement( self.Owner, 2 )
+	end
 	
 	return true
 
+end
+
+function ENT:OnRemove()
+	
+	timer.Remove( "GASL_Timer_PotatoOS_Chat"..self:EntIndex() )
+	
 end

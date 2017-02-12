@@ -208,13 +208,8 @@ function TOOL:DrawHUD()
 			local endpos = catapult:GetLandPoint()
 			local height = catapult:GetLaunchHeight()
 			local middlepos = ( startpos + endpos ) / 2
-			//local points, length = APERTURESCIENCE:CalcBezierCurvePoint( startpos, middlepos + Vector( 0, 0, height * 2 ), endpos, 10 )
 			local prevBeamPos = startpos
 
-			-- -- Drawing Rotation
-			-- render.SetMaterial( Material( "effects/wheel_ring" ) )
-			-- render.DrawQuadEasy( catapult:GetPos(), catapult:GetUp(), 200, 200, Color( 255, 255, 255 ), 0 )
-			
 			-- Drawing land target
 			render.SetMaterial( Material( "signage/mgf_overlay_bullseye" ) )
 			render.DrawQuadEasy( endpos, Vector( 0, 0, 1 ), 80, 80, Color( 255, 255, 255 ), 0 )
@@ -241,7 +236,7 @@ function TOOL:DrawHUD()
 				
 				render.DrawBeam( prevBeamPos, point, 120, 0, 1, Color( 255, 255, 255 ) )
 				prevBeamPos = point
-				
+
 			end
 			
 			-- Drawing height point

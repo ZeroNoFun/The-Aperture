@@ -18,6 +18,7 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	ent:Spawn()
 	ent:GetPhysicsObject():Wake()
 	ent:Activate()
+	ent.Owner = ply
 		
 	undo.Create( ent.PrintName )
 		undo.AddEntity( ent )
@@ -71,5 +72,9 @@ end
 function ENT:Think()
 
 	self.BaseClass.Think( self )
+	
+	if ( self:ExplodeWhenOnFire( 1 ) ) then
+		self:SetTotalDisable( true )
+	end
 	
 end

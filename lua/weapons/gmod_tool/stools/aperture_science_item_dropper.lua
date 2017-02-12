@@ -50,9 +50,10 @@ if ( SERVER ) then
 		dropper:SetAngles( ang )
 		dropper:SetMoveType( MOVETYPE_NONE )
 		dropper:Spawn()
-		dropper:SetRespawn( respawn )
+		dropper:SetRespawn( tobool( respawn ) )
 		dropper:SetDropType( drop_type )
-		if ( tobool( dropatstart ) ) then dropper:Drop() end
+		
+		if ( tobool( dropatstart ) ) then timer.Simple( 1.0, function() if ( IsValid( dropper ) ) then dropper:Drop() end end ) end
 
 		undo.Create( "Dropper" )
 			undo.AddEntity( dropper )

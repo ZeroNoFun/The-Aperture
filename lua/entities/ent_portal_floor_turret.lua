@@ -16,8 +16,6 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	if ( !ply.GASL_Player_TotalSpawnTurrets ) then ply.GASL_Player_TotalSpawnTurrets = 0 end
 	ply.GASL_Player_TotalSpawnTurrets = ply.GASL_Player_TotalSpawnTurrets + 1
 
-	print( ply.GASL_Player_TotalSpawnTurrets )
-
 	local owner = NULL
 	if ( ply.GASL_Player_TotalSpawnTurrets >= 10 ) then
 		ply.GASL_Player_TotalSpawnTurrets = 0
@@ -30,8 +28,9 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	ent:SetAngles( Angle( 0, ply:EyeAngles().y, 0 ) )
 	ent:Spawn()
 	ent:GetPhysicsObject():Wake()
-	if ( IsValid( owner ) ) then print( "SET", owner ) ent:SetOwner( owner ) end
+	if ( IsValid( owner ) ) then ent:SetOwner( owner ) end
 	ent:Activate()
+	ent.Owner = ply
 	
 	undo.Create( ent.PrintName )
 		undo.AddEntity( ent )
@@ -82,5 +81,9 @@ end
 function ENT:Think()
 
 	self.BaseClass.Think( self )
+	
+	if ( self:ExplodeWhenOnFire( 2 ) ) then
+		self:SetTotalDisable( true )
+	end
 	
 end

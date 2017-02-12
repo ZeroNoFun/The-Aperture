@@ -26,7 +26,6 @@ end
 function ENT:SetupDataTables()
 
 	self:NetworkVar( "Bool", 0, "Enable" )
-	self:NetworkVar( "Bool", 1, "Toggle" )
 	self:NetworkVar( "Int", 1, "Timer" )
 
 end
@@ -135,30 +134,9 @@ function ENT:Think()
 	
 end
 
-function ENT:ToggleEnable( bDown )
-
-	if ( self:GetStartEnabled() ) then bDown = !bDown end
-
-	if ( self:GetToggle( ) ) then
-	
-		if ( !bDown ) then return end
-		
-		self:SetEnable( !self:GetEnable( ) )
-	else
-		self:SetEnable( bDown )
-	end
-	
-	if ( self:GetEnable() ) then
-		self:EmitSound( "GASL.WallEmiterEnabledNoises" )
-	else
-		self:StopSound( "GASL.WallEmiterEnabledNoises" )
-	end
-	
-end
-
--- Removing wall props
 function ENT:OnRemove()
 
-	
+	timer.Remove( "GASL_Button_Timer"..self:EntIndex() )	
+	timer.Remove( "GASL_Button_Block"..self:EntIndex() )	
 	
 end

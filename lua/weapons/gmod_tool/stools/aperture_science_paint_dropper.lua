@@ -56,7 +56,7 @@ if ( SERVER ) then
 		paint_dropper:SetAngles( ang )
 		paint_dropper:SetMoveType( MOVETYPE_NONE )
 		paint_dropper:Spawn()
-		paint_dropper.GASL_ENT_Owner = pl -- why this? because SetOwner disable collisions and make persistent for this
+		paint_dropper.Owner = pl
 		
 		paint_dropper:SetGelType( gelType )
 		paint_dropper:SetGelRadius( gelRad )

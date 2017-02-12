@@ -136,14 +136,17 @@ function ENT:DoLaser( startpos, ang, ignore )
 		else
 		
 			local trEnt = trace.Entity
+
+			if ( IsValid( trEnt ) && ( !trEnt:IsPlayer() && trEnt:Health() > 0 
+				|| trEnt:GetClass() == "ent_portal_floor_turret"
+				|| trEnt:GetClass() == "ent_portal_turret_different"
+				|| trEnt:GetClass() == "ent_portal_defective_turret" ) ) then trEnt:Ignite( 1 ) end
 			
 			if ( trEnt && trEnt:IsValid() 
 				&& ( trEnt:IsPlayer()
 				|| trEnt:IsNPC() ) ) then
 				trEnt:TakeDamage( 10, self, self ) 
 				trEnt:EmitSound( "GASL.LaserBodyBurn" )
-				
-				if ( !trEnt:IsPlayer() && trEnt:Health() > 0 ) then trEnt:Ignite( 1 ) end
 				
 				-- Forces Player away from the laser
 				-- local angles = ( v.endpos - v.startpos ):Angle()
