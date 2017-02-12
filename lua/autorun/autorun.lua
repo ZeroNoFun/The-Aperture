@@ -1,5 +1,5 @@
 AddCSLuaFile( "aperture/main.lua" )
-AddCSLuaFile( "autorun/cl_GASLControlPanel.lua" )
+AddCSLuaFile( "autorun/cl_gaslcontrolpanel.lua" )
 
 include( "aperture/main.lua" )
 

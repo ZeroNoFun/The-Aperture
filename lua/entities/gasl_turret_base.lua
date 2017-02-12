@@ -115,6 +115,7 @@ if( CLIENT ) then
 	
 		local targetEnt = self:GetTargetEntity()
 		
+		local selfCenter = self:LocalToWorld( Vector( 0, 0, 35 ) )
 		self:SetRenderBounds( self.GASL_RenderBounds.mins, self.GASL_RenderBounds.maxs )
 		
 		-- when turret fallover
@@ -198,7 +199,7 @@ if( CLIENT ) then
 					targetPos = targetEnt:GetPos()
 				end
 
-				local angle = ( targetPos - self:GetPos() ):Angle()
+				local angle = ( targetPos - selfCenter ):Angle()
 				angle = self:WorldToLocalAngles( angle )
 				//angle = Angle( math.max( -45, math.min( 45, angle.p ) ), math.max( -45, math.min( 45, angle.y ) ), 0 )
 
@@ -316,20 +317,19 @@ function ENT:FindClosestEntityThrowPortal( pos, ang, distance, isportal )
 	
 	for _, ent in pairs( findEnts ) do
 
-		local angle = ( ent:GetPos() - pos ):Angle()
+		local centerPos = Vector( )
+		if ( ent:GetModelRadius() ) then
+			centerPos = ent:GetPos() + Vector( 0, 0, ent:GetModelRadius() / 2 )
+		else
+			centerPos = ent:GetPos()
+		end
+		
+		local angle = ( centerPos - pos ):Angle()
 		local _, angle = WorldToLocal( pos, ang, Vector(), angle )
 		
 		if ( ( ( ent:IsNPC() || ent:IsPlayer() ) && ent:Health() > 0 || ent:GetClass() == "prop_portal" )
 			&& ( angle.p > -45 && angle.p < 45 ) 
 			&& ( angle.y > -45 && angle.y < 45 ) ) then
-			
-			-- getting center pos
-			local centerPos = Vector()
-			if ( ent:GetClass() == "prop_portal" ) then
-				centerPos = ent:GetPos()
-			else
-				centerPos = ent:GetPos()
-			end
 
 			local trace = util.TraceLine( {
 				start = pos,
@@ -341,7 +341,7 @@ function ENT:FindClosestEntityThrowPortal( pos, ang, distance, isportal )
 			if ( trace.Hit ) then continue end
 			
 			if ( ent:GetClass() == "prop_portal"
-				&& IsValid( ent:GetNWBool( "Potal:Other" ) ) ) then
+				&& ent:GetNWBool( "Potal:Other" ) && IsValid( ent:GetNWBool( "Potal:Other" ) ) ) then
 			
 				-- geting portal exit
 				local exitPortal = ent:GetNWBool( "Potal:Other" )
@@ -365,9 +365,9 @@ function ENT:FindClosestEntityThrowPortal( pos, ang, distance, isportal )
 					dirThrowPortal = dirTrowPortal
 				end
 			
-			elseif ( centerPos:Distance( self:GetPos() ) < closest || closest == -1 ) then
+			elseif ( centerPos:Distance( pos ) < closest || closest == -1 ) then
 				dirThrowPortal = Vector()
-				closest = centerPos:Distance( self:GetPos() )
+				closest = centerPos:Distance( pos )
 				closestEnt = ent
 				angleDir = angle
 				
@@ -390,27 +390,33 @@ function ENT:Think()
 
 	self:NextThink( CurTime() + 0.1 )
 
+	local selfCenter = self:LocalToWorld( Vector( 0, 0, 35 ) )
 	if ( self:GetTotalDisable() ) then return end
 	
-	local closestEnt, angleDir, _, dirThrowPortal = self:FindClosestEntityThrowPortal( self:GetPos(), self:GetAngles(), 1000.0 )
-	local eyePos = self:LocalToWorld( Vector( 11, 0, 36.7 ) )
+	local closestEnt, angleDir, _, dirThrowPortal = self:FindClosestEntityThrowPortal( selfCenter, self:GetAngles(), 1000.0 )
 	local eyeAngDir = self:LocalToWorldAngles( angleDir ):Forward()
 	
-	local trace = util.QuickTrace( eyePos, eyeAngDir * 1100, self )
+	local trace = util.QuickTrace( selfCenter, eyeAngDir * 1100, self )
 	
-	if ( IsValid( closestEnt )
+	if ( IsValid( closestEnt ) && closestEnt:GetClass() != "prop_portal"
 		&& self:GetActivated() && ( !IsValid( trace.Entity ) || IsValid( trace.Entity ) && trace.Entity:GetModel() != "models/wall_projector_bridge/wall.mdl" ) ) then
 		
 			if ( dirThrowPortal != Vector() ) then
-				angleDir = self:WorldToLocalAngles( ( dirThrowPortal - self:GetPos() ):Angle() )
+				angleDir = self:WorldToLocalAngles( ( dirThrowPortal - selfCenter ):Angle() )
 			end
 
 		self:TurretShoot( angleDir )
 		
 	end
 	
-	if ( self:GetTargetEntity() != closestEnt 
-		|| self:GetTargetEntityVector() != dirThrowPortal ) then
+	if ( !IsValid( closestEnt ) ) then
+		self:SetTargetEntity( NULL )
+		self:SetTargetEntityVector( Vector() )
+	end
+
+	if ( IsValid( closestEnt ) 
+		&& ( self:GetTargetEntity() != closestEnt && closestEnt:GetClass() != "prop_portal"
+		|| self:GetTargetEntityVector() != dirThrowPortal ) ) then
 		
 		self:SetTargetEntity( closestEnt )
 		self:SetTargetEntityVector( dirThrowPortal )

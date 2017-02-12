@@ -151,7 +151,7 @@ if ( CLIENT ) then
 
 		local panelAngles = Angle( 0, -lang2.p - pitch4 - localPanelAng.p, 0 )
 
-		self:ManipulateBoneAngles( 0, Angle( 0, -b, -90 ) ) -- dof first
+		self:ManipulateBoneAngles( 0, Angle( 0, 0, -90 ) ) -- dof first
 		self:ManipulateBoneAngles( 2, Angle( 0, lang1.p + pitch1, 0 ) ) -- dof first
 		self:ManipulateBoneAngles( 4, Angle( 0, -50, 0 ) ) -- dof second
 		self:ManipulateBoneAngles( 5, Angle( 0, a + pitch3, 0 ) ) -- dof second

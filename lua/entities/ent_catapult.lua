@@ -231,18 +231,26 @@ function ENT:LaunchEntity( entity )
 	velocity = velocity + ( self:GetPos() - entity:GetPos() ) / time
 	
 	if ( entity:IsPlayer() ) then entity:SetVelocity( velocity - entity:GetVelocity() )
-	elseif ( IsValid( entity:GetPhysicsObject() ) ) then entity:GetPhysicsObject():SetVelocity( velocity )
+	elseif ( IsValid( entity:GetPhysicsObject() ) ) then
 		
-		if ( !timer.Exists( "GASL_Catapult_Fall"..entity:EntIndex() ) ) then
-			local entityPhys = entity:GetPhysicsObject()
+		local entityPhys = entity:GetPhysicsObject()
+
+		-- for some reason portal props have different air density
+		if ( entity:GetModel() == "models/portal_custom/metal_box_custom.mdl"
+			|| entity:GetModel() == "models/portal_custom/underground_weighted_cube.mdl" ) then velocity = velocity * 1.16 end
+		if ( entity:GetModel() == "models/portal_custom/metal_ball_custom.mdl" ) then velocity = velocity * 1.5 end
+		
+		if ( !timer.Exists( "GASL_Catapult_Fall"..entity:EntIndex() ) ) then		
 			entity.GASL_ENT_LastMass = entityPhys:GetMass()
-			entityPhys:SetMass( 5000 )
-			
-			timer.Create( "GASL_Catapult_Fall"..entity:EntIndex(), self:GetTimeOfFlight() - 0.5, 1, function()
-				if ( IsValid( entity ) && entity.GASL_ENT_LastMass ) then entityPhys:SetMass( entity.GASL_ENT_LastMass ) end
-			end )
+			entityPhys:SetMass( 50000 )
 		end
 		
+		entity:GetPhysicsObject():SetVelocity( velocity )
+		
+		timer.Create( "GASL_Catapult_Fall"..entity:EntIndex(), self:GetTimeOfFlight(), 1, function()
+			if ( IsValid( entity ) && entity.GASL_ENT_LastMass ) then entityPhys:SetMass( entity.GASL_ENT_LastMass ) end
+		end )
+	
 	end
 end
 

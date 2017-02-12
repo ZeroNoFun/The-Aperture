@@ -25,6 +25,7 @@ ADD_PROP( "portal_box2", "Cube (Dirty)", "models/portal_custom/metal_box_custom.
 ADD_PROP( "portal_box3", "Cube (Companion)", "models/portal_custom/metal_box_custom.mdl", 1 )
 ADD_PROP( "portal_box4", "Cube (Old)", "models/portal_custom/underground_weighted_cube.mdl", 0 )
 ADD_PROP( "portal_ball", "Ball", "models/portal_custom/metal_ball_custom.mdl", 0 )
+ADD_PROP( "portal_reflection_box", "Reflection Cube", "models/props/reflection_cube.mdl", 0 )
 
 -- Notes:
 -- Ent:Fire( "Dissolve", Ent.Target, 0 )

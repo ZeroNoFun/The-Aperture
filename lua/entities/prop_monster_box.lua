@@ -21,12 +21,6 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 		if ( math.random( 0, 1 ) == 1 ) then ent:SetBodygroup( v.id, 1 ) end
 	end
 
-	if ( trace.Entity:IsValid() ) then
-
-		ent:SetParent( trace.Entity )
-		
-	end
-
 	return ent
 
 end

@@ -120,7 +120,7 @@ function TOOL:DrawHUD()
 	cam.Start3D()
 		render.SetMaterial( MatBridgeBorder )
 		render.DrawBeam( trace.HitPos + right * BridgeDrawWidth, traceEnd.HitPos + right * BridgeDrawWidth, BorderBeamWidth, 0, 1, Color( 100, 200, 255 ) )
-		render.DrawBeam( trace.HitPos + right * -BridgeDrawWidth, traceEnd.HitPos + right * BridgeDrawWidth, BorderBeamWidth, 0, 1, Color( 100, 200, 255 ) )
+		render.DrawBeam( trace.HitPos + right * -BridgeDrawWidth, traceEnd.HitPos + right * -BridgeDrawWidth, BorderBeamWidth, 0, 1, Color( 100, 200, 255 ) )
 	cam.End3D()
 	
 end
