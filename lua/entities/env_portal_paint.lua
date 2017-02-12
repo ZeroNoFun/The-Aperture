@@ -43,10 +43,10 @@ function ENT:UpdateGel()
 
 		self.GASL_Link = { left = NULL, right = NULL, forward = NULL, back = NULL }
 		
-		local left = APERTURESCIENCE:CheckForGel( self:LocalToWorld( Vector( 0, -APERTURESCIENCE.GEL_BOX_SIZE, 5 ) ), -self:GetUp() * 10 ).Entity
-		local right = APERTURESCIENCE:CheckForGel( self:LocalToWorld( Vector( 0, APERTURESCIENCE.GEL_BOX_SIZE, 5 ) ), -self:GetUp() * 10 ).Entity
-		local forward = APERTURESCIENCE:CheckForGel( self:LocalToWorld( Vector( -APERTURESCIENCE.GEL_BOX_SIZE, 0, 5 ) ), -self:GetUp() * 10 ).Entity
-		local back = APERTURESCIENCE:CheckForGel( self:LocalToWorld( Vector( APERTURESCIENCE.GEL_BOX_SIZE, 0, 5 ) ), -self:GetUp() * 10 ).Entity
+		local left = APERTURESCIENCE:CheckForGel( self:LocalToWorld( Vector( 0, -APERTURESCIENCE.GEL_BOX_SIZE, 5 ) ), -self:GetUp() * 10, true )
+		local right = APERTURESCIENCE:CheckForGel( self:LocalToWorld( Vector( 0, APERTURESCIENCE.GEL_BOX_SIZE, 5 ) ), -self:GetUp() * 10, true )
+		local forward = APERTURESCIENCE:CheckForGel( self:LocalToWorld( Vector( -APERTURESCIENCE.GEL_BOX_SIZE, 0, 5 ) ), -self:GetUp() * 10, true )
+		local back = APERTURESCIENCE:CheckForGel( self:LocalToWorld( Vector( APERTURESCIENCE.GEL_BOX_SIZE, 0, 5 ) ), -self:GetUp() * 10, true )
 		
 		if ( left:IsValid() ) then
 		
@@ -113,9 +113,7 @@ end
 function ENT:Draw()
 
 	if ( APERTURESCIENCE.GEL_QUALITY == 0 ) then
-		
 		self:DrawModel()
-		
 	end
 	
 	if ( APERTURESCIENCE.GEL_QUALITY == 1 ) then

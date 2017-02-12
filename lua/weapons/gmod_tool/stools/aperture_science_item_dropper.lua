@@ -1,20 +1,18 @@
 TOOL.Category = "Aperture Science"
 TOOL.Name = "#tool.aperture_science_item_dropper.name"
 
-TOOL.ClientConVar[ "keydrop" ] = "42"
+TOOL.ClientConVar[ "model" ] = "models/props/switch001.mdl"
 TOOL.ClientConVar[ "respawn" ] = "0"
 TOOL.ClientConVar[ "drop_type" ] = "1"
 TOOL.ClientConVar[ "dropatstart" ] = "0"
 
 if ( CLIENT ) then
 
-	language.Add( "aperture_science_item_dropper", "Dropper" )
 	language.Add( "tool.aperture_science_item_dropper.name", "Dropper" )
 	language.Add( "tool.aperture_science_item_dropper.desc", "Creates Dropper" )
 	language.Add( "tool.aperture_science_item_dropper.0", "Left click to use" )
 	language.Add( "tool.aperture_science_item_dropper.dropType", "Drop Type" )
-	language.Add( "tool.aperture_science_item_dropper.dropatstart", "Drop when Disabled" )
-	language.Add( "tool.aperture_science_item_dropper.drop", "Drop" )
+	language.Add( "tool.aperture_science_item_dropper.dropatstart", "Drop when Place" )
 	language.Add( "tool.aperture_science_item_dropper.respawn", "Respawn on it lost" )
 	
 end
@@ -22,13 +20,17 @@ end
 function TOOL:LeftClick( trace )
 
 	-- Ignore if place target is Alive
-	if ( trace.Entity && trace.Entity:IsPlayer() ) then return false end
+	if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then return false end
 	
 	if ( CLIENT ) then return true end
 
-	local ply = self:GetOwner()
+	if ( !APERTURESCIENCE.ALLOWING.item_dropper && !self:GetOwner():IsSuperAdmin() ) then MsgC( Color( 255, 0, 0 ), "This tool is disabled" ) return end
 	
-	local key_drop = self:GetClientNumber( "keydrop" )
+	local normal = trace.HitNormal
+	normal = Vector( math.Round( normal.x ),  math.Round( normal.y ),  math.Round( normal.z ) )
+	if ( normal != Vector( 0, 0, -1 ) || APERTURESCIENCE:GASLStuff( trace.Entity ) ) then return end
+	
+	local ply = self:GetOwner()
 	local respawn = self:GetClientNumber( "respawn" )
 	local dropType = self:GetClientNumber( "drop_type" )
 	local dropatstart = self:GetClientNumber( "dropatstart" )
@@ -41,18 +43,15 @@ end
 
 if ( SERVER ) then
 
-	function MakeDropper( pl, pos, ang, drop_type, dropatstart, respawn, key_drop )
+	function MakeDropper( pl, pos, ang, drop_type, dropatstart, respawn )
 		
 		local dropper = ents.Create( "ent_item_dropper" )
 		dropper:SetPos( pos )
 		dropper:SetAngles( ang )
 		dropper:SetMoveType( MOVETYPE_NONE )
 		dropper:Spawn()
-
-		dropper.NumDrop = numpad.OnDown( pl, key_drop, "aperture_science_item_dropper_drop", dropper, 1 )
 		dropper:SetRespawn( respawn )
 		dropper:SetDropType( drop_type )
-		
 		if ( tobool( dropatstart ) ) then dropper:Drop() end
 
 		undo.Create( "Dropper" )
@@ -66,40 +65,48 @@ if ( SERVER ) then
 	
 end
 
-function TOOL:UpdateGhostLaserField( ent, ply )
+function TOOL:UpdateGhostItemDropper( ent, ply )
 
 	if ( !IsValid( ent ) ) then return end
 
 	local trace = ply:GetEyeTrace()
-	if ( !trace.Hit || trace.HitNormal != Vector( 0, 0, -1 ) 
-		|| trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then
+
+	local normal = trace.HitNormal
+	normal = Vector( math.Round( normal.x ),  math.Round( normal.y ),  math.Round( normal.z ) )
+	
+	if ( !trace.Hit || normal != Vector( 0, 0, -1 ) 
+		|| trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:GASLStuff( trace.Entity ) ) ) then
 
 		ent:SetNoDraw( true )
 		return
-
 	end
 	
 	local CurPos = ent:GetPos()
-	local ang = trace.HitNormal:Angle()
+
+	local ang = trace.HitNormal:Angle() - Angle( 90, 0, 0 )
 	local pos = trace.HitPos
-	local skip, rAng = LocalToWorld( Vector(), Angle( 0, 0, 0 ), Vector(), ang )
-
-	ent:SetPos( pos )
-	ent:SetAngles( rAng )
-
+	
+	ent:SetPos( pos + trace.HitNormal * 85)
+	ent:SetAngles( ang )
 	ent:SetNoDraw( false )
 
 end
 
 function TOOL:Think()
 
-	if ( !util.IsValidModel( "models/props_backstage/item_dropper.mdl" ) ) then self:ReleaseGhostEntity() return end
+	local mdl = "models/prop_backstage/item_dropper.mdl"
+	if ( !util.IsValidModel( mdl ) ) then self:ReleaseGhostEntity() return end
 
-	if ( !IsValid( self.GhostEntity ) ) then
-		self:MakeGhostEntity( "models/props_backstage/item_dropper.mdl", Vector( 0, 0, 0 ), Angle( 0, 0, 0 ) )
+	if ( !IsValid( self.GhostEntity ) || self.GhostEntity:GetModel() != mdl ) then
+		self:MakeGhostEntity( mdl, Vector( 0, 0, 0 ), Angle( 0, 0, 0 ) )
 	end
 
-	self:UpdateGhostLaserField( self.GhostEntity, self:GetOwner() )
+	self:UpdateGhostItemDropper( self.GhostEntity, self:GetOwner() )
+
+end
+
+
+function TOOL:RightClick( trace )
 
 end
 
@@ -119,6 +126,5 @@ function TOOL.BuildCPanel( CPanel )
 	
 	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_item_dropper.dropatstart", Command = "aperture_science_item_dropper_dropatstart" } )
 	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_item_dropper.respawn", Command = "aperture_science_item_dropper_respawn" } )
-	CPanel:AddControl( "Numpad", { Label = "#tool.aperture_science_item_dropper.drop", Command = "aperture_science_item_dropper_keydrop" } )
 
 end

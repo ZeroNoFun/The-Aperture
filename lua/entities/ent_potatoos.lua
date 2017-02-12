@@ -15,11 +15,8 @@ function ENT:Draw()
 	
 	local pos = self:LocalToWorld( Vector( 1.8, 4.7, 7 ) )
 
-	cam.Start3D() 
-		render.SetMaterial( Material( "sprites/orangecore2" ) )
-		render.DrawSprite( pos, 4, 4, Color( 255, 255, 255, 255 ) ) 
-	cam.End3D()
-
+	render.SetMaterial( Material( "sprites/orangecore2" ) )
+	render.DrawSprite( pos, 4, 4, Color( 255, 255, 255, 255 ) ) 
 
 end
 

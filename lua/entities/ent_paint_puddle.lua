@@ -10,7 +10,7 @@ function ENT:SetupDataTables()
 	
 end
 
-cleanup.Register( "gasl_gel" )
+cleanup.Register( "aperture_paint" )
 
 function ENT:Initialize()
 
@@ -60,7 +60,7 @@ function ENT:PaintGel( pl, pos, normal, rad )
 	effectdata:SetColor( self.GASL_GelType )
 	
 	self:EmitSound( "GASL.GelSplat" )
-	util.Effect( "gel_splat_effect", effectdata )
+	util.Effect( "paint_splat_effect", effectdata )
 	
 	for x = -maxseg, maxseg do
 	for y = -maxseg, maxseg do
@@ -69,20 +69,20 @@ function ENT:PaintGel( pl, pos, normal, rad )
 		offset:Rotate( normal:Angle() + Angle( 90, 0, 0 ) )
 
 		local location = pos + offset
-		local gelTrace = APERTURESCIENCE:CheckForGel( location + normal * 5, -normal * 10 ) 
+		local paint = APERTURESCIENCE:CheckForGel( location + normal * 5, -normal * 10 ) 
 		
 		if ( location:Distance( pos ) > rad ) then continue end
 		
-		if ( !gelTrace.Entity:IsValid() ) then
+		if ( !IsValid( paint ) ) then
 			
-			-- Skip if gel type is water
+			-- Skip if paint type is water
 			if ( self.GASL_GelType == 4 ) then continue end
 			
 			local trace = util.TraceLine( {
 				start = location + normal * 5,
 				endpos = location - normal * 10,
 				filter = function( ent )
-					if ( ent:GetClass() == "ent_gel_paint" || ent:GetClass() == "ent_gel_puddle" || ent:GetClass() == "prop_gel_dropper" ) then return false end
+					if ( ent:GetClass() == "env_portal_paint" || ent:GetClass() == "ent_paint_puddle" || ent:GetClass() == "prop_paint_dropper" ) then return false end
 				end
 			} )
 			
@@ -101,8 +101,7 @@ function ENT:PaintGel( pl, pos, normal, rad )
 			ent:Spawn()
 			
 			if ( IsValid( pl ) ) then
-				pl:AddCount( "gasl_gel", ent )
-				pl:AddCleanup( "gasl_gel", ent )
+				pl:AddCleanup( "aperture_paint", ent )
 			end
 			
 			ent:SetGelType( self.GASL_GelType )
@@ -110,13 +109,13 @@ function ENT:PaintGel( pl, pos, normal, rad )
 
 		else
 			if ( self.GASL_GelType == 4 ) then
-				gelTrace.Entity:SetGelType( 0 )
+				paint:SetGelType( 0 )
 			else
-				gelTrace.Entity:SetGelType( self.GASL_GelType )
+				paint:SetGelType( self.GASL_GelType )
 			end
 
-			gelTrace.Entity:UpdateGel()
-			if ( self.GASL_GelType == 4 ) then gelTrace.Entity:Remove() end
+			paint:UpdateGel()
+			if ( self.GASL_GelType == 4 ) then paint:Remove() end
 		end
 		
 	end
@@ -129,6 +128,13 @@ function ENT:PaintGel( pl, pos, normal, rad )
 		if ( APERTURESCIENCE:IsValidEntity( v ) && !v:IsPlayer() && v:GetPhysicsObject():IsValid()
 			&& ( !APERTURESCIENCE.GELLED_ENTITIES[ v ] || v.GASL_GelledType && v.GASL_GelledType != self.GASL_GelType ) ) then
 			
+			local trace = util.TraceLine( {
+				start = self:GetPos(),
+				endpos = v:GetPos(),
+				filter = function( ent ) if ( ent:GetClass() == "ent_paint_puddle" || ent == v ) then return false end end
+			} )
+			if ( trace.Hit ) then continue end
+
 			-- Reseting physics material
 			if ( v.GASL_PrevPhysMaterial ) then
 				v:GetPhysicsObject():SetMaterial( v.GASL_PrevPhysMaterial )
@@ -210,7 +216,7 @@ function ENT:Think()
 			ignoreworld = true,
 			filter = function( ent )
 				if ( ent:GetClass() == "prop_portal" ) then return true end
-				if ( ent:GetClass() == "ent_gel_paint" || ent:GetClass() == "ent_gel_puddle" ) then return false end
+				if ( ent:GetClass() == "env_portal_paint" || ent:GetClass() == "ent_paint_puddle" ) then return false end
 			end
 		} )
 		
@@ -222,7 +228,7 @@ function ENT:Think()
 				start = self:GetPos(),
 				endpos = self:GetPos() + self:GetVelocity() / 5,
 				filter = function( ent )
-					if ( ent:GetClass() == "ent_gel_paint" || ent:GetClass() == "ent_gel_puddle" || ent:GetClass() == "prop_gel_dropper" ) then return false end
+					if ( ent:GetClass() == "env_portal_paint" || ent:GetClass() == "ent_paint_puddle" || ent:GetClass() == "prop_paint_dropper" ) then return false end
 				end
 			} )
 		end
@@ -231,7 +237,7 @@ function ENT:Think()
 		
 		if ( trace.Hit && ( !traceEnt:IsValid() || traceEnt:IsValid() && traceEnt:GetClass() != "prop_portal" ) ) then
 		
-			self:PaintGel( NULL, trace.HitPos, trace.HitNormal, self:GetGelRadius() )
+			self:PaintGel( self:GetOwner(), trace.HitPos, trace.HitNormal, self:GetGelRadius() )
 			self:SetColor( Color( 0, 0, 0, 0 ) )
 			self:GetPhysicsObject():EnableMotion( false )
 

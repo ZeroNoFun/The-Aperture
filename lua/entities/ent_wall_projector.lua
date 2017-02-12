@@ -26,8 +26,7 @@ end
 function ENT:SetupDataTables()
 
 	self:NetworkVar( "Bool", 0, "Enable" )
-	self:NetworkVar( "Bool", 1, "Toggle" )
-	self:NetworkVar( "Bool", 2, "StartEnabled" )
+	self:NetworkVar( "Bool", 1, "StartEnabled" )
 
 end
 
@@ -170,14 +169,7 @@ function ENT:ToggleEnable( bDown )
 
 	if ( self:GetStartEnabled() ) then bDown = !bDown end
 
-	if ( self:GetToggle( ) ) then
-	
-		if ( !bDown ) then return end
-		
-		self:SetEnable( !self:GetEnable( ) )
-	else
-		self:SetEnable( bDown )
-	end
+	self:SetEnable( bDown )
 	
 	if ( self:GetEnable() ) then
 		self:EmitSound( "GASL.WallEmiterEnabledNoises" )
@@ -186,24 +178,6 @@ function ENT:ToggleEnable( bDown )
 	end
 	
 end
-
-numpad.Register( "aperture_science_wall_projector_enable", function( pl, ent, keydown, idx )
-
-	if ( !IsValid( ent ) ) then return false end
-
-	if ( keydown ) then ent:ToggleEnable( true ) end
-	return true
-
-end )
-
-numpad.Register( "aperture_science_wall_projector_disable", function( pl, ent, keydown )
-
-	if ( !IsValid( ent ) ) then return false end
-
-	if ( keydown ) then ent:ToggleEnable( false ) end
-	return true
-
-end )
 
 -- Removing wall props
 function ENT:OnRemove()

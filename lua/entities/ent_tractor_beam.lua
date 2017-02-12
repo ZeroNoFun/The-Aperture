@@ -26,9 +26,8 @@ function ENT:SetupDataTables()
 
 	self:NetworkVar( "Bool", 0, "Reverse" )
 	self:NetworkVar( "Bool", 1, "Enable" )
-	self:NetworkVar( "Bool", 2, "Toggle" )
-	self:NetworkVar( "Bool", 3, "StartEnabled" )
-	self:NetworkVar( "Bool", 4, "StartReversed" )
+	self:NetworkVar( "Bool", 2, "StartEnabled" )
+	self:NetworkVar( "Bool", 3, "StartReversed" )
 
 end
 
@@ -277,12 +276,6 @@ function ENT:Think()
 		local LTW = LocalToWorld( WTL, Angle(), v.GASL_TravelingInBeamPos, v.GASL_TravelingInBeamDir:Angle() )
 		local tractorBeamMovingSpeed = APERTURESCIENCE.FUNNEL_MOVE_SPEED * dir
 
-		-- if( self:GetReverse() ) then
-			-- tractorBeamMovingSpeed = APERTURESCIENCE.FUNNEL_MOVE_SPEED * math.min( 1, ( WTL.x - entRadius ) / entRadius ) * dir
-		-- else
-			-- tractorBeamMovingSpeed = APERTURESCIENCE.FUNNEL_MOVE_SPEED * math.min( 1, ( totalDistance - ( WTL.x + entRadius ) ) / entRadius ) * dir
-		-- end
-		
 		-- Handling entering into Funnel
 		if ( !v.GASL_TractorBeamEnter ) then
 			
@@ -505,14 +498,7 @@ function ENT:ToggleEnable( bDown )
 
 	if ( self:GetStartEnabled() ) then bDown = !bDown end
 
-	if ( self:GetToggle() ) then
-	
-		if ( !bDown ) then return end
-		
-		self:SetEnable( !self:GetEnable( ) )
-	else
-		self:SetEnable( bDown )
-	end
+	self:SetEnable( bDown )
 	
 	if ( self:GetEnable( ) ) then
 	
@@ -542,15 +528,7 @@ function ENT:ToggleReverse( bDown )
 
 	if ( self:GetStartReversed() ) then bDown = !bDown end
 
-	if ( self:GetToggle() ) then
-	
-		if ( !bDown ) then return end
-		
-		self:SetReverse( !self:GetReverse() )
-		
-	else
-		self:SetReverse( bDown )
-	end
+	self:SetReverse( bDown )
 	
 	if ( self:GetEnable() ) then
 	
@@ -566,42 +544,6 @@ function ENT:ToggleReverse( bDown )
 	end
 	
 end
-
-numpad.Register( "aperture_science_tractor_beam_enable", function( pl, ent, keydown, idx )
-
-	if ( !IsValid( ent ) ) then return false end
-
-	if ( keydown ) then ent:ToggleEnable( true ) end
-	return true
-
-end )
-
-numpad.Register( "aperture_science_tractor_beam_disable", function( pl, ent, keydown )
-
-	if ( !IsValid( ent ) ) then return false end
-
-	if ( keydown ) then ent:ToggleEnable( false ) end
-	return true
-
-end )
-
-numpad.Register( "aperture_science_tractor_beam_reverse_back", function( pl, ent, keydown )
-
-	if ( !IsValid( ent ) ) then return false end
-
-	if ( keydown ) then ent:ToggleReverse( true ) end
-	return true
-
-end )
-
-numpad.Register( "aperture_science_tractor_beam_reverse_forward", function( pl, ent, keydown )
-
-	if ( !IsValid( ent ) ) then return false end
-
-	if ( keydown ) then ent:ToggleReverse( false ) end
-	return true
-
-end )
 
 -- Removing field effect 
 function ENT:OnRemove()

@@ -3,8 +3,6 @@ TOOL.Name = "#tool.aperture_science_fizzler.name"
 
 TOOL.ClientConVar[ "model" ] = "models/props/fizzler.mdl"
 TOOL.ClientConVar[ "maxrad" ] = "20"
-TOOL.ClientConVar[ "keyenable" ] = "45"
-TOOL.ClientConVar[ "toggle" ] = "0"
 TOOL.ClientConVar[ "startenabled" ] = "0"
 
 if ( CLIENT ) then
@@ -14,8 +12,6 @@ if ( CLIENT ) then
 	language.Add( "tool.aperture_science_fizzler.desc", "Creates Fizzler" )
 	language.Add( "tool.aperture_science_fizzler.0", "Left click to use" )
 	language.Add( "tool.aperture_science_fizzler.startenabled", "Start Enabled" )
-	language.Add( "tool.aperture_science_fizzler.enable", "Enable" )
-	language.Add( "tool.aperture_science_fizzler.toggle", "Toggle" )
 	language.Add( "tool.aperture_science_fizzler.maxrad", "Maximum Length" )
 	
 end
@@ -27,6 +23,8 @@ function TOOL:LeftClick( trace )
 	
 	if ( CLIENT ) then return true end
 	
+	if ( !APERTURESCIENCE.ALLOWING.fizzler && !self:GetOwner():IsSuperAdmin() ) then MsgC( Color( 255, 0, 0 ), "This tool is disabled" ) return end
+
 	local ply = self:GetOwner()
 	local model = self:GetClientInfo( "model" )
 	local maxrad = self:GetClientNumber( "maxrad" )
@@ -148,10 +146,7 @@ function TOOL.BuildCPanel( CPanel )
 	CPanel:NumSlider( "#tool.aperture_science_fizzler.maxrad", "aperture_science_fizzler_maxrad", 80, 1000 )
 	CPanel:AddControl( "PropSelect", { ConVar = "aperture_science_fizzler_model", Models = list.Get( "FizzlerModels" ), Height = 1 } )
 	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_fizzler.startenabled", Command = "aperture_science_fizzler_startenabled" } )
-	CPanel:AddControl( "Numpad", { Label = "#tool.aperture_science_fizzler.enable", Command = "aperture_science_fizzler_keyenable" } )
-	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_fizzler.toggle", Command = "aperture_science_fizzler_toggle" } )
 
 end
 
 list.Set( "FizzlerModels", "models/props/fizzler_dynamic.mdl", {} )
-list.Set( "FizzlerModels", "models/props_underground/underground_fizzler_wall.mdl", {} )

@@ -13,8 +13,7 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Vector", 0, "ArmPos" )
 	self:NetworkVar( "Angle", 1, "ArmAng" )
 	self:NetworkVar( "Bool", 2, "Enable" )
-	self:NetworkVar( "Bool", 3, "Toggle" )
-	self:NetworkVar( "Bool", 4, "StartEnabled" )
+	self:NetworkVar( "Bool", 3, "StartEnabled" )
 	self:NetworkVar( "Entity", 4, "BasePanel" )
 	
 end
@@ -43,56 +42,24 @@ function ENT:MovePanel( pos, ang )
 	self:SetArmPos( pos )
 	self:SetArmAng( ang )
 
-end
-
-function ENT:Initialize()
-
-	self.BaseClass.Initialize( self )
+	if ( !timer.Exists( "GASL_Timer_ArmPanel"..self:EntIndex() ) ) then
 	
-	if ( SERVER ) then
-
-		self:SetModel( "models/anim_wp/arm_panel/arm_panel.mdl" )
-		self:PhysicsInit( SOLID_VPHYSICS )
-		self:SetMoveType( MOVETYPE_VPHYSICS )
-		self:SetSolid( SOLID_VPHYSICS )
-		self:SetSkin( 2 )
-		self:GetPhysicsObject():EnableMotion( false )
-		self:GetPhysicsObject():EnableCollisions( false )
+		self:EmitSound( "world/interior_robot_arm/interior_arm_platform_open_01.wav" )
+		timer.Create( "GASL_Timer_ArmPanel"..self:EntIndex(), 1.0, 1, function() end )
 		
-		local ent = ents.Create( "prop_physics" )
-		ent:SetModel( "models/hunter/plates/plate1x1.mdl" )
-		ent:SetPos( self:LocalToWorld( Vector( -30, 0, 50 ) )  )
-		ent:SetAngles( self:LocalToWorldAngles( Angle( 0, 0, 0 ) ) )
-		ent:SetMoveType( MOVETYPE_NONE )
-		ent:Spawn()
-		ent:SetRenderMode( RENDERMODE_TRANSALPHA )
-		ent:SetColor( Color( 0, 0, 0, 0 ) )
-		ent:GetPhysicsObject():SetMass( 10000000 )
-		ent:GetPhysicsObject():EnableGravity( false )
-		self:SetBasePanel( ent )
-		if ( !IsValid( ent ) ) then self:Remove() end
-		
-		self:SetArmPos( ent:GetPos() )
-		self:SetArmAng( ent:GetAngles() )
-		self.GASL_SlowArmPos = self:GetArmPos()
-		self.GASL_SlowArmAng = self:GetArmAng()
-		
-		if ( !WireAddon ) then return end
-		self.Inputs = Wire_CreateInputs( self, { "Enable", "Arm Position", "Arm Angle" } )
-		
-		self:ManipulateBoneAngles( 0, Angle( 0, 0, 0 ) )
-		
-		self:SetSubMaterial( 1, "hunter/myplastic" )
-	end
-
-	if ( CLIENT ) then
 	end
 	
 end
 
 if ( CLIENT ) then
 
-	function ENT:Think()
+	function ENT:Initialize()
+	
+		self.BaseClass.Initialize( self )
+		
+	end
+
+		function ENT:Think()
 
 		local panel = self:GetBasePanel()
 
@@ -133,8 +100,6 @@ if ( CLIENT ) then
 
 		local panelAngles = Angle( 0, -lang2.p - pitch4 - localPanelAng.p, 0 )
 
-		-- self:ManipulateBoneAngles( 9, Angle( 0, CurTime() * 100, 0 ) )
-		-- self:ManipulateBoneAngles( 3, Angle( 0, 0, 0 ) )
 		self:ManipulateBoneAngles( 0, Angle( 0, -b, -90 ) ) -- dof first
 		self:ManipulateBoneAngles( 2, Angle( 0, lang1.p + pitch1, 0 ) ) -- dof first
 		self:ManipulateBoneAngles( 4, Angle( 0, -50, 0 ) ) -- dof second
@@ -150,27 +115,69 @@ if ( CLIENT ) then
 		
 	end
 	
+	-- no more client side
+	return
 end
 
--- no more client side
-if ( CLIENT ) then return end
+function ENT:Initialize()
+
+	self.BaseClass.Initialize( self )
+
+	self:SetModel( "models/anim_wp/arm_panel/arm_panel.mdl" )
+	self:PhysicsInit( SOLID_VPHYSICS )
+	self:SetMoveType( MOVETYPE_VPHYSICS )
+	self:SetSolid( SOLID_VPHYSICS )
+	self:SetSkin( 2 )
+	self:GetPhysicsObject():EnableMotion( false )
+	self:GetPhysicsObject():EnableCollisions( false )
+	
+	local ent = ents.Create( "prop_physics" )
+	ent:SetModel( "models/hunter/plates/plate1x1.mdl" )
+	ent:SetPos( self:LocalToWorld( Vector( -30, 0, 50 ) )  )
+	ent:SetAngles( self:LocalToWorldAngles( Angle( 0, 0, 0 ) ) )
+	ent:SetMoveType( MOVETYPE_NONE )
+	ent:Spawn()
+	ent:SetRenderMode( RENDERMODE_TRANSALPHA )
+	ent:SetColor( Color( 0, 0, 0, 0 ) )
+	ent:GetPhysicsObject():SetMass( 10000000 )
+	ent:GetPhysicsObject():EnableGravity( false )
+	self:SetBasePanel( ent )
+	if ( !IsValid( ent ) ) then self:Remove() end
+	
+	self:SetArmPos( Vector( -30, 0, 45 ) )
+	self:SetArmAng( Angle( 0, 0, 0 ) )
+	self.GASL_ArmPos = self:GetArmPos()
+	self.GASL_ArmAng = self:GetArmAng()
+	self.GASL_SlowArmPos = self:GetArmPos()
+	self.GASL_SlowArmAng = self:GetArmAng()
+	self:ManipulateBoneAngles( 0, Angle( 0, 0, 0 ) )
+	self:SetSubMaterial( 1, "hunter/myplastic" )
+
+	self:AddInput( "Enable", function( value ) self:ToggleEnable( value ) end )
+
+	if ( !WireAddon ) then return end
+	self.Inputs = Wire_CreateInputs( self, { "Enable", "Arm Position", "Arm Angle" } )
+		
+end
 
 function ENT:Think()
 	
-	self:NextThink( CurTime() + 0.05 )
+	self:NextThink( CurTime() + 0.1 )
 	
 	local PanelMaxSpeed = 5 -- default 1
 	local panel = self:GetBasePanel()
+	local armPos = self:LocalToWorld( self.GASL_ArmPos )
+	local armAng = self:LocalToWorldAngles( self.GASL_ArmAng )
 	
 	if ( !IsValid( panel ) ) then
 		self:Remove()
 		return
 	end
 	
-	local length = math.min( PanelMaxSpeed, ( self:GetArmPos() - self.GASL_SlowArmPos ):Length() / 4 )
-	self.GASL_SlowArmPos = panel:GetPos() + ( self:GetArmPos() - panel:GetPos() ):GetNormalized() * length
+	local length = math.min( PanelMaxSpeed, ( armPos - self.GASL_SlowArmPos ):Length() / 4 )
+	self.GASL_SlowArmPos = panel:GetPos() + ( armPos - panel:GetPos() ):GetNormalized() * length
 
-	local divAng = panel:WorldToLocalAngles( self:GetArmAng() )
+	local divAng = panel:WorldToLocalAngles( armAng )
 	self.GASL_SlowArmAng = panel:LocalToWorldAngles( Angle( divAng.p / 40, divAng.y / 40, divAng.r / 40 ) )
 	
 	local dir = self.GASL_SlowArmPos
@@ -188,54 +195,28 @@ function ENT:TriggerInput( iname, value )
 	if ( !WireAddon ) then return end
 	
 	if ( iname == "Enable" ) then self:ToggleEnable( tobool( value ) ) end
-	if ( iname == "Arm Position" ) then self:SetArmPos( value ) end
-	if ( iname == "Arm Angle" ) then self:SetArmPos( value ) end
+	if ( iname == "Arm Position" ) then self:SetArmPos( value, self:GetArmAng() ) end
+	if ( iname == "Arm Angle" ) then self:MovePanel( self:GetArmPos(), value ) end
 
 end
-
 
 function ENT:ToggleEnable( bDown )
 
 	if ( self:GetStartEnabled() ) then bDown = !bDown end
 
-	if ( self:GetToggle() ) then
-	
-		if ( !bDown ) then return end
-		
-		self:SetEnable( !self:GetEnable() )
-	else
-		self:SetEnable( bDown )
-	end
+	self:SetEnable( bDown )
 	
 	if ( self:GetEnable() ) then
 		self:EmitSound( "world/interior_robot_arm/interior_arm_platform_open_01.wav" )
-		self:SetArmPos( self:LocalToWorld( Vector( -30, 0, 150 ) ) )
-		self:SetArmAng( self:LocalToWorldAngles( Angle( 0, 0, 0 ) ) )
+		self.GASL_ArmPos = self:GetArmPos()
+		self.GASL_ArmAng = self:GetArmAng()
 	else
 		self:EmitSound( "world/interior_robot_arm/interior_arm_platform_close_01.wav" )
-		self:SetArmPos( self:LocalToWorld( Vector( -30, 0, 45 ) ) )
-		self:SetArmAng( self:LocalToWorldAngles( Angle( 0, 0, 0 ) ) )
+		self.GASL_ArmPos = Vector( -30, 0, 45 )
+		self.GASL_ArmAng = Angle( 0, 0, 0 )
 	end
 	
 end
-
-numpad.Register( "aperture_science_arm_panel_enable", function( pl, ent, keydown )
-
-	if ( !IsValid( ent ) ) then return false end
-
-	if ( keydown ) then ent:ToggleEnable( true ) end
-	return true
-
-end )
-
-numpad.Register( "aperture_science_arm_panel_disable", function( pl, ent, keydown )
-
-	if ( !IsValid( ent ) ) then return false end
-
-	if ( keydown ) then ent:ToggleEnable( false ) end
-	return true
-
-end )
 
 function ENT:OnRemove()
 

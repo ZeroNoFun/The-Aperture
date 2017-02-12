@@ -3,8 +3,6 @@ TOOL.Name = "#tool.aperture_science_laser_field.name"
 
 TOOL.ClientConVar[ "model" ] = "models/props/fizzler.mdl"
 TOOL.ClientConVar[ "maxrad" ] = "20"
-TOOL.ClientConVar[ "keyenable" ] = "45"
-TOOL.ClientConVar[ "toggle" ] = "0"
 TOOL.ClientConVar[ "startenabled" ] = "0"
 
 if ( CLIENT ) then
@@ -13,9 +11,7 @@ if ( CLIENT ) then
 	language.Add( "tool.aperture_science_laser_field.name", "Laser Field" )
 	language.Add( "tool.aperture_science_laser_field.desc", "Creates Laser Field" )
 	language.Add( "tool.aperture_science_laser_field.0", "Left click to use" )
-	language.Add( "tool.aperture_science_laser_field.enable", "Enable" )
 	language.Add( "tool.aperture_science_laser_field.startenabled", "Start Enabled" )
-	language.Add( "tool.aperture_science_laser_field.toggle", "Toggle" )
 	language.Add( "tool.aperture_science_laser_field.maxrad", "Maximum Length" )
 	
 end
@@ -24,22 +20,22 @@ function TOOL:LeftClick( trace )
 
 	-- Ignore if place target is Alive
 	if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then return false end
-	
+
 	if ( CLIENT ) then return true end
+	
+	if ( !APERTURESCIENCE.ALLOWING.laser_field && !self:GetOwner():IsSuperAdmin() ) then MsgC( Color( 255, 0, 0 ), "This tool is disabled" ) return end
 	
 	local ply = self:GetOwner()
 	local model = self:GetClientInfo( "model" )
 	local maxrad = self:GetClientNumber( "maxrad" )
-	local toggle = self:GetClientNumber( "toggle" )
-	local keyenable = self:GetClientNumber( "keyenable" )
 	local startenabled = self:GetClientNumber( "startenabled" )
 	local angle = trace.HitNormal:Angle()
 
-	local firstLaserField = MakeLaserField( ply, model, angle, -90, trace.HitPos, startenabled, toggle, keyenable )
+	local firstLaserField = MakeLaserField( ply, model, angle, -90, trace.HitPos, startenabled )
 
 	trace = util.QuickTrace( firstLaserField:GetPos(), -firstLaserField:GetRight() * maxrad, firstLaserField )
 
-	local secondLaserField = MakeLaserField( ply, model, angle, 90, trace.HitPos, startenabled, toggle, keyenable )
+	local secondLaserField = MakeLaserField( ply, model, angle, 90, trace.HitPos, startenabled )
 
 	PrintTable( APERTURESCIENCE:FizzlerModelToInfo( model ) )
 	local Angles = APERTURESCIENCE:FizzlerModelToInfo( model ).angle
@@ -63,7 +59,7 @@ end
 
 if ( SERVER ) then
 
-	function MakeLaserField( pl, model, ang, addAng, pos, startenabled, toggle, key_enable )
+	function MakeLaserField( pl, model, ang, addAng, pos, startenabled )
 		
 		local laserField = ents.Create( "ent_laser_field" )
 		laserField:SetPos( pos )
@@ -74,12 +70,8 @@ if ( SERVER ) then
 		laserField:Spawn()
 		laserField:SetSkin( 2 )
 
-		laserField.NumEnableDown = numpad.OnDown( pl, key_enable, "aperture_science_fizzler_enable", laserField, 1 )
-		laserField.NumEnableUp = numpad.OnUp( pl, key_enable, "aperture_science_fizzler_disable", laserField, 1 )
-		
 		laserField:SetStartEnabled( tobool( startenabled ) )
 		laserField:ToggleEnable( false )
-		laserField:SetToggle( tobool( toggle ) )
 		
 		return laserField
 		
@@ -148,10 +140,7 @@ function TOOL.BuildCPanel( CPanel )
 	CPanel:NumSlider( "#tool.aperture_science_laser_field.maxrad", "aperture_science_laser_field_maxrad", 80, 1000 )
 	CPanel:AddControl( "PropSelect", { ConVar = "aperture_science_laser_field_model", Models = list.Get( "LaserFieldModels" ), Height = 1 } )
 	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_laser_field.startenabled", Command = "aperture_science_laser_field_startenabled" } )
-	CPanel:AddControl( "Numpad", { Label = "#tool.aperture_science_laser_field.enable", Command = "aperture_science_laser_field_keyenable" } )
-	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_laser_field.toggle", Command = "aperture_science_laser_field_toggle" } )
 
 end
 
 list.Set( "LaserFieldModels", "models/props/fizzler_dynamic.mdl", {} )
-list.Set( "LaserFieldModels", "models/props_underground/underground_fizzler_wall.mdl", {} )

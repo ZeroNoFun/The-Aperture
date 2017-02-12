@@ -4,18 +4,35 @@ ENT.Base 			= "gasl_base_ent"
 
 ENT.Editable		= true
 ENT.PrintName		= "Aerial Faith Plate"
+ENT.Category		= "Aperture Science"
+ENT.Spawnable		= true
+ENT.RenderGroup 	= RENDERGROUP_BOTH
 ENT.AutomaticFrameAdvance = true
 
+function ENT:SpawnFunction( ply, trace, ClassName )
+
+	if ( !trace.Hit ) then return end
+	
+	local ent = ents.Create( ClassName )
+	ent:SetPos( trace.HitPos + trace.HitNormal * 10 )
+	ent:SetModel( "models/props/faith_plate.mdl" )
+	ent:SetAngles( trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
+	ent:Spawn()
+	ent:SetSkin( 1 )
+	ent:Activate()
+
+	return ent
+
+end
 
 function ENT:SetupDataTables()
 
 	self:NetworkVar( "Vector", 0, "LandPoint" )
 	self:NetworkVar( "Float", 1, "LaunchHeight" )
 	self:NetworkVar( "Bool", 2, "Enable" )
-	self:NetworkVar( "Bool", 3, "Toggle" )
-	self:NetworkVar( "Bool", 4, "StartEnabled" )
-	self:NetworkVar( "Float", 5, "TimeOfFlight" )
-	self:NetworkVar( "Vector", 6, "LaunchVector" )
+	self:NetworkVar( "Bool", 3, "StartEnabled" )
+	self:NetworkVar( "Float", 4, "TimeOfFlight" )
+	self:NetworkVar( "Vector", 5, "LaunchVector" )
 
 end
 
@@ -33,7 +50,7 @@ function ENT:Initialize()
 	if ( CLIENT ) then return end
 
 	self:PhysicsInit( SOLID_VPHYSICS )
-	self:SetMoveType( MOVETYPE_VPHYSICS )
+	self:SetMoveType( MOVETYPE_NONE )
 	self:SetSolid( SOLID_VPHYSICS )
 
 	self:AddInput( "Enable", function( value ) self:ToggleEnable( value ) end )
@@ -69,20 +86,6 @@ function ENT:Think()
 		mask = MASK_SHOT_HULL
 	} )
 	
-	-- Handling catapult location change
-	if ( self.GASL_CatapultUpdate != self:GetPos() ) then
-		self.GASL_CatapultUpdate = self:GetPos()
-		
-		-- local startpos = self:GetPos()
-		-- local endpos = self:GetLandPoint()
-		-- local middlepos = ( startpos + endpos ) / 2 + Vector( 0, 0, self:GetLaunchHeight() * 2 )
-		-- local dist = startpos:Distance( endpos )
-		-- self.GASL_TrajectoryCurve = APERTURESCIENCE:CalcBezierCurvePoint( startpos, middlepos, endpos, 20 )
-
-		
-	
-	end
-	
 	-- launch init
 	if ( trace.Entity:IsValid() && self.GASL_Cooldown == 0 && self:GetEnable()
 		&& ( trace.Entity:IsNPC() 
@@ -96,8 +99,7 @@ function ENT:Think()
 		EmitSound( "door/heavy_metal_stop1.wav", self:LocalToWorld( Vector( 0, 0, 100 ) ), self:EntIndex(), CHAN_AUTO, 1, 75, 0, 100 )
 		
 		self:LaunchEntity( ent )
-		
-		self.GASL_Cooldown = 2
+		self.GASL_Cooldown = 10
 
 	end
 	
@@ -120,19 +122,20 @@ function ENT:CalculateTrajectoryForceAng( )
     local locZ = destination.z - pos.z
 	local Gravity = -physenv.GetGravity().z
 	
-	local force = self:GetLaunchHeight() --start force
+	local force = math.pow( self:GetLaunchHeight() * 100 + 55000, 1 / 1.7 ) --start force
 	local dist = 0
 	local angle = 0
 	local time = 0
 	local velX = 0
 	local velY = 0
 	local maxY = 0
+	local brk = 0
 	
 	local isReversed = false
 	
-	local brkr = 0
 	while math.abs( dist - locXY ) > 1 do
-	
+		brk = brk + 1
+		if ( brk > 1000000 ) then MsgC( Color( 255, 0, 0 ), "Can't calculate trajectory" ) break end
 		angle = angle + ( locXY - dist ) / 5000
 		
 		velX = math.cos( ( 90 - angle ) * math.pi / 180 ) * force
@@ -145,19 +148,20 @@ function ENT:CalculateTrajectoryForceAng( )
 		
 		-- if doesn't found add force
 		if ( angle > 360 || dist ~= dist ) then
-			//print( force )
 			angle = angle - 360
-			force = force + 100
+			if ( dist ~= dist ) then force = force + 1 else force = force + 10 end
+			
 			dist = 0
 		end		
 		
 	end
 	
-	if ( time == 0 ) then
-		
+	if ( time == nil ) then
 		isReversed = true
 		
 		while math.abs( dist - locXY ) > 1 do
+			brk = brk + 1
+			if ( brk > 1000000 ) then MsgC( Color( 255, 0, 0 ), "Can't calculate trajectory" ) break end
 		
 			angle = angle + ( locXY - dist ) / 5000
 			
@@ -171,7 +175,6 @@ function ENT:CalculateTrajectoryForceAng( )
 			
 			-- if doesn't found add force
 			if ( angle > 360 || dist ~= dist ) then
-				//print( force )
 				angle = angle - 360
 				force = force + 100
 				dist = 0
@@ -205,6 +208,13 @@ function ENT:CalculateTrajectoryForceAng( )
 	
 end
 
+function ENT:SetLandingPoint( point )
+
+	self:SetLandPoint( point )
+	self:CalculateTrajectoryForceAng()
+	
+end
+
 function ENT:LaunchEntity( entity )
 
 	local angle = self.GASL_LaunchAngle
@@ -215,16 +225,20 @@ function ENT:LaunchEntity( entity )
 	
 	velocity = velocity + ( self:GetPos() - entity:GetPos() ) / time
 	
-	if ( entity:IsPlayer() ) then
+	if ( entity:IsPlayer() ) then entity:SetVelocity( velocity - entity:GetVelocity() )
+	elseif ( IsValid( entity:GetPhysicsObject() ) ) then entity:GetPhysicsObject():SetVelocity( velocity )
 		
-		entity:SetVelocity( velocity - entity:GetVelocity() )
-		
-	elseif ( entity:GetPhysicsObject():IsValid() ) then
-	
-		entity:GetPhysicsObject():SetVelocity( velocity )
+		if ( !timer.Exists( "GASL_Catapult_Fall"..entity:EntIndex() ) ) then
+			local entityPhys = entity:GetPhysicsObject()
+			entity.GASL_ENT_LastMass = entityPhys:GetMass()
+			entityPhys:SetMass( 5000 )
+			
+			timer.Create( "GASL_Catapult_Fall"..entity:EntIndex(), self:GetTimeOfFlight() - 0.5, 1, function()
+				if ( IsValid( entity ) && entity.GASL_ENT_LastMass ) then entityPhys:SetMass( entity.GASL_ENT_LastMass ) end
+			end )
+		end
 		
 	end
-	
 end
 
 function ENT:TriggerInput( iname, value )
@@ -237,41 +251,8 @@ end
 function ENT:ToggleEnable( bDown )
 
 	if ( self:GetStartEnabled() ) then bDown = !bDown end
-
-	if ( self:GetToggle() ) then
-	
-		if ( !bDown ) then return end
-		
-		self:SetEnable( !self:GetEnable() )
-	else
-		self:SetEnable( bDown )
-	end
+	self:SetEnable( bDown )
 	
 	if ( self:GetEnable() ) then self:SetSkin( 0 ) else self:SetSkin( 1 ) end
 	
 end
-
-function ENT:SetLandingPoint( point )
-
-	self:SetLandPoint( point )
-	self:CalculateTrajectoryForceAng()
-	
-end
-
-numpad.Register( "aperture_science_catapult_enable", function( pl, ent, keydown )
-
-	if ( !IsValid( ent ) ) then return false end
-
-	if ( keydown ) then ent:ToggleEnable( true ) end
-	return true
-
-end )
-
-numpad.Register( "aperture_science_catapult_disable", function( pl, ent, keydown )
-
-	if ( !IsValid( ent ) ) then return false end
-
-	if ( keydown ) then ent:ToggleEnable( false ) end
-	return true
-
-end )

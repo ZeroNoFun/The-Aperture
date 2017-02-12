@@ -1,9 +1,6 @@
 TOOL.Category = "Aperture Science"
 TOOL.Name = "#tool.aperture_science_tractor_beam.name"
 
-TOOL.ClientConVar[ "keyenable" ] = "45"
-TOOL.ClientConVar[ "keyreverse" ] = "42"
-TOOL.ClientConVar[ "toggle" ] = "0"
 TOOL.ClientConVar[ "startenabled" ] = "0"
 TOOL.ClientConVar[ "startreversed" ] = "0"
 
@@ -27,11 +24,10 @@ function TOOL:LeftClick( trace )
 	if ( trace.Entity && trace.Entity:IsPlayer() ) then return false end
 	
 	if ( CLIENT ) then return true end
+	
+	if ( !APERTURESCIENCE.ALLOWING.tractor_beam && !self:GetOwner():IsSuperAdmin() ) then MsgC( Color( 255, 0, 0 ), "This tool is disabled" ) return end
 
 	local ply = self:GetOwner()
-	local key_enable = self:GetClientNumber( "keyenable" )
-	local key_reverse = self:GetClientNumber( "keyreverse" )
-	local toggle = self:GetClientNumber( "toggle" )
 	local startenabled = self:GetClientNumber( "startenabled" )
 	local startreverse = self:GetClientNumber( "startreversed" )
 	
@@ -43,7 +39,7 @@ end
 
 if ( SERVER ) then
 
-	function MakeTractorBeam( pl, ang, pos, startenabled, startreverse, toggle, key_enable, key_reverse )
+	function MakeTractorBeam( pl, ang, pos, startenabled, startreverse )
 		
 		local tractor_beam = ents.Create( "ent_tractor_beam" )
 		tractor_beam:SetPos( pos )
@@ -51,16 +47,10 @@ if ( SERVER ) then
 		tractor_beam:SetMoveType( MOVETYPE_NONE )
 		tractor_beam:Spawn()
 
-		tractor_beam.NumEnableDown = numpad.OnDown( pl, key_enable, "aperture_science_tractor_beam_enable", tractor_beam, 1 )
-		tractor_beam.NumEnableUp = numpad.OnUp( pl, key_enable, "aperture_science_tractor_beam_disable", tractor_beam, 1 )
-		tractor_beam.NumReverseDown = numpad.OnDown( pl, key_reverse, "aperture_science_tractor_beam_reverse_back", tractor_beam, 1 )
-		tractor_beam.NumReverseUp = numpad.OnUp( pl, key_reverse, "aperture_science_tractor_beam_reverse_forward", tractor_beam, 1 )
-		
 		tractor_beam:SetStartEnabled( tobool( startenabled ) )
 		tractor_beam:ToggleEnable( false )
 		tractor_beam:SetStartReversed( tobool( startreverse ) )
 		tractor_beam:ToggleReverse( false )
-		tractor_beam:SetToggle( tobool( toggle ) )
 		
 		undo.Create( "Excursion Funnel" )
 			undo.AddEntity( tractor_beam )
@@ -84,8 +74,5 @@ function TOOL.BuildCPanel( CPanel )
 	CPanel:AddControl( "Header", { Description = "#tool.aperture_science_tractor_beam.desc" } )
 	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_tractor_beam.startenabled", Command = "aperture_science_tractor_beam_startenabled" } )
 	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_tractor_beam.startreversed", Command = "aperture_science_tractor_beam_startreversed" } )
-
-	CPanel:AddControl( "Numpad", { Label = "#tool.aperture_science_tractor_beam.enable", Command = "aperture_science_tractor_beam_keyenable", Label2 = "#tool.aperture_science_tractor_beam.reverse", Command2 = "aperture_science_tractor_beam_keyreverse" } )
-	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_tractor_beam.toggle", Command = "aperture_science_tractor_beam_toggle" } )
 
 end

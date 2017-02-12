@@ -9,7 +9,7 @@ AddCSLuaFile( )
 APERTURESCIENCE = { }
 
 -- Main 
-APERTURESCIENCE.DRAW_HALOS = true
+APERTURESCIENCE.DRAW_HALOS = false
 
 -- Funnel
 APERTURESCIENCE.FUNNEL_MOVE_SPEED = 173
@@ -33,13 +33,30 @@ APERTURESCIENCE.DISSOLVE_ENTITIES = { }
 
 -- Achievement
 APERTURESCIENCE.ACHIEVEMENTS = {
-	[1] = { img = "sprites/sent_ball", text = "Make An Opera" },
+	[1] = { img = "sprites/sent_ball", text = "Thay are Singing" },
 	[2] = { img = "sprites/sent_ball", text = "Fried Potato" },
-	[3] = { img = "sprites/sent_ball", text = "Turrets Can Fly" },
+	[3] = { img = "sprites/sent_ball", text = "It's a bird\nIt's a plane\nNo! it's a turret" },
 }
 APERTURESCIENCE.HUD_ACHIEVEMENTS = { }
 
-include( "aperture/sounds/gel_sounds.lua" )
+-- Allowing
+APERTURESCIENCE.ALLOWING = {
+	arm_panel = true
+	, button = true
+	, catapult = true
+	, fizzler = true
+	, item_dopper = true
+	, laser_catcher = true
+	, laser = true
+	, laser_field = true
+	, linker = true
+	, paint = true
+	, tractor_beam = true
+	, wall_projector = true
+	, turret = true
+}
+
+include( "aperture/sounds/paint_sounds.lua" )
 include( "aperture/sounds/tractor_beam_sounds.lua" )
 include( "aperture/sounds/catapult_sounds.lua" )
 include( "aperture/sounds/wall_projector_sounds.lua" )
@@ -51,6 +68,43 @@ include( "aperture/sounds/portal_button_sounds.lua" )
 include( "aperture/sounds/portal_turret_sounds.lua" )
 include( "aperture/sounds/portal_turret_different_sounds.lua" )
 include( "aperture/sounds/portal_turret_defective_sounds.lua" )
+
+-- Console commands
+APERTURESCIENCE.Convars = {}
+APERTURESCIENCE.Convars[ "aperture_science_allow_arm_panel" ] = CreateConVar( "aperture_science_allow_arm_panel", "1", FCVAR_NONE, "Allowing Arm Panel" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_button" ] = CreateConVar( "aperture_science_allow_button", "1", FCVAR_NONE, "Allowing Arm Panel" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_catapult" ] = CreateConVar( "aperture_science_allow_catapult", "1", FCVAR_NONE, "Allowing Arm Panel" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_fizzler" ] = CreateConVar( "aperture_science_allow_fizzler", "1", FCVAR_NONE, "Allowing Arm Panel" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_item_dropper" ] = CreateConVar( "aperture_science_allow_item_dropper", "1", FCVAR_NONE, "Allowing Arm Panel" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_laser_catcher" ] = CreateConVar( "aperture_science_allow_laser_catcher", "1", FCVAR_NONE, "Allowing Arm Panel" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_laser" ] = CreateConVar( "aperture_science_allow_laser", "1", FCVAR_NONE, "Allowing Arm Panel" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_laser_field" ] = CreateConVar( "aperture_science_allow_laser_field", "1", FCVAR_NONE, "Allowing Arm Panel" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_linker" ] = CreateConVar( "aperture_science_allow_linker", "1", FCVAR_NONE, "Allowing Arm Panel" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_paint" ] = CreateConVar( "aperture_science_allow_paint", "1", FCVAR_NONE, "Allowing Arm Panel" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_tractor_beam" ] = CreateConVar( "aperture_science_allow_tractor_beam", "1", FCVAR_NONE, "Allowing Arm Panel" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_wall_projector" ] = CreateConVar( "aperture_science_allow_wall_projector", "1", FCVAR_NONE, "Allowing Arm Panel" )
+APERTURESCIENCE.Convars[ "aperture_science_allow_turret" ] = CreateConVar( "aperture_science_allow_turret", "1", FCVAR_NONE, "Allowing Arm Panel" )
+
+function APERTURESCIENCE:IsValid() return true end
+
+function APERTURESCIENCE:UpdateParameters()
+
+	APERTURESCIENCE.ALLOWING.arm_panel = tobool( self.Convars[ "aperture_science_allow_arm_panel" ]:GetInt() )
+	APERTURESCIENCE.ALLOWING.button = tobool( self.Convars[ "aperture_science_allow_button" ]:GetInt() )
+	APERTURESCIENCE.ALLOWING.catapult = tobool( self.Convars[ "aperture_science_allow_catapult" ]:GetInt() )
+	APERTURESCIENCE.ALLOWING.fizzler = tobool( self.Convars[ "aperture_science_allow_fizzler" ]:GetInt() )
+	APERTURESCIENCE.ALLOWING.item_dopper = tobool( self.Convars[ "aperture_science_allow_item_dropper" ]:GetInt() )
+	APERTURESCIENCE.ALLOWING.laser_catcher = tobool( self.Convars[ "aperture_science_allow_laser_catcher" ]:GetInt() )
+	APERTURESCIENCE.ALLOWING.laser = tobool( self.Convars[ "aperture_science_allow_laser" ]:GetInt() )
+	APERTURESCIENCE.ALLOWING.laser_field = tobool( self.Convars[ "aperture_science_allow_laser_field" ]:GetInt() )
+	APERTURESCIENCE.ALLOWING.linker = tobool( self.Convars[ "aperture_science_allow_linker" ]:GetInt() )
+	APERTURESCIENCE.ALLOWING.paint = tobool( self.Convars[ "aperture_science_allow_paint" ]:GetInt() )
+	APERTURESCIENCE.ALLOWING.tractor_beam = tobool( self.Convars[ "aperture_science_allow_tractor_beam" ]:GetInt() )
+	APERTURESCIENCE.ALLOWING.wall_projector = tobool( self.Convars[ "aperture_science_allow_wall_projector" ]:GetInt() )
+	APERTURESCIENCE.ALLOWING.turret = tobool( self.Convars[ "aperture_science_allow_turret" ]:GetInt() )
+	
+end
+hook.Add( "Think", APERTURESCIENCE, APERTURESCIENCE.UpdateParameters )
 
 function APERTURESCIENCE:PlaySequence( self, seq, rate )
 
@@ -68,7 +122,7 @@ end
 
 function APERTURESCIENCE:ConnectableStuff( ent )
 
-	if ( IsValid( ent ) &&
+	return ( IsValid( ent ) &&
 		( ent:GetClass() == "ent_paint_dropper"
 		|| ent:GetClass() == "ent_tractor_beam"
 		|| ent:GetClass() == "ent_wall_projector"
@@ -78,35 +132,41 @@ function APERTURESCIENCE:ConnectableStuff( ent )
 		|| ent:GetClass() == "ent_laser_catcher"
 		|| ent:GetClass() == "ent_laser_relay"
 		|| ent:GetClass() == "ent_item_dropper"
+		|| ent:GetClass() == "ent_arm_panel"
 		|| ent:GetClass() == "ent_portal_button"
 		|| ent:GetClass() == "sent_portalbutton_box"
 		|| ent:GetClass() == "sent_portalbutton_ball"
 		|| ent:GetClass() == "sent_portalbutton_normal"
-		|| ent:GetClass() == "sent_portalbutton_old" ) ) then return true end
+		|| ent:GetClass() == "sent_portalbutton_old" ) )
 		
-	return false
+end
+
+function APERTURESCIENCE:GASLStuff( ent )
+
+	return ( IsValid( ent ) && (
+		ent:GetClass() == "env_paint_paint" 
+		|| ent:GetClass() == "ent_paint_puddle"
+		|| ent:GetClass() == "ent_paint_dropper"
+		|| ent:GetClass() == "ent_tractor_beam"
+		|| ent:GetClass() == "ent_wall_projector"
+		|| ent:GetClass() == "ent_laser_field"
+		|| ent:GetClass() == "ent_fizzler"
+		|| ent:GetClass() == "ent_portal_laser"
+		|| ent:GetClass() == "ent_laser_catcher"
+		|| ent:GetClass() == "ent_laser_relay"
+		|| ent:GetClass() == "ent_item_dropper"
+		|| ent:GetClass() == "ent_portal_button"
+		|| ent:GetClass() == "ent_portal_bomb"
+		|| ent:GetClass() == "ent_catapult" ) )
+	
 end
 
 function APERTURESCIENCE:IsValidEntity( ent )
 
-	if ( IsValid( ent ) && !ent.GASL_Ignore 
+	return ( IsValid( ent ) && !ent.GASL_Ignore 
 		&& ( !IsValid( ent:GetPhysicsObject() ) || IsValid( ent:GetPhysicsObject() ) && ent:GetPhysicsObject():IsMotionEnabled() )
-		&& ent:GetClass() != "env_paint_paint" 
-		&& ent:GetClass() != "ent_paint_puddle"
-		&& ent:GetClass() != "ent_paint_dropper"
-		&& ent:GetClass() != "ent_tractor_beam"
-		&& ent:GetClass() != "ent_wall_projector"
-		&& ent:GetClass() != "ent_laser_field"
-		&& ent:GetClass() != "ent_fizzler"
-		&& ent:GetClass() != "ent_portal_laser"
-		&& ent:GetClass() != "ent_laser_catcher"
-		&& ent:GetClass() != "ent_laser_relay"
-		&& ent:GetClass() != "ent_item_dropper"
-		&& ent:GetClass() != "ent_portal_button"
-		&& ent:GetClass() != "ent_portal_bomb"
-		&& ent:GetClass() != "ent_catapult" ) then  return true end
-	
-	return false
+		&& !APERTURESCIENCE:GASLStuff( ent ) )
+		
 end
 
 function APERTURESCIENCE:DissolveEnt( ent )
@@ -125,13 +185,13 @@ function APERTURESCIENCE:DissolveEnt( ent )
 
 end
 
-function APERTURESCIENCE:GetColorByGelType( gelType )
+function APERTURESCIENCE:GetColorByGelType( paintType )
 
 	local color = Color( 0, 0, 0 )
-	if ( gelType == 1 ) then color = APERTURESCIENCE.GEL_BOUNCE_COLOR end
-	if ( gelType == 2 ) then color = APERTURESCIENCE.GEL_SPEED_COLOR end
-	if ( gelType == 3 ) then color = APERTURESCIENCE.GEL_PORTAL_COLOR end
-	if ( gelType == 4 ) then color = APERTURESCIENCE.GEL_WATER_COLOR end
+	if ( paintType == 1 ) then color = APERTURESCIENCE.GEL_BOUNCE_COLOR end
+	if ( paintType == 2 ) then color = APERTURESCIENCE.GEL_SPEED_COLOR end
+	if ( paintType == 3 ) then color = APERTURESCIENCE.GEL_PORTAL_COLOR end
+	if ( paintType == 4 ) then color = APERTURESCIENCE.GEL_WATER_COLOR end
 	
 	return color
 	
@@ -250,88 +310,29 @@ hook.Add( "PostDrawHUD", "GASL_HUDPaint", function()
 	
 end )
 
-hook.Add( "PreDrawHUD", "GASL_HUDRender", function()
-
-	cam.Start3D()
+function APERTURESCIENCE:CheckForGel( startpos, dir, skipprops )
 	
-		local ply = LocalPlayer()
+	if ( skipprops == nil ) then skipprops = false end
 	
-		if ( ply:GetActiveWeapon():IsValid() && ply:GetActiveWeapon():GetClass() == "gmod_tool" 
-			&& ply:GetTool() && ply:GetTool().Mode && ply:GetTool().Mode == "aperture_science_catapult" ) then
-
-			for i, catapult in pairs( ents.FindByClass( "ent_catapult" ) ) do
-				
-				local tool = ply:GetTool( "aperture_science_catapult" )
-				
-				-- Draw trajectory if player holding air faith plate tool
-				if ( catapult:GetLandPoint() == Vector() || catapult:GetLaunchHeight() == 0 ) then continue end
-				
-				local startpos = Vector( )
-
-				if ( tool.GASL_MakePoint && tool.GASL_Catapult == catapult ) then 
-					startpos = LocalPlayer():GetEyeTrace().HitPos
-				else
-					startpos = catapult:GetPos()
-				end
-				
-				local endpos = catapult:GetLandPoint()
-				local height = catapult:GetLaunchHeight()
-				local middlepos = ( startpos + endpos ) / 2
-				//local points, length = APERTURESCIENCE:CalcBezierCurvePoint( startpos, middlepos + Vector( 0, 0, height * 2 ), endpos, 10 )
-				local prevBeamPos = startpos
-
-				-- -- Drawing Rotation
-				-- render.SetMaterial( Material( "effects/wheel_ring" ) )
-				-- render.DrawQuadEasy( catapult:GetPos(), catapult:GetUp(), 200, 200, Color( 255, 255, 255 ), 0 )
-				
-				-- Drawing land target
-				render.SetMaterial( Material( "signage/mgf_overlay_bullseye" ) )
-				render.DrawQuadEasy( endpos, Vector( 0, 0, 1 ), 80, 80, Color( 255, 255, 255 ), 0 )
-				
-				-- Drawing trajectory
-				render.SetMaterial( Material( "effects/trajectory_path" ) )
-				local amount = math.max( 4, startpos:Distance( endpos ) / 200 )
-				
-				local Iterrations = 20
-				
-				local timeofFlight = catapult:GetTimeOfFlight()
-				local launchVector = catapult:GetLaunchVector()
-
-				local dTime = timeofFlight / ( Iterrations )
-				local dVector = launchVector * dTime
-				
-				local point = catapult:GetPos()
-				local Gravity = math.abs( physenv.GetGravity().z ) * timeofFlight / ( Iterrations - 1 )
-				
-				for i = 1, Iterrations do
-				
-					point = point + dVector
-					dVector = dVector - Vector( 0, 0, Gravity * dTime )
-					
-					render.DrawBeam( prevBeamPos, point, 120, 0, 1, Color( 255, 255, 255 ) )
-					prevBeamPos = point
-					
-				end
-				
-				-- Drawing height point
-				render.SetMaterial( Material( "sprites/sent_ball" ) )
-				render.DrawSprite( middlepos + Vector( 0, 0, height ), 32, 32, Color( 255, 255, 0 ) ) 
-			end
-		end
-		
-	cam.End3D()
-end )
-
-function APERTURESCIENCE:CheckForGel( startpos, dir )
+	local paintedProp = false
 	
 	local trace = util.TraceLine( {
 		start = startpos,
 		endpos = startpos + dir,
-		ignoreworld = true,
-		filter = function( ent ) if ( ent:GetClass() == "env_portal_paint" ) then return true end end
+		filter = function( ent ) if ( ent:GetClass() == "env_portal_paint" || !skipprops && ent.GASL_GelledType ) then return true end end
 	} )
 	
-	return trace
+	local paintType = 0
+	
+	if ( !IsValid( trace.Entity ) ) then return NULL end
+	
+	if ( trace.Entity:GetClass() == "env_portal_paint" ) then
+		paintType = trace.Entity:GetGelType()
+	else
+		paintType = trace.Entity.GASL_GelledType
+	end
+	
+	return trace.Entity, paintType
 	
 end
 
@@ -389,10 +390,13 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 	
 	for i, ply in pairs( player.GetAll() ) do
 		
-		-- Checking if player stands or hit gel
-		local gel = { }
+		-- Checking if player stands or hit paint
+		
+		local paint = NULL
+		local paintType = 0
+		
 		if ( ply:IsOnGround() ) then
-			gel = APERTURESCIENCE:CheckForGel( ply:GetPos(), Vector( 0, 0, -100 ) ).Entity
+			paint, paintType = APERTURESCIENCE:CheckForGel( ply:GetPos(), Vector( 0, 0, -100 ) )
 		else
 			local dir = ply:GetVelocity() / 20
 			
@@ -400,9 +404,9 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 				dir = dir:GetNormalized() * 30
 			end
 			
-			gel = APERTURESCIENCE:CheckForGel( ply:GetPos(), dir ).Entity
+			paint, paintType = APERTURESCIENCE:CheckForGel( ply:GetPos(), dir )
 		end
-
+		
 		-- Exiting Gel
 		if ( ply.GASL_LastStandingGelType && CurTime() > ply.GASL_LastTimeOnGel + 0.25 ) then
 		
@@ -418,8 +422,8 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 		
 		end
 
-		-- Skip if gel doesn't found
-		if ( !gel:IsValid() ) then continue end
+		-- Skip if paint doesn't found
+		if ( !paint:IsValid() ) then continue end
 		
 		-- Footsteps sounds
 		if ( ply:IsOnGround() && !timer.Exists( "GASL_GelFootsteps"..ply:EntIndex() )
@@ -446,17 +450,17 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 		
 			if ( !ply.GASL_LastTimeOnGel || ply.GASL_LastTimeOnGel && CurTime() > ply.GASL_LastTimeOnGel + 0.25 ) then
 			
-				if ( gel:GetGelType() == 1 ) then
+				if ( paintType == 1 ) then
 					ply:EmitSound( "GASL.GelBounceEnter" )
 				end
 				
-				if ( gel:GetGelType() == 2 ) then
+				if ( paintType == 2 ) then
 					ply:EmitSound( "GASL.GelSpeedEnter" )
 				end
 
-				-- doesn't change if player ran on repulsion gel when he was on propulsion gel
-				if ( !( gel:GetGelType() == 1 && ply.GASL_LastStandingGelType == 2 && plyVelocity:Length() > 400 ) ) then
-					ply.GASL_LastStandingGelType = gel:GetGelType()
+				-- doesn't change if player ran on repulsion paint when he was on propulsion paint
+				if ( !( paintType == 1 && ply.GASL_LastStandingGelType == 2 && plyVelocity:Length() > 400 ) ) then
+					ply.GASL_LastStandingGelType = paintType
 				end
 				
 			end
@@ -465,18 +469,18 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 		
 		end
 		
-		-- if player hit repulsion gel
-		if ( gel:GetGelType() == 1 && !ply:KeyDown( IN_DUCK ) ) then
+		-- if player hit repulsion paint
+		if ( paintType == 1 && !ply:KeyDown( IN_DUCK ) ) then
 		
 			local plyVelocity = ply:GetVelocity()
 			
 			-- skip if player stand on the ground
-			-- doesn't skip if player ran on repulsion gel when he was on propulsion gel
+			-- doesn't skip if player ran on repulsion paint when he was on propulsion paint
 			if ( ply:IsOnGround() && !( ply.GASL_LastStandingGelType == 2 && plyVelocity:Length() > 400 ) ) then continue end
 			
-			local WTL = WorldToLocal( gel:GetPos() + plyVelocity, Angle( ), gel:GetPos(), gel:GetAngles() )
+			local WTL = WorldToLocal( paint:GetPos() + plyVelocity, Angle( ), paint:GetPos(), paint:GetAngles() )
 			WTL = Vector( 0, 0, math.max( -WTL.z * 2, 800 ) )
-			local LTW = LocalToWorld( WTL, Angle( ), gel:GetPos(), gel:GetAngles() ) - gel:GetPos()
+			local LTW = LocalToWorld( WTL, Angle( ), paint:GetPos(), paint:GetAngles() ) - paint:GetPos()
 			LTW.z = math.max( 200, LTW.z / 2 )
 			
 			ply:SetVelocity( LTW - Vector( 0, 0, ply:GetVelocity().z ) )
@@ -484,8 +488,8 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 
 		end
 		
-		-- if player hit propulsion gel
-		if ( gel:GetGelType() == 2 ) then
+		-- if player hit propulsion paint
+		if (paintType == 2 ) then
 		
 			local plyVelocity = ply:GetVelocity()
 
@@ -504,14 +508,16 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 		
 	end
 	
-	-- Handling gelled entities
+	-- Handling paintled entities
 	for k, v in pairs( APERTURESCIENCE.GELLED_ENTITIES ) do
 	
 		-- skip and remove if entity is not exist
-		if ( !v:IsValid() ) then
+		if ( !IsValid( v ) ) then
 			APERTURESCIENCE.GELLED_ENTITIES[ k ] = nil
 			continue
 		end
+
+		if ( IsValid( v:GetPhysicsObject() ) && !v:GetPhysicsObject():IsMotionEnabled( ) ) then continue end
 		
 		if ( v.GASL_GelledType == 1 ) then
 			
@@ -593,22 +599,30 @@ hook.Add( "KeyPress", "GASL_HandlePlayerJump", function( ply, key )
 	
 	local trace = { start = ply:GetPos(), endpos = ply:GetPos() - Vector( 0, 0, 100 ), filter = ply }
 	local ent = util.TraceEntity( trace, ply ).Entity
+	local paintType = 0
 	
-	if ( !ent:IsValid() ) then
-		ent = APERTURESCIENCE:CheckForGel( ply:GetPos(), Vector( 0, 0, -100 ) ).Entity
+	if ( IsValid( ent ) ) then
+		if ( ent:GetClass() == "env_portal_paint" ) then
+			paintType = ent:GetGelType()
+		else
+			paintType = 0
+		end
+	else
+		ent, paintType = APERTURESCIENCE:CheckForGel( ply:GetPos(), Vector( 0, 0, -100 ) )
 	end
-	-- Skip if it's not bridge or gel
+	
+	-- Skip if it's not bridge or paint
 	if ( !ent:IsValid() || ent:IsValid() 
 		&& ( ent:GetModel() != "models/wall_projector_bridge/wall.mdl"
-		&& ent:GetClass() != "ent_gel_paint" ) ) then return end
+		&& ent:GetClass() != "env_portal_paint" ) ) then return end
 		
 	if ( ent:GetModel() == "models/wall_projector_bridge/wall.mdl" ) then
 		ent:EmitSound( "GASL.WallProjectorFootsteps" )
-	elseif ( ent:GetClass() == "ent_gel_paint" ) then
+	elseif ( ent:GetClass() == "env_portal_paint" ) then
 	
 		ent:EmitSound( "GASL.GelFootsteps" )
 		
-		if ( ent:GetGelType() == 1 ) then
+		if ( paintType == 1 ) then
 			
 			ply:SetVelocity( Vector( 0, 0, 400 ) )
 			ply:EmitSound( "GASL.GelBounce" )

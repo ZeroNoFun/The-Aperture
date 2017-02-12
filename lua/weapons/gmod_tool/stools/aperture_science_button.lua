@@ -6,7 +6,6 @@ TOOL.ClientConVar[ "timer" ] = "1"
 
 if ( CLIENT ) then
 
-	//language.Add( "aperture_science_button", "Button" )
 	language.Add( "tool.aperture_science_button.name", "Button" )
 	language.Add( "tool.aperture_science_button.desc", "Creates Button" )
 	language.Add( "tool.aperture_science_button.tooldesc", "Activate other stuff" )
@@ -21,6 +20,8 @@ function TOOL:LeftClick( trace )
 	if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then return false end
 	
 	if ( CLIENT ) then return true end
+
+	if ( !APERTURESCIENCE.ALLOWING.button && !self:GetOwner():IsSuperAdmin() ) then MsgC( Color( 255, 0, 0 ), "This tool is disabled" ) return end
 	
 	local ply = self:GetOwner()
 	local model = self:GetClientInfo( "model" )
@@ -51,9 +52,10 @@ if ( SERVER ) then
 		return true
 		
 	end
+
 end
 
-function TOOL:UpdateGhostLaserField( ent, ply )
+function TOOL:UpdateGhostButton( ent, ply )
 
 	if ( !IsValid( ent ) ) then return end
 
@@ -67,14 +69,12 @@ function TOOL:UpdateGhostLaserField( ent, ply )
 	end
 	
 	local CurPos = ent:GetPos()
-	local mdl = self:GetClientInfo( "model" )
-	local timer = self:GetClientInfo( "model" )
+	
 	local ang = trace.HitNormal:Angle() + Angle( 90, 0, 0 )
 	local pos = trace.HitPos
 
 	ent:SetPos( pos )
 	ent:SetAngles( ang )
-
 	ent:SetNoDraw( false )
 
 end
@@ -88,7 +88,7 @@ function TOOL:Think()
 		self:MakeGhostEntity( mdl, Vector( 0, 0, 0 ), Angle( 0, 0, 0 ) )
 	end
 
-	self:UpdateGhostLaserField( self.GhostEntity, self:GetOwner() )
+	self:UpdateGhostButton( self.GhostEntity, self:GetOwner() )
 
 end
 

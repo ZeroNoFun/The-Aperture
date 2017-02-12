@@ -197,33 +197,9 @@ function ENT:ToggleEnable( bDown, reverse, noloop )
 	if ( reverse == nil ) then reverse = self:GetStartEnabled() end
 	if ( reverse ) then bDown = !bDown end
 	
-	if ( self:GetToggle() ) then
-		if ( !bDown ) then return end
-		self:SetEnableE( !self:GetEnable(), noloop )
-		
-	else
-		self:SetEnableE( bDown, noloop )
-	end
+	self:SetEnableE( bDown, noloop )
 	
 end
-
-numpad.Register( "aperture_science_fizzler_enable", function( pl, ent, keydown, idx )
-
-	if ( !IsValid( ent ) ) then return false end
-
-	if ( keydown ) then ent:ToggleEnable( true, ent:GetStartEnabled(), false ) end
-	return true
-
-end )
-
-numpad.Register( "aperture_science_fizzler_disable", function( pl, ent, keydown )
-
-	if ( !IsValid( ent ) ) then return false end
-
-	if ( keydown ) then ent:ToggleEnable( false, ent:GetStartEnabled(), false ) end
-	return true
-
-end )
 
 -- Removing field effect 
 function ENT:OnRemove()

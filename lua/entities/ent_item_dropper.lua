@@ -191,18 +191,6 @@ function ENT:TriggerInput( iname, value )
 	
 end
 
-numpad.Register( "aperture_science_item_dropper_drop", function( pl, ent, keydown )
-
-	if ( !IsValid( ent ) ) then return false end
-
-	if ( keydown ) then
-		ent:Drop( )
-	end
-	
-	return true
-
-end )
-
 function ENT:OnRemove()
 
 	if ( IsValid( self.GASL_ItemDropper_LastSpawnedItem ) ) then self.GASL_ItemDropper_LastSpawnedItem:Remove() end

@@ -31,10 +31,6 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	secondFizzler:Spawn()
 	secondFizzler:SetAngles( secondFizzler:LocalToWorldAngles( Angle( 0, 180, 0 ) ) )
 	
-	local Angles = APERTURESCIENCE:FizzlerModelToInfo( mdl ).angle
-	firstFizzler:SetAngles( firstFizzler:LocalToWorldAngles( Angles ) )
-	secondFizzler:SetAngles( secondFizzler:LocalToWorldAngles( Angles ) )
-
 	firstFizzler:SetNWEntity( "GASL_ConnectedField", secondFizzler )
 	secondFizzler:SetNWEntity( "GASL_ConnectedField", firstFizzler )
 	

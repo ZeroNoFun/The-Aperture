@@ -33,11 +33,10 @@ function TOOL:LeftClick( trace )
 	local lastEnt = self:GetWeapon():GetNWEntity( "GASL_Linker_LastEnt" )
 	local selectedInputName = self:GetWeapon():GetNWEntity( "GASL_Linker_InputName" )
 	local selectedOutputName = self:GetWeapon():GetNWEntity( "GASL_Linker_OutputName" )
-
-	print( table.Count( traceEnt.GASL_LinkInputs ) )
-	print( table.Count( traceEnt.GASL_LinkOutputs ) )
 	
 	if ( !IsValid( lastEnt ) ) then
+		
+		if ( !APERTURESCIENCE.ALLOWING.linker && !self:GetOwner():IsSuperAdmin() ) then MsgC( Color( 255, 0, 0 ), "This tool is disabled" ) return end
 		
 		-- if inputs doesn't exist skip
 		if ( !traceEnt.GASL_LinkInputs || table.Count( traceEnt.GASL_LinkInputs ) == 0 ) then return end
@@ -94,6 +93,8 @@ function TOOL:RightClick( trace )
 	
 	if ( CLIENT ) then return false end
 
+	if ( !APERTURESCIENCE.ALLOWING.linker && !self:GetOwner():IsSuperAdmin() ) then MsgC( Color( 255, 0, 0 ), "This tool is disabled" ) return end
+	
 	local ply = self:GetOwner()
 	local lastEnt = self:GetWeapon():GetNWEntity( "GASL_Linker_LastEnt" )
 	if ( !self.GASL_Link_KeyIndex ) then self.GASL_Link_KeyIndex = 0 end

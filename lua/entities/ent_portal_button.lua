@@ -14,7 +14,8 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 	
 	local ent = ents.Create( ClassName )
 	ent:SetPos( trace.HitPos )
-	ent:SetAngles( trace.HitNormal:Angle() )
+	ent:SetModel( "models/props/switch001.mdl" )
+	ent:SetAngles( trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
 	ent:Spawn()
 	ent:Activate()
 
@@ -61,12 +62,10 @@ function ENT:Initialize()
 	self:SetSolid( SOLID_VPHYSICS )
 	self:GetPhysicsObject():EnableMotion( false )
 	
-	self.GASL_EntInfo = { model = "models/wall_projector_bridge/wall.mdl", length = 200.393692, color = Color( 255, 255, 255 ) }
-
 	self:AddOutput( "Activated", false )
 
 	if ( !WireAddon ) then return end
-	self.Inputs = Wire_CreateInputs( self, { "Enable" } )
+	self.Outputs = WireLib.CreateSpecialOutputs( self, { "Activated" }, { "NORMAL" } )
 	
 	return true
 	
@@ -99,6 +98,7 @@ function ENT:Use( activator, caller, usetype, val )
 				
 			APERTURESCIENCE:PlaySequence( self, info.animdown, 1.0 )
 			self:UpdateOutput( "Activated", true )
+			if ( WireAddon ) then Wire_TriggerOutput( self, "Activated", 1 ) end
 		end
 		
 		timer.Create( "GASL_Button_Timer"..self:EntIndex(), self:GetTimer(), 1, function()
@@ -109,12 +109,19 @@ function ENT:Use( activator, caller, usetype, val )
 				self:EmitSound( info.soundup )
 				APERTURESCIENCE:PlaySequence( self, info.animup, 1.0 )
 				self:UpdateOutput( "Activated", false )
-				
+				if ( WireAddon ) then Wire_TriggerOutput( self, "Activated", 0 ) end
 			end
 			
 		end )
 		
 	end
+	
+end
+
+function ENT:Setup()
+
+	if ( !WireAddon ) then return end
+	Wire_TriggerOutput( self, "Activated", 0 )
 	
 end
 

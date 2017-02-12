@@ -110,8 +110,7 @@ function ENT:Think()
 			APERTURESCIENCE:PlaySequence( self, "spin", 1.0 )
 			
 			self:UpdateOutput( "Actiaved", true )
-			
-			Wire_TriggerOutput( self, "Enabled", 1 )
+			if ( WireAddon ) then Wire_TriggerOutput( self, "Enabled", 1 ) end
 		end
 		
 	elseif ( self:GetEnableUpdate() ) then
@@ -122,8 +121,7 @@ function ENT:Think()
 		APERTURESCIENCE:PlaySequence( self, "idle", 1.0 )
 
 		self:UpdateOutput( "Actiaved", false )
-		
-		Wire_TriggerOutput( self, "Enabled", 0 )
+		if ( WireAddon ) then Wire_TriggerOutput( self, "Enabled", 0 ) end
 	end
 
 	return true
@@ -132,6 +130,7 @@ end
 
 function ENT:Setup()
 
+	if ( !WireAddon ) then return end
 	Wire_TriggerOutput( self, "Enabled", 0 )
 	
 end

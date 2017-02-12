@@ -330,14 +330,14 @@ function ENT:FindClosestEntityThrowPortal( pos, ang, distance, isportal )
 				centerPos = ent:GetPos()
 			end
 
-			local tractorBeamTrace = util.TraceLine( {
+			local trace = util.TraceLine( {
 				start = pos,
 				endpos = centerPos,
 				filter = function( ent ) if ( ent:IsPlayer() || ent:IsNPC() || ent:GetClass() == "prop_portal" || ent:GetModel() == "models/wall_projector_bridge/wall.mdl" ) then return false end end
 			} )
 			
 			-- If tracer hit something skip this tick
-			if ( tractorBeamTrace.Hit ) then continue end
+			if ( trace.Hit ) then continue end
 			
 			if ( ent:GetClass() == "prop_portal"
 				&& IsValid( ent:GetNWBool( "Potal:Other" ) ) ) then
@@ -393,8 +393,9 @@ function ENT:Think()
 	
 	local closestEnt, angleDir, _, dirThrowPortal = self:FindClosestEntityThrowPortal( self:GetPos(), self:GetAngles(), 1000.0 )
 	local eyePos = self:LocalToWorld( Vector( 11, 0, 36.7 ) )
-
-	local trace = util.QuickTrace( eyePos, angleDir:Forward() * 1100, self )
+	local eyeAngDir = self:LocalToWorldAngles( angleDir ):Forward()
+	
+	local trace = util.QuickTrace( eyePos, eyeAngDir * 1100, self )
 	
 	if ( IsValid( closestEnt )
 		&& self:GetActivated() && ( !IsValid( trace.Entity ) || IsValid( trace.Entity ) && trace.Entity:GetModel() != "models/wall_projector_bridge/wall.mdl" ) ) then

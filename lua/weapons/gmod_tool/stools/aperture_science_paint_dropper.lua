@@ -1,8 +1,6 @@
 TOOL.Category = "Aperture Science"
 TOOL.Name = "#tool.aperture_science_paint_dropper.name"
 
-TOOL.ClientConVar[ "keyenable" ] = "42"
-TOOL.ClientConVar[ "toggle" ] = "0"
 TOOL.ClientConVar[ "gel_type" ] = "1"
 TOOL.ClientConVar[ "gel_radius" ] = "50"
 TOOL.ClientConVar[ "gel_randomize_size" ] = "0"
@@ -22,31 +20,28 @@ if ( CLIENT ) then
 	language.Add( "tool.aperture_science_paint_dropper.gelAmount", "Gel Amount" )
 	language.Add( "tool.aperture_science_paint_dropper.gelLaunchSpeed", "Gel Launch Speed" )
 	language.Add( "tool.aperture_science_paint_dropper.startenabled", "Start Enabled" )
-	language.Add( "tool.aperture_science_paint_dropper.enable", "Enable" )
-	language.Add( "tool.aperture_science_paint_dropper.toggle", "Toggle" )
 	
 end
 
 function TOOL:LeftClick( trace )
 
 	-- Ignore if place target is Alive
-	if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then return false end
-	
-	if ( CLIENT ) then return true end
+	if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:GASLStuff( trace.Entity ) ) ) then return false end
 
+	if ( CLIENT ) then return true end
+	
+	if ( !APERTURESCIENCE.ALLOWING.paint && !self:GetOwner():IsSuperAdmin() ) then MsgC( Color( 255, 0, 0 ), "This tool is disabled" ) return end
+	
 	local ply = self:GetOwner()
 	
-	local key_enable = self:GetClientNumber( "keyenable" )
-	local toggle = self:GetClientNumber( "toggle" )
 	local gelType = self:GetClientNumber( "gel_type" )
-	
 	local gelRad = self:GetClientNumber( "gel_radius" )
 	local gelRandomizeSize = self:GetClientNumber( "gel_randomize_size" )
 	local gelAmount = self:GetClientNumber( "gel_amount" )
 	local gelLaunchSpeed = self:GetClientNumber( "gel_launch_speed" )
 	local startenabled = self:GetClientNumber( "startenabled" )
 
-	local paint_dropper = MakePaintDropper( ply, trace.HitPos, trace.HitNormal:Angle() - Angle( 90, 0, 0 ), gelType, gelRad, gelAmount, gelRandomizeSize, gelLaunchSpeed, startenabled, toggle, key_enable )
+	local paint_dropper = MakePaintDropper( ply, trace.HitPos, trace.HitNormal:Angle() - Angle( 90, 0, 0 ), gelType, gelRad, gelAmount, gelRandomizeSize, gelLaunchSpeed, startenabled )
 	
 	return true
 	
@@ -54,16 +49,14 @@ end
 
 if ( SERVER ) then
 
-	function MakePaintDropper( pl, pos, ang, gelType, gelRad, gelAmount, gelRandomizeSize, gelLaunchSpeed, startenabled, toggle, key_enable )
+	function MakePaintDropper( pl, pos, ang, gelType, gelRad, gelAmount, gelRandomizeSize, gelLaunchSpeed, startenabled )
 		
 		local paint_dropper = ents.Create( "ent_paint_dropper" )
 		paint_dropper:SetPos( pos )
 		paint_dropper:SetAngles( ang )
 		paint_dropper:SetMoveType( MOVETYPE_NONE )
 		paint_dropper:Spawn()
-
-		paint_dropper.NumEnableDown = numpad.OnDown( pl, key_enable, "aperture_science_paint_dropper_enable", paint_dropper, 1 )
-		paint_dropper.NumEnableUp = numpad.OnUp( pl, key_enable, "aperture_science_paint_dropper_disable", paint_dropper, 1 )
+		paint_dropper.GASL_ENT_Owner = pl -- why this? because SetOwner disable collisions and make persistent for this
 		
 		paint_dropper:SetGelType( gelType )
 		paint_dropper:SetGelRadius( gelRad )
@@ -73,7 +66,6 @@ if ( SERVER ) then
 		
 		paint_dropper:SetStartEnabled( tobool( startenabled ) )
 		paint_dropper:ToggleEnable( false )
-		paint_dropper:SetToggle( tobool( toggle ) )
 
 		undo.Create( "Gel Dropper" )
 			undo.AddEntity( paint_dropper )
@@ -86,8 +78,52 @@ if ( SERVER ) then
 	
 end
 
+function TOOL:UpdateGhostCatapult( ent, ply )
+
+	if ( !IsValid( ent ) ) then return end
+
+	local trace = ply:GetEyeTrace()
+	if ( !trace.Hit || trace.Entity && ( trace.Entity:IsNPC() || trace.Entity:IsPlayer() || APERTURESCIENCE:GASLStuff( trace.Entity ) ) ) then
+
+		ent:SetNoDraw( true )
+		return
+
+	end
+	
+	local CurPos = ent:GetPos()
+	local ang = trace.HitNormal:Angle()
+	local pos = trace.HitPos
+
+	ent:SetPos( pos + trace.HitNormal * 5 )
+	ent:SetAngles( ang - Angle( 90, 0, 0 ) )
+
+	ent:SetNoDraw( false )
+
+end
+
 function TOOL:RightClick( trace )
 
+end
+
+function TOOL:Think()
+
+	local mdl = "models/props_ingame/paint_dropper.mdl"
+	if ( !util.IsValidModel( mdl ) || IsValid( self.GASL_PointerGrab ) ) then self:ReleaseGhostEntity() else
+
+		if ( !IsValid( self.GhostEntity ) || self.GhostEntity:GetModel() != mdl ) then
+			self:MakeGhostEntity( mdl, Vector( 0, 0, 0 ), Angle( 0, 0, 0 ) )
+		end
+		
+		if ( IsValid( self.GhostEntity ) ) then
+			local gelType = self:GetClientNumber( "gel_type" )
+			if ( gelType == 1 ) then self.GhostEntity:SetSkin( 1 ) end
+			if ( gelType == 2 ) then self.GhostEntity:SetSkin( 2 ) end
+			if ( gelType == 3 ) then self.GhostEntity:SetSkin( 3 ) end
+			if ( gelType == 4 ) then self.GhostEntity:SetSkin( 4 ) end
+		end
+
+		self:UpdateGhostCatapult( self.GhostEntity, self:GetOwner() )
+	end
 end
 
 local ConVarsDefault = TOOL:BuildConVarList()
@@ -108,7 +144,5 @@ function TOOL.BuildCPanel( CPanel )
 	CPanel:NumSlider( "#tool.aperture_science_paint_dropper.gelLaunchSpeed", "aperture_science_paint_dropper_gel_launch_speed", 0, 1000 )
 
 	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_paint_dropper.startenabled", Command = "aperture_science_paint_dropper_startenabled" } )
-	CPanel:AddControl( "Numpad", { Label = "#tool.aperture_science_paint_dropper.enable", Command = "aperture_science_paint_dropper_keyenable" } )
-	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_paint_dropper.toggle", Command = "aperture_science_paint_dropper_toggle" } )
 
 end

@@ -17,8 +17,10 @@ function TOOL:LeftClick( trace )
 
 	-- Ignore if place target is Alive
 	if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then return false end
-	
+
 	if ( CLIENT ) then return true end
+	
+	if ( !APERTURESCIENCE.ALLOWING.laser_catcher && !self:GetOwner():IsSuperAdmin() ) then MsgC( Color( 255, 0, 0 ), "This tool is disabled" ) return end
 	
 	local ply = self:GetOwner()
 	local model = self:GetClientInfo( "model" )

@@ -14,22 +14,25 @@ surface.CreateFont( "GASL_SecFont", {
 	antialias = true,
 } )
 
-local function GASL_BuildPanel( Panel )
+local function GASL_AllowingPanel( Panel )
 
 	Panel:ClearControls()
 	
 	if LocalPlayer():IsSuperAdmin() then
 		
-		Panel:CheckBox( "Allow Arial Faith Plate", "" )
-		Panel:CheckBox( "Allow Arm Panels", "" )
-		Panel:CheckBox( "Allow Fizzler", "" )
-		Panel:CheckBox( "Allow Laser Field", "" )
-		Panel:CheckBox( "Allow Gel Dropper", "" )
-		Panel:CheckBox( "Allow Laser Emiter", "" )
-		Panel:CheckBox( "Allow Hard Light Bridge", "" )
-		Panel:CheckBox( "Allow Excursion Funnel", "" )
-		Panel:CheckBox( "Allow Turrets", "" )
-		Panel:CheckBox( "Allow Laser", "" )
+		Panel:CheckBox( "Allow Arm Panel", "aperture_science_allow_arm_panel" )
+		Panel:CheckBox( "Allow Button", "aperture_science_allow_button" )
+		Panel:CheckBox( "Allow Arial Faith Plate", "aperture_science_allow_catapult" )
+		Panel:CheckBox( "Allow Fizzler", "aperture_science_allow_fizzler" )
+		Panel:CheckBox( "Allow Item Dropper", "aperture_science_allow_item_dropper" )
+		Panel:CheckBox( "Allow Laser Catcher", "aperture_science_allow_laser_catcher" )
+		Panel:CheckBox( "Allow Laser Emiter", "aperture_science_allow_laser" )
+		Panel:CheckBox( "Allow Laser Field", "aperture_science_allow_laser_field" )
+		Panel:CheckBox( "Allow Linker", "aperture_science_allow_linker" )
+		Panel:CheckBox( "Allow Gel Dropper", "aperture_science_allow_paint" )
+		Panel:CheckBox( "Allow Excursion Funnel", "aperture_science_allow_tractor_beam" )
+		Panel:CheckBox( "Allow Hard Light Bridge", "aperture_science_allow_wall_projector" )
+		Panel:CheckBox( "Allow Turrets", "aperture_science_allow_turret" )
 
 	end
 	
@@ -42,7 +45,7 @@ end
 function GASL_SMO()
 
 	if GASL_Panel then
-		GASL_BuildPanel( GASL_Panel )
+		GASL_AllowingPanel( GASL_Panel )
 	end
 	
 end
@@ -51,7 +54,8 @@ hook.Add("SpawnMenuOpen","GASL_SpawnMenuOpen", GASL_SMO )
 
 hook.Add( "PopulateToolMenu", "GASL_PopulateToolMenu", function()
 
-	spawnmenu.AddToolMenuOption( "Utilities", "GMOD Aperture Science Laboratories", "GASLMenu", "Allowing", "", "", GASL_BuildPanel )
+	spawnmenu.AddToolMenuOption( "Utilities", "GMOD Aperture Science Laboratories", "GASLMenu", "Allowing", "", "", GASL_AllowingPanel )
+	spawnmenu.AddToolMenuOption( "Utilities", "GMOD Aperture Science Laboratories", "GASLMenu", "Draw Settings", "", "", GASL_DrawPanel )
 	
 end )
 

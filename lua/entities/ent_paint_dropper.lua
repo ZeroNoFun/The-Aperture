@@ -2,12 +2,28 @@ AddCSLuaFile( )
 
 ENT.Type 			= "anim"
 ENT.Base 			= "gasl_base_ent"
+ENT.PrintName		= "Gel Dropper"
 
 function ENT:SetupDataTables()
 
 	self:NetworkVar( "Bool", 0, "Enable" )
 	self:NetworkVar( "Bool", 1, "Toggle" )
 	self:NetworkVar( "Bool", 2, "StartEnabled" )
+
+end
+
+function ENT:SpawnFunction( ply, trace, ClassName )
+
+	if ( !trace.Hit ) then return end
+	
+	local ent = ents.Create( ClassName )
+	ent:SetPos( trace.HitPos + trace.HitNormal * 10 )
+	ent:SetModel( "models/props_ingame/paint_dropper.mdl" )
+	ent:SetAngles( trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
+	ent:Spawn()
+	ent:Activate()
+
+	return ent
 
 end
 
@@ -80,7 +96,8 @@ function ENT:MakePuddle( )
 	ent:GetPhysicsObject():EnableCollisions( false )
 	ent:GetPhysicsObject():Wake()
 	ent:GetPhysicsObject():SetVelocity( -self:GetUp() * self.GASL_GelLaunchSpeed )
-	
+	if ( IsValid( self.GASL_ENT_Owner ) && self.GASL_ENT_Owner:IsPlayer() ) then ent:SetOwner( self.GASL_ENT_Owner ) end
+
 	ent.GASL_GelType = self.GASL_GelType
 	-- Randomize makes random size between maxsize and minsize by selected procent
 	local randSize = math.Rand( -self.GASL_GelRandomizeSize, self.GASL_GelRandomizeSize ) / 100 * APERTURESCIENCE.GEL_MAXSIZE
@@ -98,11 +115,7 @@ end
 
 function ENT:SetGelType( gelType )
 
-	if ( gelType == 1 ) then self:SetSkin( 1 ) end
-	if ( gelType == 2 ) then self:SetSkin( 2 ) end
-	if ( gelType == 3 ) then self:SetSkin( 3 ) end
-	if ( gelType == 4 ) then self:SetSkin( 4 ) end
-	
+	self:SetSkin( gelType )
 	self.GASL_GelType = gelType
 
 end
@@ -139,32 +152,6 @@ end
 function ENT:ToggleEnable( bDown )
 
 	if ( self:GetStartEnabled() ) then bDown = !bDown end
-
-	if ( self:GetToggle() ) then
-	
-		if ( !bDown ) then return end
-		
-		self:SetEnable( !self:GetEnable() )
-	else
-		self:SetEnable( bDown )
-	end
+	self:SetEnable( bDown )
 	
 end
-
-numpad.Register( "aperture_science_paint_dropper_enable", function( pl, ent, keydown )
-
-	if ( !IsValid( ent ) ) then return false end
-
-	if ( keydown ) then ent:ToggleEnable( true ) end
-	return true
-
-end )
-
-numpad.Register( "aperture_science_paint_dropper_disable", function( pl, ent, keydown )
-
-	if ( !IsValid( ent ) ) then return false end
-
-	if ( keydown ) then ent:ToggleEnable( false ) end
-	return true
-
-end )

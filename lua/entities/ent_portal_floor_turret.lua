@@ -27,7 +27,7 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 
 	local ent = ents.Create( ClassName )
 	ent:SetPos( trace.HitPos )
-	ent:SetAngles( trace.HitNormal:Angle() + Angle( 90, ply:EyeAngles().y, 0 ) )
+	ent:SetAngles( Angle( 0, ply:EyeAngles().y, 0 ) )
 	ent:Spawn()
 	ent:GetPhysicsObject():Wake()
 	if ( IsValid( owner ) ) then print( "SET", owner ) ent:SetOwner( owner ) end
