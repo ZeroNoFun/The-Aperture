@@ -10,6 +10,8 @@ ENT.AutomaticFrameAdvance = true
 
 function ENT:SpawnFunction( ply, trace )
 
+	if ( !APERTURESCIENCE.ALLOWING.paint && !ply:IsSuperAdmin() ) then ply:PrintMessage( HUD_PRINTTALK, "This entity is blocked" ) return end
+
 	if ( !trace.Hit ) then return end
 	
 	local ent = ents.Create( "ent_paint_dropper" )

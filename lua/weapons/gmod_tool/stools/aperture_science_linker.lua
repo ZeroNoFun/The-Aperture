@@ -35,7 +35,7 @@ function TOOL:LeftClick( trace )
 	
 	if ( !IsValid( lastEnt ) ) then
 		
-		if ( !APERTURESCIENCE.ALLOWING.linker && !self:GetOwner():IsSuperAdmin() ) then MsgC( Color( 255, 0, 0 ), "This tool is disabled" ) return end
+		if ( !APERTURESCIENCE.ALLOWING.linker && !self:GetOwner():IsSuperAdmin() ) then self:GetOwner():PrintMessage( HUD_PRINTTALK, "This tool is disabled" ) return end
 		
 		-- if inputs doesn't exist skip
 		if ( !traceEnt.GASL_LinkInputs || table.Count( traceEnt.GASL_LinkInputs ) == 0 ) then return end
@@ -92,7 +92,7 @@ function TOOL:RightClick( trace )
 	
 	if ( CLIENT ) then return false end
 
-	if ( !APERTURESCIENCE.ALLOWING.linker && !self:GetOwner():IsSuperAdmin() ) then MsgC( Color( 255, 0, 0 ), "This tool is disabled" ) return end
+	if ( !APERTURESCIENCE.ALLOWING.linker && !self:GetOwner():IsSuperAdmin() ) then self:GetOwner():PrintMessage( HUD_PRINTTALK, "This tool is disabled" ) return end
 	
 	local ply = self:GetOwner()
 	local lastEnt = self:GetWeapon():GetNWEntity( "GASL_Linker_LastEnt" )
@@ -137,6 +137,8 @@ function TOOL:Reload( trace )
 		-- Ignore if place target is Alive or non Aperture
 		if ( trace.Entity && !APERTURESCIENCE:ConnectableStuff( trace.Entity ) && !IsValid( lastEnt ) ) then return false end
 		if ( CLIENT ) then return true end
+		
+		if ( !APERTURESCIENCE.ALLOWING.linker && !self:GetOwner():IsSuperAdmin() ) then self:GetOwner():PrintMessage( HUD_PRINTTALK, "This tool is disabled" ) return end
 		
 		-- clearing input
 		if ( trace.Entity.GASL_LinkInputs && trace.Entity.GASL_LinkInputs[ selectedInputName ] != nil && selectedInputName != ""

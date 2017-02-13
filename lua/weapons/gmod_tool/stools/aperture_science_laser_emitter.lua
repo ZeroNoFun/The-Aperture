@@ -22,8 +22,8 @@ function TOOL:LeftClick( trace )
 
 	if ( CLIENT ) then return true end
 	
-	if ( !APERTURESCIENCE.ALLOWING.laser && !self:GetOwner():IsSuperAdmin() ) then MsgC( Color( 255, 0, 0 ), "This tool is disabled" ) return end
-	
+	if ( !APERTURESCIENCE.ALLOWING.laser && !self:GetOwner():IsSuperAdmin() ) then self:GetOwner():PrintMessage( HUD_PRINTTALK, "This tool is disabled" ) return end
+
 	local ply = self:GetOwner()
 	local model = self:GetClientInfo( "model" )
 	local startenabled = self:GetClientNumber( "startenabled" )

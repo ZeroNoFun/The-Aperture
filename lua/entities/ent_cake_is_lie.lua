@@ -41,5 +41,13 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 
 end
 
+function ENT:Use( activator, caller, usetype, val )
+
+	if ( IsValid( caller ) && caller:IsPlayer() ) then
+		caller:SetHealth( caller:Health() + 1000 )
+	end
+	
+end
+
 -- no more client side
 if ( CLIENT ) then return end

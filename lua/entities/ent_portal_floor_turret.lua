@@ -10,6 +10,8 @@ ENT.AutomaticFrameAdvance = true
 
 function ENT:SpawnFunction( ply, trace, ClassName )
 
+	if ( !APERTURESCIENCE.ALLOWING.turret && !ply:IsSuperAdmin() ) then ply:PrintMessage( HUD_PRINTTALK, "This entity is blocked" ) return end
+
 	if ( !trace.Hit ) then return end
 	
 	-- spawn counter

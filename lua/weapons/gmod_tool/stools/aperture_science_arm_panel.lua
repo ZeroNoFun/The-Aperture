@@ -29,7 +29,7 @@ function TOOL:LeftClick( trace )
 		-- Ignore if place target is Alive
 		if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then return false end
 
-		if ( !APERTURESCIENCE.ALLOWING.arm_panel && !self:GetOwner():IsSuperAdmin() ) then MsgC( Color( 255, 0, 0 ), "This tool is disabled" ) return end
+		if ( !APERTURESCIENCE.ALLOWING.arm_panel && !self:GetOwner():IsSuperAdmin() ) then self:GetOwner():PrintMessage( HUD_PRINTTALK, "This tool is disabled" ) return end
 		
 		local ply = self:GetOwner()
 		
@@ -70,7 +70,7 @@ function TOOL:RightClick( trace )
 	
 	if ( !self.GASL_LastPos ) then
 		
-		if ( !APERTURESCIENCE.ALLOWING.arm_panel && !self:GetOwner():IsSuperAdmin() ) then MsgC( Color( 255, 0, 0 ), "This tool is disabled" ) return end
+		if ( !APERTURESCIENCE.ALLOWING.arm_panel && !self:GetOwner():IsSuperAdmin() ) then self:GetOwner():PrintMessage( HUD_PRINTTALK, "This tool is disabled" ) return end
 	
 		self.GASL_LastPos = trace.HitPos
 	else

@@ -13,6 +13,8 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 
 	if ( !trace.Hit ) then return end
 	
+	if ( !APERTURESCIENCE.ALLOWING.fizzler && !ply:IsSuperAdmin() ) then ply:PrintMessage( HUD_PRINTTALK, "This entity is blocked" ) return end
+
 	local mdl = "models/props/fizzler_dynamic.mdl"
 	
 	local firstFizzler = ents.Create( ClassName )

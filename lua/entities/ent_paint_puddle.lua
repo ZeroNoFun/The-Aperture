@@ -61,10 +61,6 @@ function ENT:PaintGel( pl, pos, normal, rad )
 		local location = pos + offset
 		local paint = APERTURESCIENCE:CheckForGel( location + normal * 5, -normal * 10 ) 
 
-		if IsValid(paint) and paint:GetClass() != "env_portal_paint" then print(paint:GetClass()) end
-		
-	
-
 		if ( location:Distance( pos ) > rad ) then continue end
 		
 		if ( !IsValid( paint ) ) then
@@ -103,17 +99,19 @@ function ENT:PaintGel( pl, pos, normal, rad )
 
 		else
 
-			if ( IsValid(paint) and paint:GetClass() == "env_portal_paint" ) then 
+			if ( IsValid( paint ) and paint:GetClass() == "env_portal_paint" ) then 
 
-			if ( self.GASL_GelType == 4 ) then
-				paint:SetGelType( 0 )
-			else
-				paint:SetGelType( self.GASL_GelType )
+				if ( self.GASL_GelType == 4 ) then
+					paint:SetGelType( 0 )
+				else
+					paint:SetGelType( self.GASL_GelType )
+				end
+
+				paint:UpdateGel()
+				if ( self.GASL_GelType == 4 ) then paint:Remove() end
+				
 			end
-
-			paint:UpdateGel()
-			if ( self.GASL_GelType == 4 ) then paint:Remove() end
-		end
+			
 		end
 		
 	end

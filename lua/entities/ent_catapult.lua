@@ -13,6 +13,8 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 
 	if ( !trace.Hit ) then return end
 	
+	if ( !APERTURESCIENCE.ALLOWING.catapult && !ply:IsSuperAdmin() ) then ply:PrintMessage( HUD_PRINTTALK, "This entity is blocked" ) return end
+
 	local ent = ents.Create( ClassName )
 	ent:SetPos( trace.HitPos + trace.HitNormal * 10 )
 	ent:SetModel( "models/props/faith_plate.mdl" )

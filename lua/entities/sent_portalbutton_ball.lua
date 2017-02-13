@@ -28,6 +28,9 @@ if CLIENT then
 end
 
 function ENT:SpawnFunction( ply, tr )
+
+	if ( !APERTURESCIENCE.ALLOWING.floor_button && !ply:IsSuperAdmin() ) then ply:PrintMessage( HUD_PRINTTALK, "This entity is blocked" ) return end
+	
 	if ( !tr.Hit ) then return end
 	local SpawnPos = tr.HitPos + tr.HitNormal * 1
 	local ent = ents.Create( "sent_portalbutton_ball" )

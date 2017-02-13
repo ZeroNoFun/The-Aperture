@@ -11,6 +11,8 @@ ENT.AutomaticFrameAdvance = true
 
 function ENT:SpawnFunction( ply, trace, ClassName )
 
+	if ( !APERTURESCIENCE.ALLOWING.laser_field && !ply:IsSuperAdmin() ) then ply:PrintMessage( HUD_PRINTTALK, "This entity is blocked" ) return end
+
 	if ( !trace.Hit ) then return end
 	
 	local mdl = "models/props/fizzler_dynamic.mdl"

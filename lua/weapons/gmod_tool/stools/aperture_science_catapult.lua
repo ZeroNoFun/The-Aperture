@@ -29,7 +29,7 @@ function TOOL:LeftClick( trace )
 		-- Ignore if place target is Alive
 		if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:GASLStuff( trace.Entity ) ) ) then return false end
 
-		if ( !APERTURESCIENCE.ALLOWING.catapult && !self:GetOwner():IsSuperAdmin() ) then MsgC( Color( 255, 0, 0 ), "This tool is disabled" ) return end
+		if ( !APERTURESCIENCE.ALLOWING.catapult && !self:GetOwner():IsSuperAdmin() ) then self:GetOwner():PrintMessage( HUD_PRINTTALK, "This tool is disabled" ) return end
 		
 		if ( APERTURESCIENCE:GASLStuff( trace.Entity ) ) then return false end
 		

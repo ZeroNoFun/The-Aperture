@@ -98,7 +98,7 @@ function APERTURESCIENCE:UpdateParameters()
 	APERTURESCIENCE.ALLOWING.button = tobool( self.Convars[ "aperture_science_allow_button" ]:GetInt() )
 	APERTURESCIENCE.ALLOWING.catapult = tobool( self.Convars[ "aperture_science_allow_catapult" ]:GetInt() )
 	APERTURESCIENCE.ALLOWING.fizzler = tobool( self.Convars[ "aperture_science_allow_fizzler" ]:GetInt() )
-	APERTURESCIENCE.ALLOWING.item_dopper = tobool( self.Convars[ "aperture_science_allow_item_dropper" ]:GetInt() )
+	APERTURESCIENCE.ALLOWING.item_dropper = tobool( self.Convars[ "aperture_science_allow_item_dropper" ]:GetInt() )
 	APERTURESCIENCE.ALLOWING.laser_catcher = tobool( self.Convars[ "aperture_science_allow_laser_catcher" ]:GetInt() )
 	APERTURESCIENCE.ALLOWING.laser = tobool( self.Convars[ "aperture_science_allow_laser" ]:GetInt() )
 	APERTURESCIENCE.ALLOWING.laser_field = tobool( self.Convars[ "aperture_science_allow_laser_field" ]:GetInt() )
@@ -140,6 +140,7 @@ function APERTURESCIENCE:ConnectableStuff( ent )
 
 	return ( IsValid( ent ) &&
 		( ent:GetClass() == "ent_paint_dropper"
+		|| ent:GetClass() == "ent_catapult"
 		|| ent:GetClass() == "ent_tractor_beam"
 		|| ent:GetClass() == "ent_wall_projector"
 		|| ent:GetClass() == "ent_laser_field"
@@ -173,7 +174,11 @@ function APERTURESCIENCE:GASLStuff( ent )
 		|| ent:GetClass() == "ent_item_dropper"
 		|| ent:GetClass() == "ent_portal_button"
 		|| ent:GetClass() == "ent_portal_bomb"
-		|| ent:GetClass() == "ent_catapult" ) )
+		|| ent:GetClass() == "ent_catapult"
+		|| ent:GetClass() == "sent_portalbutton_box"
+		|| ent:GetClass() == "sent_portalbutton_ball"
+		|| ent:GetClass() == "sent_portalbutton_normal"
+		|| ent:GetClass() == "sent_portalbutton_old" ) )
 	
 end
 
