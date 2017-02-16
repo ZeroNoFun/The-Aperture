@@ -99,14 +99,18 @@ function ENT:DoLaser( startpos, ang, ignore )
 			filter = function( ent )
 				if ( ent:GetClass() == "prop_portal" || ( ent:IsPlayer() || ent:IsNPC() ) && CLIENT || ent == ignore ) then return false end
 				if ( ent:GetClass() == "ent_laser_relay" ) then ent.GASL_LastHittedByLaser = CurTime() end
-				if ( APERTURESCIENCE:IsValidEntity( ent ) || ent:GetClass() == "ent_laser_catcher" ) then return true end
+				if ( APERTURESCIENCE:IsValidEntity( ent ) || ent:GetClass() == "ent_laser_catcher" || ent:GetClass() == "prop_physics") then return true end
+				if(IsValid(ent)) then return true end
+
 			end
 		} )
 		
 		local addingDist = 20
 		local addingDistB = 0
 		local traceEnt = trace.Entity
-		
+
+		if SERVER then print(traceEnt) end
+ 		
 		if ( traceEnt && traceEnt:IsValid() ) then addingDist = 0 end		
 		if ( itter > 1 ) then addingDistB = 20 end
 		if ( itter == table.Count( points ) ) then addingDist = 0 end

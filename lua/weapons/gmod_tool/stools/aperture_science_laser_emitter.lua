@@ -95,6 +95,7 @@ end
 
 function TOOL:RightClick( trace )
 
+
 end
 
 local ConVarsDefault = TOOL:BuildConVarList()
@@ -106,6 +107,11 @@ function TOOL.BuildCPanel( CPanel )
 	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_laser_emitter.startenabled", Command = "aperture_science_laser_emitter_startenabled" } )
 
 end
+
+function TOOL:DrawHUD()
+	
+end
+
 
 list.Set( "LaserEmitterModels", "models/props/laser_emitter.mdl", {} )
 list.Set( "LaserEmitterModels", "models/props/laser_emitter_center.mdl", {} )
