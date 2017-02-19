@@ -21,9 +21,6 @@ APERTURESCIENCE.WallProjectorFootsteps =
 		, "player/footsteps/fs_fm_lightbridge_08.wav" 
 		, "player/footsteps/fs_fm_lightbridge_09.wav" 
 		, "player/footsteps/fs_fm_lightbridge_10.wav" 
-		, "player/footsteps/fs_fm_lightbridge_11.wav" 
-		, "player/footsteps/fs_fm_lightbridge_12.wav" 
-		, "player/footsteps/fs_fm_lightbridge_13.wav" 
 	},
 	volume	= 1.0,
 	pitch	= 100,

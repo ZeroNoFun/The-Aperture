@@ -30,11 +30,7 @@ APERTURESCIENCE.TurretDryFire =
 	, "npc/turret_defective/defect_dryfire02.wav"
 	, "npc/turret_defective/defect_dryfire03.wav"
 	, "npc/turret_defective/defect_dryfire04.wav"
-	, "npc/turret_defective/defect_dryfire05.wav"
-	, "npc/turret_defective/defect_dryfire06.wav"
-	, "npc/turret_defective/defect_dryfire07.wav"
-	, "npc/turret_defective/defect_dryfire08.wav"
-	, "npc/turret_defective/defect_dryfire09.wav" },
+	, "npc/turret_defective/defect_dryfire05.wav" },
 	volume	= 1.0,
 	pitch	= 100,
 }
