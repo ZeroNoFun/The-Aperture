@@ -1,7 +1,7 @@
 TOOL.Category = "Aperture Science"
 TOOL.Name = "#tool.aperture_science_laser_field.name"
 
-TOOL.ClientConVar[ "model" ] = "models/props/fizzler.mdl"
+TOOL.ClientConVar[ "model" ] = "models/props/fizzler_dynamic.mdl"
 TOOL.ClientConVar[ "maxrad" ] = "20"
 TOOL.ClientConVar[ "startenabled" ] = "0"
 

@@ -81,6 +81,25 @@ function ENT:ModelToStartCoord()
 	
 end
 
+function ENT:DamageEntity( ent )
+
+	if ( !IsValid( ent ) ) then return end
+	
+	ent:TakeDamage( 10, self, self ) 
+	ent:EmitSound( "GASL.LaserBodyBurn" )
+	
+	-- Forces Player away from the laser
+	-- local angles = ( v.endpos - v.startpos ):Angle()
+	-- local forceDirLocal = WorldToLocal( trEnt:LocalToWorld( trEnt:GetPhysicsObject():GetMassCenter() ), Angle(), v.startpos, angles )
+	-- forceDirLocal.x = 0
+	
+	-- local forceDir = WorldToLocal( forceDirLocal, Angle(), Vector(), angles )
+	-- forceDir.z = 0
+	-- forceDir = -forceDir:GetNormalized() * ( 40 - forceDir:Length() )
+	-- trEnt:SetVelocity( forceDir * 20 )
+	
+end
+
 function ENT:DoLaser( startpos, ang, ignore )
 	
 	local points = self:GetAllPortalPassages( startpos, ang )
@@ -97,20 +116,36 @@ function ENT:DoLaser( startpos, ang, ignore )
 			start = v.startpos,
 			endpos = v.endpos + offset,
 			filter = function( ent )
+				if ( ( ent:IsNPC() || ent:IsPlayer() ) && SERVER ) then return false end
 				if ( ent:GetClass() == "prop_portal" || ( ent:IsPlayer() || ent:IsNPC() ) && CLIENT || ent == ignore ) then return false end
 				if ( ent:GetClass() == "ent_laser_relay" ) then ent.GASL_LastHittedByLaser = CurTime() end
-				if ( APERTURESCIENCE:IsValidEntity( ent ) || ent:GetClass() == "ent_laser_catcher" || ent:GetClass() == "prop_physics") then return true end
-				if(IsValid(ent)) then return true end
+				if ( APERTURESCIENCE:IsValidEntity( ent ) || ent:GetClass() == "ent_laser_catcher" || ent:GetClass() == "prop_physics" ) then return true end
+				if( IsValid( ent ) ) then return true end
 
 			end
 		} )
 		
+		local traceHitEntity = NULL
+		
+		if ( SERVER ) then
+			traceHitEntity = util.TraceLine( {
+				start = v.startpos,
+				endpos = v.endpos + offset,
+				filter = function( ent )
+					if ( ( ent:IsNPC() || ent:IsPlayer() ) ) then return true end
+					if ( ent:GetClass() == "prop_portal" || ent == ignore ) then return false end
+					if ( ent:GetClass() == "ent_laser_relay" ) then ent.GASL_LastHittedByLaser = CurTime() end
+					if ( APERTURESCIENCE:IsValidEntity( ent ) || ent:GetClass() == "ent_laser_catcher" || ent:GetClass() == "prop_physics" ) then return true end
+					if( IsValid( ent ) ) then return true end
+
+				end
+			} ).Entity
+		end
+		
 		local addingDist = 20
 		local addingDistB = 0
 		local traceEnt = trace.Entity
-
-		if SERVER then print(traceEnt) end
- 		
+		
 		if ( traceEnt && traceEnt:IsValid() ) then addingDist = 0 end		
 		if ( itter > 1 ) then addingDistB = 20 end
 		if ( itter == table.Count( points ) ) then addingDist = 0 end
@@ -139,33 +174,14 @@ function ENT:DoLaser( startpos, ang, ignore )
 			render.SetMaterial( Material( "sprites/purplelaser1" ) )
 			render.DrawBeam( startpos, endpos, 80, distance / 100, 1, Color( 255, 255, 255 ) )
 			
-		else
-		
-			local trEnt = trace.Entity
-
-			if ( IsValid( trEnt ) && ( !trEnt:IsPlayer() && trEnt:Health() > 0 
-				|| trEnt:GetClass() == "ent_portal_floor_turret"
-				|| trEnt:GetClass() == "ent_portal_turret_different"
-				|| trEnt:GetClass() == "ent_portal_defective_turret" ) ) then trEnt:Ignite( 1 ) end
+		elseif ( IsValid( traceHitEntity ) ) then
 			
-			if ( trEnt && trEnt:IsValid() 
-				&& ( trEnt:IsPlayer()
-				|| trEnt:IsNPC() ) ) then
-				trEnt:TakeDamage( 10, self, self ) 
-				trEnt:EmitSound( "GASL.LaserBodyBurn" )
+			if ( ( !traceHitEntity:IsPlayer() && traceHitEntity:Health() > 0 
+				|| traceHitEntity:GetClass() == "ent_portal_floor_turret"
+				|| traceHitEntity:GetClass() == "ent_portal_turret_different"
+				|| traceHitEntity:GetClass() == "ent_portal_defective_turret" ) ) then traceHitEntity:Ignite( 1 ) end
 				
-				-- Forces Player away from the laser
-				-- local angles = ( v.endpos - v.startpos ):Angle()
-				-- local forceDirLocal = WorldToLocal( trEnt:LocalToWorld( trEnt:GetPhysicsObject():GetMassCenter() ), Angle(), v.startpos, angles )
-				-- forceDirLocal.x = 0
-				
-				-- local forceDir = WorldToLocal( forceDirLocal, Angle(), Vector(), angles )
-				-- forceDir.z = 0
-				-- forceDir = -forceDir:GetNormalized() * ( 40 - forceDir:Length() )
-				-- trEnt:SetVelocity( forceDir * 20 )
-				
-			end
-		
+			self:DamageEntity( traceHitEntity )
 		end
 		
 		-- skip if 
