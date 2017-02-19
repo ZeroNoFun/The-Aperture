@@ -33,6 +33,7 @@ function ENT:Initialize()
 		
 	end
 
+	self.GASL_Gel_Angles = self:GetAngles()
 	self:UpdateGel()
 	
 end
@@ -141,7 +142,7 @@ function ENT:DrawTranslucent()
 	local color = APERTURESCIENCE:GetColorByGelType( self:GetGelType() )
 	
 	self:SetSubMaterial( 0, material )
-	self:SetAngles( self:GetUp():Angle() + Angle( 90, 0, 0 ) )
+	self:SetAngles( self.GASL_Gel_Angles )
 	self:SetAngles( self:LocalToWorldAngles( Angle( 0, angle + 180, 0 ) ) )
 	
 	self:DrawModel()

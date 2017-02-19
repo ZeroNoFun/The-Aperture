@@ -79,7 +79,7 @@ function ENT:PaintGel( pl, pos, normal, rad )
 			-- Skip if tracer doesn't hit anything or it in the world
 			if ( !trace.Hit || !util.IsInWorld( trace.HitPos ) ) then continue end
 			
-			local gridPos = APERTURESCIENCE:ConvertToGridWithoutZ( trace.HitPos, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), APERTURESCIENCE.GEL_BOX_SIZE )
+			local gridPos = APERTURESCIENCE:ConvertToGridWithoutZ( trace.HitPos + trace.HitNormal, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), APERTURESCIENCE.GEL_BOX_SIZE )
 			
 			-- Skip if grided position is outside of the world
 			if ( !util.IsInWorld( gridPos ) ) then continue end
