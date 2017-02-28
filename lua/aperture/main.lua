@@ -20,7 +20,7 @@ APERTURESCIENCE.FUNNEL_REVERSE_COLOR = Color( 255, 150, 0 )
 APERTURESCIENCE.GEL_BOX_SIZE = 74
 APERTURESCIENCE.GEL_MAXSIZE = 150
 APERTURESCIENCE.GEL_MINSIZE = 40
-APERTURESCIENCE.GEL_BOUNCE_COLOR = Color( 0, 100, 255 )
+APERTURESCIENCE.GEL_BOUNCE_COLOR = Color( 50, 125, 255 )
 APERTURESCIENCE.GEL_SPEED_COLOR = Color( 255, 100, 0 )
 APERTURESCIENCE.GEL_PORTAL_COLOR = Color( 180, 190, 200 )
 APERTURESCIENCE.GEL_WATER_COLOR = Color( 200, 230, 255, 100 )
@@ -149,6 +149,7 @@ function APERTURESCIENCE:ConnectableStuff( ent )
 		|| ent:GetClass() == "ent_laser_relay"
 		|| ent:GetClass() == "ent_item_dropper"
 		|| ent:GetClass() == "ent_arm_panel"
+		|| ent:GetClass() == "ent_portal_frame"
 		|| ent:GetClass() == "ent_portal_button"
 		|| ent:GetClass() == "sent_portalbutton_box"
 		|| ent:GetClass() == "sent_portalbutton_ball"
@@ -159,8 +160,8 @@ end
 
 function APERTURESCIENCE:GASLStuff( ent )
 
-	return ( IsValid( ent ) && (
-		ent:GetClass() == "env_portal_paint" 
+	return ( IsValid( ent ) && 
+		( ent:GetClass() == "env_portal_paint" 
 		|| ent:GetClass() == "ent_paint_puddle"
 		|| ent:GetClass() == "ent_paint_dropper"
 		|| ent:GetClass() == "ent_tractor_beam"
@@ -174,6 +175,7 @@ function APERTURESCIENCE:GASLStuff( ent )
 		|| ent:GetClass() == "ent_portal_button"
 		|| ent:GetClass() == "ent_portal_bomb"
 		|| ent:GetClass() == "ent_catapult"
+		|| ent:GetClass() == "ent_portal_frame"
 		|| ent:GetClass() == "sent_portalbutton_box"
 		|| ent:GetClass() == "sent_portalbutton_ball"
 		|| ent:GetClass() == "sent_portalbutton_normal"

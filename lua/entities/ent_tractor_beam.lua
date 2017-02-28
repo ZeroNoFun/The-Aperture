@@ -24,6 +24,7 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 
 end
 
+
 function ENT:SetupDataTables()
 
 	self:NetworkVar( "Bool", 0, "Reverse" )
@@ -370,7 +371,7 @@ function ENT:Think()
 	if ( self.GASL_FunnelUpdate.lastPos != self:GetPos() or self.GASL_FunnelUpdate.lastAngle != self:GetAngles() ) then
 		self.GASL_FunnelUpdate.lastPos = self:GetPos()
 		self.GASL_FunnelUpdate.lastAngle = self:GetAngles()
-		
+		self:SetupTrails()
 	end
 
 	return true
@@ -406,7 +407,7 @@ if ( CLIENT ) then return end
 
 function ENT:SetupTrails( )
 	
-	local TrailWidth = 120
+	local TrailWidth = 150
 	local TrailWidthEnd = 30
 	
 	if ( self.GASL_Trail1 && self.GASL_Trail1:IsValid() ) then self.GASL_Trail1:Remove() end
@@ -438,55 +439,6 @@ function ENT:TractorBeamEffectRemove( )
 	
 end
 
-function ENT:TractorBeamEffect( distance )
-	
-	self:SetupTrails()
-	
-	local PlateLength = 428.5
-	
-	-- Removing preview field effect
-	self:TractorBeamEffectRemove( )
-	
-	-- Spawning field effect 
-	local addingDist = 0
-	
-	local color
-	local angle
-	local adding
-	if( self:GetReverse() ) then
-		color = APERTURESCIENCE.FUNNEL_REVERSE_COLOR
-		angle = -1
-		adding = PlateLength
-	else
-		color = APERTURESCIENCE.FUNNEL_COLOR
-		angle = 1
-		adding = 0
-	end
-		
-	while ( distance > addingDist ) do
-		
-		local ent = ents.Create( "prop_physics" )
-		ent:SetModel( "models/hunter/blocks/cube025x025x025.mdl" )
-		ent:SetPos( self:LocalToWorld( Vector( addingDist + adding, 0, -1 ) ) )
-		ent:SetAngles( self:LocalToWorldAngles( Angle( 90 * angle, 0, 0 ) ) )
-		ent:SetParent( self )
-		ent:Spawn()
-		
-		ent:DrawShadow( false )
-		ent:SetModel( "models/tractor_beam_field/tractor_beam_field.mdl" )
-		ent.GASLIgnore = true
-		ent:SetColor( color )
-		
-		local physEnt = ent:GetPhysicsObject()
-		physEnt:EnableMotion( false )
-		physEnt:EnableCollisions( false )
-		table.insert( self.GASL_TractorBeamFields, table.Count( self.GASL_TractorBeamFields ) + 1, ent )
-
-		addingDist = addingDist + PlateLength
-		
-	end
-	
-end
 
 function ENT:TriggerInput( iname, value )
 	if ( !WireAddon ) then return end

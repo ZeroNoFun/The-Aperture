@@ -16,14 +16,12 @@ function ENT:Initialize()
 
 	if ( SERVER ) then
 
-		self:SetModel( "models/XQM/Rails/gumball_1.mdl" )
+		self:SetModel( "models/gasl/portal_gel_bubble.mdl" )
 		self:PhysicsInit( SOLID_VPHYSICS )
 		self:SetMoveType( MOVETYPE_VPHYSICS )
 		self:SetSolid( SOLID_OBB )
 		self:SetRenderMode( RENDERMODE_TRANSALPHA )
 		self:SetCollisionGroup( COLLISION_GROUP_IN_VEHICLE )
-
-		self:SetMaterial( "models/shiny" )
 		
 		self.GASL_GelType = 0
 		self.GASL_GelRandomizeSize = 0
@@ -121,55 +119,62 @@ function ENT:PaintGel( pl, pos, normal, rad )
 	
 	for k, v in pairs( findResult ) do
 	
-		if ( APERTURESCIENCE:IsValidEntity( v ) && !v:IsPlayer() && v:GetPhysicsObject():IsValid()
-			&& ( !APERTURESCIENCE.GELLED_ENTITIES[ v ] || v.GASL_GelledType && v.GASL_GelledType != self.GASL_GelType ) ) then
-			
-			local trace = util.TraceLine( {
-				start = self:GetPos(),
-				endpos = v:GetPos(),
-				filter = function( ent ) if ( ent:GetClass() == "ent_paint_puddle" || ent == v ) then return false end end
-			} )
-			if ( trace.Hit ) then continue end
+		if ( APERTURESCIENCE:IsValidEntity( v ) && !v:IsPlayer() && v:GetPhysicsObject():IsValid() ) then
+		
+			if ( !APERTURESCIENCE.GELLED_ENTITIES[ v ] || v.GASL_GelledType && v.GASL_GelledType != self.GASL_GelType ) then
+				
+				local trace = util.TraceLine( {
+					start = self:GetPos(),
+					endpos = v:GetPos(),
+					filter = function( ent ) if ( ent:GetClass() == "ent_paint_puddle" || ent == v ) then return false end end
+				} )
+				if ( trace.Hit ) then continue end
 
-			-- Reseting physics material
-			if ( v.GASL_PrevPhysMaterial ) then
-				v:GetPhysicsObject():SetMaterial( v.GASL_PrevPhysMaterial )
-				v.GASL_PrevPhysMaterial = nil
-			end
-			
-			if ( self.GASL_GelType != 4 ) then
-				
-				v.GASL_GelledType = self.GASL_GelType
-				
-				local color = APERTURESCIENCE:GetColorByGelType( self.GASL_GelType )
-				
-				if ( self.GASL_GelType == 1 ) then
-					v:SetSubMaterial( 0, "paint/prop_paint_blue" )
-				end
-				if ( self.GASL_GelType == 2 ) then
-					v:SetSubMaterial( 0, "paint/prop_paint_orange" )
+				-- Reseting physics material
+				if ( v.GASL_PrevPhysMaterial ) then
+					v:GetPhysicsObject():SetMaterial( v.GASL_PrevPhysMaterial )
+					v.GASL_PrevPhysMaterial = nil
 				end
 				
-				if ( !v.GASL_PrevPhysMaterial ) then
-				
+				if ( self.GASL_GelType != 4 ) then
+					
+					v.GASL_GelledType = self.GASL_GelType
+					
+					local color = APERTURESCIENCE:GetColorByGelType( self.GASL_GelType )
+					
 					if ( self.GASL_GelType == 1 ) then
-						v.GASL_PrevPhysMaterial = v:GetPhysicsObject():GetMaterial()
-						v:GetPhysicsObject():SetMaterial( "metal_bouncy" )
-						APERTURESCIENCE.GELLED_ENTITIES[ v ] = v
+						v:SetSubMaterial( 0, "paint/prop_paint_blue" )
 					end
-
 					if ( self.GASL_GelType == 2 ) then
-						v.GASL_PrevPhysMaterial = v:GetPhysicsObject():GetMaterial()
-						v:GetPhysicsObject():SetMaterial( "gmod_ice" )
+						v:SetSubMaterial( 0, "paint/prop_paint_orange" )
 					end
 					
+					if ( !v.GASL_PrevPhysMaterial ) then
+					
+						if ( self.GASL_GelType == 1 ) then
+							v.GASL_PrevPhysMaterial = v:GetPhysicsObject():GetMaterial()
+							v:GetPhysicsObject():SetMaterial( "metal_bouncy" )
+							APERTURESCIENCE.GELLED_ENTITIES[ v ] = v
+						end
+
+						if ( self.GASL_GelType == 2 ) then
+							v.GASL_PrevPhysMaterial = v:GetPhysicsObject():GetMaterial()
+							v:GetPhysicsObject():SetMaterial( "gmod_ice" )
+						end
+						
+					end
+					
+				else
+					APERTURESCIENCE.GELLED_ENTITIES[ v ] = nil
+					v:SetSubMaterial( 0, "" )
+					v:GetPhysicsObject():SetMaterial( "none" )
+					v.GASL_GelledType = nil
 				end
-				
-			else
-				APERTURESCIENCE.GELLED_ENTITIES[ v ] = nil
-				v:SetSubMaterial( 0, "" )
-				v:GetPhysicsObject():SetMaterial( "none" )
-				v.GASL_GelledType = nil
+			
+			end
+			
+			if( self.GASL_GelType == 4 && v:IsOnFire() ) then
+				v:Extinguish()
 			end
 			
 		end
@@ -191,16 +196,14 @@ function ENT:Think()
 	if ( CLIENT ) then
 	
 		-- Changing Size
-		if ( !self.GASL_SizeChanged ) then
-		
-			self.GASL_SizeChanged = true
-			
-			local scale = Vector( 1, 1, 1 ) * ( self:GetGelRadius() / 100 )
-			local mat = Matrix()
-			mat:Scale( scale )
-			self:EnableMatrix( "RenderMultiply", mat )
-			
-		end
+		local rotation = ( CurTime() + self:EntIndex() * 10 ) * 4
+
+		local scale = Vector( 1 + math.cos( rotation ) / 4, 1 + math.sin( rotation ) / 4, 1 ) * ( self:GetGelRadius() / 110 )
+		local mat = Matrix()
+		mat:Scale( scale )
+		self:EnableMatrix( "RenderMultiply", mat )
+
+		self:SetAngles( Angle( rotation * 10, rotation * 20, 0 ) )
 		
 	end
 	

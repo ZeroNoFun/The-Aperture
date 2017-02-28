@@ -9,7 +9,7 @@ function EFFECT:Init( data )
 	
 	self.Emitter = ParticleEmitter( self.Start )
 	
-	for i = 1, 10 do
+	for i = 1, 5 do
 	
 		local vec = VectorRand()
 		vec = Vector( vec.x, vec.y, vec.z + 3 )
@@ -17,7 +17,7 @@ function EFFECT:Init( data )
 		
 		local p = self.Emitter:Add( "effects/splash2", self.Start + vec )
 
-		p:SetDieTime( math.Rand( 1, 1.5 ) )
+		p:SetDieTime( math.Rand( 0.5, 1 ) )
 		p:SetStartAlpha( math.random( 100, 200 ) )
 		p:SetEndAlpha( 0 )
 		p:SetStartSize( math.Rand( 30, 50 ) * self.Radius )
@@ -34,7 +34,7 @@ function EFFECT:Init( data )
 	for i = 1, 10 do
 	
 		local vec = VectorRand()
-		vec = Vector( vec.x, vec.y, vec.z + 2 )
+		vec = Vector( vec.x, vec.y, vec.z + 1 )
 		vec:Rotate( self.Direction:Angle() + Angle( 90, 0, 0 ) )
 		
 		local p = self.Emitter:Add( "particle/paintblobs/paint_blob_sheet_1", self.Start + vec )
@@ -44,7 +44,7 @@ function EFFECT:Init( data )
 		p:SetStartAlpha( math.random( 200, 255 ) )
 		p:SetEndAlpha( 0 )
 		p:SetStartSize( size )
-		p:SetEndSize( size / 2 )
+		p:SetEndSize( 0 )
 		p:SetRoll( math.Rand( 0, 360 ) )
 		p:SetRollDelta( math.Rand( -3, 3 ) )
 		p:SetVelocity( vec * 120 * self.Radius )

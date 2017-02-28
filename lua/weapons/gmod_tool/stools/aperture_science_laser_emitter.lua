@@ -103,7 +103,7 @@ local ConVarsDefault = TOOL:BuildConVarList()
 function TOOL.BuildCPanel( CPanel )
 
 	CPanel:AddControl( "Header", { Description = "#tool.aperture_science_laser_emitter.tooldesc" } )
-	CPanel:AddControl( "PropSelect", { ConVar = "aperture_science_laser_emitter_model", Models = list.Get( "LaserEmitterModels" ), Height = 1 } )
+	CPanel:AddControl( "PropSelect", { ConVar = "aperture_science_laser_emitter_model", Models = list.Get( "PortalLaserEmitterModels" ), Height = 1 } )
 	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_laser_emitter.startenabled", Command = "aperture_science_laser_emitter_startenabled" } )
 
 end
@@ -113,5 +113,5 @@ function TOOL:DrawHUD()
 end
 
 
-list.Set( "LaserEmitterModels", "models/props/laser_emitter.mdl", {} )
-list.Set( "LaserEmitterModels", "models/props/laser_emitter_center.mdl", {} )
+list.Set( "PortalLaserEmitterModels", "models/props/laser_emitter.mdl", {} )
+list.Set( "PortalLaserEmitterModels", "models/props/laser_emitter_center.mdl", {} )

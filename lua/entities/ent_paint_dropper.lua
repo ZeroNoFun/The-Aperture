@@ -95,7 +95,7 @@ function ENT:MakePuddle( )
 
 	ent:GetPhysicsObject():EnableCollisions( false )
 	ent:GetPhysicsObject():Wake()
-	ent:GetPhysicsObject():SetVelocity( -self:GetUp() * self.GASL_GelLaunchSpeed )
+
 	if ( IsValid( self.Owner ) && self.Owner:IsPlayer() ) then ent:SetOwner( self.Owner ) end
 
 	ent.GASL_GelType = self.GASL_GelType
@@ -103,6 +103,7 @@ function ENT:MakePuddle( )
 	local randSize = math.Rand( -self.GASL_GelRandomizeSize, self.GASL_GelRandomizeSize ) / 100 * APERTURESCIENCE.GEL_MAXSIZE
 
 	local rad = math.max( APERTURESCIENCE.GEL_MINSIZE, math.min( APERTURESCIENCE.GEL_MAXSIZE, self.GASL_GelRadius + randSize ) )
+	ent:GetPhysicsObject():SetVelocity( -self:GetUp() * self.GASL_GelLaunchSpeed + VectorRand() * ( APERTURESCIENCE.GEL_MAXSIZE - rad ) / 2 )
 	ent:SetGelRadius( rad )
 	ent.GASL_GelRandomizeSize = self.GASL_GelRandomizeSize
 	ent.GASL_GelAmount = self.GASL_GelAmount

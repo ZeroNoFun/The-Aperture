@@ -181,7 +181,7 @@ function ENT:DoLaser( startpos, ang, ignore )
 				|| traceHitEntity:GetClass() == "ent_portal_turret_different"
 				|| traceHitEntity:GetClass() == "ent_portal_defective_turret" ) ) then traceHitEntity:Ignite( 1 ) end
 				
-			self:DamageEntity( traceHitEntity )
+			if ( traceHitEntity:IsNPC() || traceHitEntity:IsPlayer() ) then self:DamageEntity( traceHitEntity ) end
 		end
 		
 		-- skip if 
