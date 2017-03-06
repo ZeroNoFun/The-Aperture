@@ -116,10 +116,7 @@ function TOOL:Think()
 		
 		if ( IsValid( self.GhostEntity ) ) then
 			local gelType = self:GetClientNumber( "gel_type" )
-			if ( gelType == 1 ) then self.GhostEntity:SetSkin( 1 ) end
-			if ( gelType == 2 ) then self.GhostEntity:SetSkin( 2 ) end
-			if ( gelType == 3 ) then self.GhostEntity:SetSkin( 3 ) end
-			if ( gelType == 4 ) then self.GhostEntity:SetSkin( 4 ) end
+			self.GhostEntity:SetSkin( gelType )
 		end
 
 		self:UpdateGhostCatapult( self.GhostEntity, self:GetOwner() )
@@ -137,7 +134,8 @@ function TOOL.BuildCPanel( CPanel )
 	combobox:AddChoice( "Propulsion", 2 )
 	combobox:AddChoice( "Conversion", 3 )
 	combobox:AddChoice( "Cleansing", 4 )
-	
+	combobox:AddChoice( "Adhesion Gel", 5 )
+		
 	CPanel:NumSlider( "#tool.aperture_science_paint_dropper.gelRad", "aperture_science_paint_dropper_gel_radius", APERTURESCIENCE.GEL_MINSIZE, APERTURESCIENCE.GEL_MAXSIZE )
 	CPanel:NumSlider( "#tool.aperture_science_paint_dropper.gelRandomizeSize", "aperture_science_paint_dropper_gel_randomize_size", 0, 100 )
 	CPanel:NumSlider( "#tool.aperture_science_paint_dropper.gelAmount", "aperture_science_paint_dropper_gel_amount", 1, 100 )

@@ -6,25 +6,25 @@
 
 AddCSLuaFile()
 
-APERTURESCIENCE.GelSplatSmall =
-{
-	channel	= CHAN_WEAPON,
-	name	= "GASL.GelSplatSmall",
-	level	= 75,
-	sound	= { "physics/paint/paint_trickle_01.wav"
-		, "physics/paint/paint_trickle_02.wav"
-		, "physics/paint/paint_trickle_03.wav"
-		, "physics/paint/paint_trickle_04.wav"
-		, "physics/paint/paint_trickle_05.wav"
-		, "physics/paint/paint_trickle_06.wav"
-		, "physics/paint/paint_trickle_07.wav"
-		, "physics/paint/paint_trickle_08.wav"
-		, "physics/paint/paint_trickle_09.wav"
-	},
-	volume	= 1.0,
-	pitch	= 100,
-}
-sound.Add( APERTURESCIENCE.GelSplatSmall )
+-- APERTURESCIENCE.GelSplatSmall =
+-- {
+	-- channel	= CHAN_WEAPON,
+	-- name	= "GASL.GelSplatSmall",
+	-- level	= 75,
+	-- sound	= { "physics/paint/paint_trickle_01.wav"
+		-- , "physics/paint/paint_trickle_02.wav"
+		-- , "physics/paint/paint_trickle_03.wav"
+		-- , "physics/paint/paint_trickle_04.wav"
+		-- , "physics/paint/paint_trickle_05.wav"
+		-- , "physics/paint/paint_trickle_06.wav"
+		-- , "physics/paint/paint_trickle_07.wav"
+		-- , "physics/paint/paint_trickle_08.wav"
+		-- , "physics/paint/paint_trickle_09.wav"
+	-- },
+	-- volume	= 1.0,
+	-- pitch	= 100,
+-- }
+-- sound.Add( APERTURESCIENCE.GelSplatSmall )
 
 APERTURESCIENCE.GelSplat =
 {
@@ -56,7 +56,7 @@ APERTURESCIENCE.GelSplatBig =
 	level	= 75,
 	sound	= "physics/paint/phys_paint_bomb_01.wav",
 	volume	= 1.0,
-	pitch	= 100,
+	pitch	= { 80, 120 },
 }
 sound.Add( APERTURESCIENCE.GelSplatBig )
 

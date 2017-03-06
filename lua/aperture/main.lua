@@ -16,16 +16,6 @@ APERTURESCIENCE.FUNNEL_MOVE_SPEED = 173
 APERTURESCIENCE.FUNNEL_COLOR = Color( 0, 150, 255 )
 APERTURESCIENCE.FUNNEL_REVERSE_COLOR = Color( 255, 150, 0 )
 
--- Gel
-APERTURESCIENCE.GEL_BOX_SIZE = 74
-APERTURESCIENCE.GEL_MAXSIZE = 150
-APERTURESCIENCE.GEL_MINSIZE = 40
-APERTURESCIENCE.GEL_BOUNCE_COLOR = Color( 50, 125, 255 )
-APERTURESCIENCE.GEL_SPEED_COLOR = Color( 255, 100, 0 )
-APERTURESCIENCE.GEL_PORTAL_COLOR = Color( 180, 190, 200 )
-APERTURESCIENCE.GEL_WATER_COLOR = Color( 200, 230, 255, 100 )
-APERTURESCIENCE.GELLED_ENTITIES = { }
-
 -- Fizzle
 APERTURESCIENCE.DISSOLVE_SPEED = 150
 APERTURESCIENCE.DISSOLVE_ENTITIES = { }
@@ -71,6 +61,8 @@ include( "aperture/sounds/portal_turret_different_sounds.lua" )
 include( "aperture/sounds/portal_turret_defective_sounds.lua" )
 include( "aperture/sounds/potatoos_sounds.lua" )
 include( "aperture/sounds/radio_sounds.lua" )
+
+include( "aperture/paint.lua" )
 
 -- Console commands
 APERTURESCIENCE.Convars = {}
@@ -185,8 +177,8 @@ end
 
 function APERTURESCIENCE:IsValidEntity( ent )
 
-	return ( IsValid( ent ) && !ent.GASL_Ignore 
-		&& ( !IsValid( ent:GetPhysicsObject() ) || IsValid( ent:GetPhysicsObject() ) && ent:GetPhysicsObject():IsMotionEnabled() )
+	return ( IsValid( ent ) && !ent.GASL_Ignore && ent:GetClass() != "prop_portal"
+		&& ( !IsValid( ent:GetPhysicsObject() ) || IsValid( ent:GetPhysicsObject() ) )
 		&& !APERTURESCIENCE:GASLStuff( ent ) )
 		
 end
@@ -207,21 +199,10 @@ function APERTURESCIENCE:DissolveEnt( ent )
 
 end
 
-function APERTURESCIENCE:GetColorByGelType( paintType )
-
-	local color = Color( 0, 0, 0 )
-	if ( paintType == 1 ) then color = APERTURESCIENCE.GEL_BOUNCE_COLOR end
-	if ( paintType == 2 ) then color = APERTURESCIENCE.GEL_SPEED_COLOR end
-	if ( paintType == 3 ) then color = APERTURESCIENCE.GEL_PORTAL_COLOR end
-	if ( paintType == 4 ) then color = APERTURESCIENCE.GEL_WATER_COLOR end
-	
-	return color
-	
-end
-
 hook.Add( "Initialize", "GASL_Initialize", function()
 
 	if ( SERVER ) then
+		util.AddNetworkString( "GASL_NW_PaintGun" )
 		util.AddNetworkString( "GASL_NW_Player_Achievements" ) 
 		util.AddNetworkString( "GASL_LinkConnection" ) 
 		util.AddNetworkString( "GASL_Turrets_Activation" ) 
@@ -327,75 +308,244 @@ hook.Add( "PostDrawHUD", "GASL_HUDPaint", function()
 	
 end )
 
-function APERTURESCIENCE:CheckForGel( startpos, dir, skipprops )
+function APERTURESCIENCE:CheckForGel( startpos, dir, ignoreGelledProps )
 	
-	if ( skipprops == nil ) then skipprops = false end
+	if ( ignoreGelledProps == nil ) then ignoreGelledProps = false end
 	
 	local paintedProp = false
 	
 	local trace = util.TraceLine( {
 		start = startpos,
 		endpos = startpos + dir,
-		filter = function( ent ) if ( ent:GetClass() == "env_portal_paint" || !skipprops && ent.GASL_GelledType ) then return true end end
+		ignoreworld = true,
+		filter = function( ent ) if ( ent:GetClass() == "env_portal_paint" || !ignoreGelledProps && ent.GASL_GelledType ) then return true end end
 	} )
-	
-	local paintType = 0
 	
 	if ( !IsValid( trace.Entity ) ) then return NULL end
 	
+	local paintType = PORTAL_GEL_NONE
 	if ( trace.Entity:GetClass() == "env_portal_paint" ) then
 		paintType = trace.Entity:GetGelType()
 	else
 		paintType = trace.Entity.GASL_GelledType
 	end
 	
-	return trace.Entity, paintType
+	return trace.Entity, paintType, trace.HitNormal
+	
+end
+
+if ( CLIENT ) then
+
+	// STICKY gel camera orientation
+	hook.Add( "Think", "GASL_CamOrient", function()
+	
+		local eyeAngles = LocalPlayer():EyeAngles()
+		local newEyeAngle = Angle()
+		local orientation = LocalPlayer():GetNWVector( "GASL:Orientation" )
+
+		if ( !LocalPlayer():GetNWAngle( "GASL:OrientationAng" ) ) then LocalPlayer():SetNWAngle( "GASL:OrientationAng", eyeAngles ) end
+		if ( !LocalPlayer():GetNWAngle( "GASL:PlayerAng" ) ) then LocalPlayer():SetNWAngle( "GASL:PlayerAng", eyeAngles ) end
+		if ( !LocalPlayer():GetNWAngle( "GASL:PlayerEyeAngle" ) ) then LocalPlayer():SetNWAngle( "GASL:PlayerEyeAngle", eyeAngles ) end
+		local playerEyeAngle = LocalPlayer():GetNWAngle( "GASL:PlayerEyeAngle" )
+
+		if ( orientation == Vector( 0, 0, 1 ) ) then
+		
+			if ( math.abs( playerEyeAngle.r ) > 0.1 ) then
+				playerEyeAngle.r = math.ApproachAngle( playerEyeAngle.r, 0, FrameTime() * math.min( playerEyeAngle.r / 2, 160 ) )
+			elseif ( playerEyeAngle.r != 0 ) then
+				playerEyeAngle.r = 0
+			end
+			
+		end
+		
+		if ( newEyeAngle != eyeAngles ) then
+			
+			local orientationAng = LocalPlayer():GetNWAngle( "GASL:OrientationAng" )
+			
+			local playerAng = LocalPlayer():GetNWAngle( "GASL:PlayerAng" )
+
+			if ( playerAng != eyeAngles ) then
+			
+				local angOffset = ( eyeAngles - playerAng )
+				
+				playerEyeAngle.p = math.max( -90, math.min( 90, playerEyeAngle.p ) )
+				if ( playerEyeAngle.y > 360 ) then playerEyeAngle.y = playerEyeAngle.y - 360 end
+				if ( playerEyeAngle.y < -360 ) then playerEyeAngle.y = playerEyeAngle.y + 360 end
+				
+				LocalPlayer():SetNWAngle( "GASL:PlayerEyeAngle", playerEyeAngle + angOffset )
+				playerAng = eyeAngles
+				LocalPlayer():SetNWAngle( "GASL:PlayerAng", playerAng )
+				
+			end
+			
+			local orientAng = orientation:Angle() + Angle( 90, 0, 0 )
+			orientationAng.p = math.ApproachAngle( orientationAng.p, orientAng.p, FrameTime() * 150 )
+			orientationAng.y = math.ApproachAngle( orientationAng.y, orientAng.y, FrameTime() * 150 )
+			orientationAng.r = math.ApproachAngle( orientationAng.r, orientAng.r, FrameTime() * 150 )
+			LocalPlayer():SetNWAngle( "GASL:OrientationAng", orientationAng )
+			
+			_, newEyeAngle = LocalToWorld( Vector(), playerEyeAngle, Vector(), orientationAng )
+			
+			local plyAng = -LocalPlayer():GetAngles()
+			local _, orientAngToPly = WorldToLocal( Vector( ), plyAng, Vector( ), orientationAng )
+
+			// changing cam orientation when player is have different orientation or roll is inccorect
+			if ( orientation != Vector( 0, 0, 1 ) || orientation == Vector( 0, 0, 1 ) && math.abs( LocalPlayer():EyeAngles().r ) > 0.1 ) then
+				LocalPlayer():ManipulateBoneAngles( 0, Angle( 0, 0, 0 ) )
+				LocalPlayer():SetEyeAngles( newEyeAngle )
+				LocalPlayer():SetNWAngle( "GASL:PlayerAng", newEyeAngle )
+			end
+		end
+		
+	end )
+	
+end
+
+function APERTURESCIENCE:IsPlayerOnGround( ply )
+
+	local orient = ply:GetNWVector( "GASL:Orientation" )
+	return orient && orient != Vector( 0, 0, 1 ) || ply:IsOnGround()
 	
 end
 
 if ( CLIENT ) then return end
 
-hook.Add( "Think", "GASL_HandlingGel", function()
+function APERTURESCIENCE:InvertNormal( normal )
+
+	if ( normal.x != 0 ) then normal.x = normal.x * -1 end
+	if ( normal.y != 0 ) then normal.y = normal.y * -1 end
+	if ( normal.z != 0 ) then normal.z = normal.z * -1 end
 	
+end
+
+function APERTURESCIENCE:NormalFlipZeros( normal )
+
+	local lower = 0.000001
+	if ( math.abs( normal.x ) < lower ) then normal.x = 0 end
+	if ( math.abs( normal.y ) < lower ) then normal.y = 0 end
+	if ( math.abs( normal.z ) < lower ) then normal.z = 0 end
+	
+end
+
+hook.Add( "Think", "GASL_HandlingGel", function()	
+
 	for i, ply in pairs( player.GetAll() ) do
 		
+		//ply:SetAngle( 0, Angle( 0, 0, 0 ) )
 		-- Checking if player stands or hit paint
+		if ( ply:GetNWVector( "GASL:Orientation" ) == Vector() ) then ply:SetNWVector( "GASL:Orientation", Vector( 0, 0, 1 ) ) end
+		if ( !ply:GetNWVector( "GASL:OrientationWalk" ) ) then ply:SetNWVector( "GASL:OrientationWalk", Vector( 0, 0, 0 ) ) end
+		if ( !ply.GASL_Player_Orient ) then ply.GASL_Player_Orient = Angle() end
 		
 		local paint = NULL
 		local paintType = 0
+		local PaintNormal = Vector( )
+		local orientation = ply:GetNWVector( "GASL:Orientation" )
 		
-		if ( ply:IsOnGround() ) then
-			paint, paintType = APERTURESCIENCE:CheckForGel( ply:GetPos(), Vector( 0, 0, -100 ) )
+		// Handling changing orientation
+		if ( ply.GASL_FloorDown != orientation ) then
+			ply.GASL_FloorDown = orientation
+			local orientPos = orientation * ply:GetModelRadius()
+			
+			ply:SetCurrentViewOffset( Vector( orientPos.x, orientPos.y, 0 )  )
+			ply:SetViewOffset( Vector( 0, 0, orientPos.z ) )
+			
+			-- local _, localangle = WorldToLocal( Vector(), ply:EyeAngles(), Vector(), orientation:Angle() - Angle( 90, 0, 0 ) )
+			-- localangle = Angle( 0, localangle.y, 0 )
+			-- local _, worldangle = LocalToWorld( Vector(), localangle, Vector(), orientation:Angle() - Angle( 90, 0, 0 ) )
+			-- worldangle = Angle( 0, worldangle.y, 0 )
+			//ply:SetEyeAngles( Angle( 0, ply:EyeAngles().yaw + ply.GASL_Player_Orient.yaw, 0 ) )
+
+			timer.Create( "GASL_Player_Changed"..ply:EntIndex(), 2, 1, function() end ) // disable changeabling for a second
+		end
+		
+		local eyeAngle = ply:EyeAngles()
+		
+		if ( APERTURESCIENCE:IsPlayerOnGround( ply ) || orientation != Vector( 0, 0, 1 ) ) then
+			paint, paintType, PaintNormal = APERTURESCIENCE:CheckForGel( ply:GetPos() + orientation * ply:GetModelRadius() / 2, -orientation * ply:GetModelRadius() * 2 )
 		else
 			local dir = ply:GetVelocity() / 20
 			
-			if ( dir:Length() < 30 ) then
-				dir = dir:GetNormalized() * 30
+			if ( dir:Length() < ply:GetModelRadius() ) then
+				dir = dir:GetNormalized() * ply:GetModelRadius()
 			end
 			
-			paint, paintType = APERTURESCIENCE:CheckForGel( ply:GetPos(), dir )
+			paint, paintType, PaintNormal = APERTURESCIENCE:CheckForGel( ply:GetPos() + orientation * ply:GetModelRadius() / 2, dir )
+		end
+
+		-- Checking Wall when on Sticky Gel
+		local speed = ply:KeyDown( IN_SPEED ) and ply:GetRunSpeed() or ply:GetWalkSpeed()
+		local moveDirection = Vector( 0, 0, 0 )
+		local plyOrientCenter = ply:GetPos() + orientation * ply:GetModelRadius() / 2
+		
+		if ( ply:KeyDown( IN_FORWARD ) ) then moveDirection.x = 1 end
+		if ( ply:KeyDown( IN_BACK ) ) then moveDirection.x = -1 end
+		if ( ply:KeyDown( IN_MOVELEFT ) ) then moveDirection.y = 1 end
+		if ( ply:KeyDown( IN_MOVERIGHT ) ) then moveDirection.y = -1 end
+		moveDirection:Normalize() 
+		moveDirection = moveDirection * ply:GetModelRadius() / 2
+		
+		local eyeAng = ply:EyeAngles()
+		local orientAng = orientation:Angle() + Angle( 90, 0, 0 )
+		local _, localangle = WorldToLocal( Vector(), eyeAng, Vector(), orientAng )
+		localangle = Angle( 0, localangle.yaw, 0 )
+		local _, worldangle = LocalToWorld( Vector(), localangle, Vector(), orientAng )
+		moveDirection:Rotate( worldangle )
+
+		local p, pT, pN = APERTURESCIENCE:CheckForGel( plyOrientCenter, moveDirection )
+		
+		if ( IsValid( p ) && pT == PORTAL_GEL_STICKY && !timer.Exists( "GASL_Player_Changed"..ply:EntIndex() ) ) then
+			local orient = pN
+			ply.GASL_Player_Orient = pN:Angle() + Angle( 90, 0, 0 )
+
+			ply:SetNWVector( "GASL:Orientation", orient )
+			orientation = ply:GetNWVector( "GASL:Orientation" )
+			
+			local trace = util.QuickTrace( plyOrientCenter, -orient * 100, ply )
+			ply:SetNWVector( "GASL:OrientationWalk", trace.HitPos )
+			ply:SetPos( trace.HitPos )
+			ply:SetVelocity( -ply:GetVelocity() )
+
 		end
 		
 		-- Exiting Gel
 		if ( ply.GASL_LastStandingGelType && CurTime() > ply.GASL_LastTimeOnGel + 0.25 ) then
 		
-			if ( ply.GASL_LastStandingGelType == 1 ) then
+			if ( ply.GASL_LastStandingGelType == PORTAL_GEL_BOUNCE ) then
 				ply:EmitSound( "GASL.GelBounceExit" )
 			end
 			
-			if ( ply.GASL_LastStandingGelType == 2 ) then
+			if ( ply.GASL_LastStandingGelType == PORTAL_GEL_SPEED ) then
 				ply:EmitSound( "GASL.GelSpeedExit" )
+			end
+			
+			if ( ply.GASL_LastStandingGelType == PORTAL_GEL_STICKY ) then
+				local offset = orientation * ( orientation - Vector( 0, 0, 1 ) ):Length() * ply:GetModelRadius() / 1.5
+				local traceFloor = util.QuickTrace( ply:GetPos() + offset, Vector( 0, 0, -ply:GetModelRadius() ), ply )
+				offset = offset - Vector( 0, 0, traceFloor.Fraction * ply:GetModelRadius() )
+				
+				ply:SetPos( ply:GetPos() + offset )
+				ply:SetNWVector( "GASL:Orientation", Vector( 0, 0, 1 ) )
+				ply:SetNWVector( "GASL:OrientationWalk", Vector( ) )
 			end
 
 			ply.GASL_LastStandingGelType = 0
 		
 		end
 
-		-- Skip if paint doesn't found
-		if ( !paint:IsValid() ) then continue end
+		if ( !IsValid( paint ) ) then
+		
+			-- if ( orientation != Vector( 0, 0, 1 ) ) then
+				-- ply:SetNWVector( "GASL:Orientation", Vector( 0, 0, 1 ) )
+			-- end
+			
+			-- Skip if paint doesn't found
+			continue
+		end
+		APERTURESCIENCE:NormalFlipZeros( PaintNormal )
 		
 		-- Footsteps sounds
-		if ( ply:IsOnGround() && !timer.Exists( "GASL_GelFootsteps"..ply:EntIndex() )
+		if ( APERTURESCIENCE:IsPlayerOnGround( ply ) && !timer.Exists( "GASL_GelFootsteps"..ply:EntIndex() )
 			&& ( ply:KeyDown( IN_FORWARD )
 			|| ply:KeyDown( IN_BACK )
 			|| ply:KeyDown( IN_MOVERIGHT )
@@ -415,20 +565,31 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 		end
 		
 		-- Entering Gel
-		if ( ply:IsOnGround() ) then
-		
+		if ( APERTURESCIENCE:IsPlayerOnGround( ply ) ) then
+			
 			if ( !ply.GASL_LastTimeOnGel || ply.GASL_LastTimeOnGel && CurTime() > ply.GASL_LastTimeOnGel + 0.25 ) then
 			
-				if ( paintType == 1 ) then
+				if ( paintType == PORTAL_GEL_BOUNCE ) then
 					ply:EmitSound( "GASL.GelBounceEnter" )
 				end
 				
-				if ( paintType == 2 ) then
+				if ( paintType == PORTAL_GEL_SPEED ) then
 					ply:EmitSound( "GASL.GelSpeedEnter" )
 				end
-
+				
+				if ( paintType == PORTAL_GEL_STICKY ) then
+					local plyOrientCenter = ply:GetPos() + orientation * ply:GetModelRadius() / 2
+					local trace = util.QuickTrace( plyOrientCenter, -orientation * 100, ply )
+					orientation = ply:GetNWVector( "GASL:Orientation" )
+					
+					ply:SetNWVector( "GASL:OrientationWalk", trace.HitPos )
+					ply.GASL_Player_Orient = PaintNormal:Angle() + Angle( 90, 0, 0 )
+					ply:SetPos( trace.HitPos )
+					ply:SetVelocity( -ply:GetVelocity() )
+				end
+				
 				-- doesn't change if player ran on repulsion paint when he was on propulsion paint
-				if ( !( paintType == 1 && ply.GASL_LastStandingGelType == 2 && plyVelocity:Length() > 400 ) ) then
+				if ( !( paintType == PORTAL_GEL_BOUNCE && ply.GASL_LastStandingGelType == 2 && plyVelocity:Length() > 400 ) ) then
 					ply.GASL_LastStandingGelType = paintType
 				end
 				
@@ -438,14 +599,14 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 		
 		end
 		
-		-- if player hit repulsion paint
-		if ( paintType == 1 && !ply:KeyDown( IN_DUCK ) ) then
+		-- if player stand on repulsion paint
+		if ( paintType == PORTAL_GEL_BOUNCE && !ply:KeyDown( IN_DUCK ) ) then
 		
 			local plyVelocity = ply:GetVelocity()
 			
 			-- skip if player stand on the ground
 			-- doesn't skip if player ran on repulsion paint when he was on propulsion paint
-			if ( ply:IsOnGround() && !( ply.GASL_LastStandingGelType == 2 && plyVelocity:Length() > 400 ) ) then continue end
+			if ( APERTURESCIENCE:IsPlayerOnGround( ply ) && !( ply.GASL_LastStandingGelType == 2 && plyVelocity:Length() > 400 ) ) then continue end
 			
 			local WTL = WorldToLocal( paint:GetPos() + plyVelocity, Angle( ), paint:GetPos(), paint:GetAngles() )
 			WTL = Vector( 0, 0, math.max( -WTL.z * 2, 800 ) )
@@ -457,8 +618,8 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 
 		end
 		
-		-- if player hit propulsion paint
-		if (paintType == 2 ) then
+		-- if player stand on propulsion paint
+		if ( paintType == PORTAL_GEL_SPEED ) then
 		
 			local plyVelocity = ply:GetVelocity()
 
@@ -467,11 +628,75 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 			if ( plyVelocity:Length() > ply.GASL_GelPlayerVelocity:Length() ) then ply.GASL_GelPlayerVelocity = ply.GASL_GelPlayerVelocity + plyVelocity / 10 end
 			
 			if ( ply:KeyDown( IN_FORWARD ) ) then
-				ply.GASL_GelPlayerVelocity = ply.GASL_GelPlayerVelocity + Vector( ply:GetForward().x, ply:GetForward().y, 0 ) * 30
+				ply.GASL_GelPlayerVelocity = ply.GASL_GelPlayerVelocity + Vector( ply:GetForward().x, ply:GetForward().y, 0 ) * 20
 			end
 
-			ply:SetVelocity( Vector( ply.GASL_GelPlayerVelocity.x, ply.GASL_GelPlayerVelocity.y, 0 ) / 2 * math.max( 1, ply:Ping() / 50 ) )
+			ply:SetVelocity( Vector( ply.GASL_GelPlayerVelocity.x, ply.GASL_GelPlayerVelocity.y, 0 ) * FrameTime() * 40 )
 			ply.GASL_GelPlayerVelocity = ply.GASL_GelPlayerVelocity / 2
+			
+		end
+		
+		-- if player stand on sticky paint
+		if ( paintType == PORTAL_GEL_STICKY && ply:GetNWVector( "GASL:OrientationWalk" ) != Vector() ) then
+			
+			orientation = ply:GetNWVector( "GASL:Orientation" )
+			
+			if ( !timer.Exists( "GASL_Player_Changed"..ply:EntIndex() ) ) then
+				orientation = PaintNormal
+
+				APERTURESCIENCE:NormalFlipZeros( orientation )
+				ply.GASL_Player_Orient = PaintNormal:Angle() + Angle( 90, 0, 0 )
+				ply:SetNWVector( "GASL:Orientation", orientation )
+			end
+			
+			local localPos = ply:GetNWVector( "GASL:OrientationWalk" )
+			
+			if ( localPos != Vector( ) && orientation != Vector( 0, 0, 1 ) ) then
+				
+				local eyeAng = ply:EyeAngles()
+				
+				local speed = ply:KeyDown( IN_SPEED ) and ply:GetRunSpeed() or ply:GetWalkSpeed()
+				local moveDirection = Vector( 0, 0, 0 )
+
+				if ( ply:KeyDown( IN_FORWARD ) ) then moveDirection.x = 1 end
+				if ( ply:KeyDown( IN_BACK ) ) then moveDirection.x = -1 end
+				if ( ply:KeyDown( IN_MOVELEFT ) ) then moveDirection.y = 1 end
+				if ( ply:KeyDown( IN_MOVERIGHT ) ) then moveDirection.y = -1 end
+				
+				moveDirection = moveDirection:GetNormalized() * speed / 50
+				
+				local orientAng = orientation:Angle() + Angle( 90, 0, 0 )
+				local _, localangle = WorldToLocal( Vector(), eyeAng, Vector(), orientAng )
+				localangle = Angle( 0, localangle.yaw, 0 )
+				local _, worldangle = LocalToWorld( Vector(), localangle, Vector(), orientAng )
+				moveDirection:Rotate( worldangle )
+
+				if ( ply:KeyDown( IN_JUMP ) ) then
+					local traceFloor = util.QuickTrace( ply:GetPos(), Vector( 0, 0, -ply:GetModelRadius() ), ply )
+					moveDirection = orientation * ( orientation - Vector( 0, 0, 1 ) ):Length() * ply:GetModelRadius() / 1.5 - Vector( 0, 0, ply:GetModelRadius() * traceFloor.Fraction )
+					ply:SetNWVector( "GASL:Orientation", Vector( 0, 0, 1 ) )
+					ply:SetNWVector( "GASL:OrientationWalk", Vector( ) )
+					ply:SetVelocity( orientation * ply:GetJumpPower() )
+				end
+
+				local plyWidth = 30
+				local traceForward = util.QuickTrace( ply:GetPos() + orientation * ply:GetModelRadius() / 2, orientAng:Forward() * plyWidth, ply )
+				local traceBack = util.QuickTrace( ply:GetPos() + orientation * ply:GetModelRadius() / 2, -orientAng:Forward() * plyWidth, ply )
+				local traceRight = util.QuickTrace( ply:GetPos() + orientation * ply:GetModelRadius() / 2, orientAng:Right() * plyWidth, ply )
+				local traceLeft = util.QuickTrace( ply:GetPos() + orientation * ply:GetModelRadius() / 2, -orientAng:Right() * plyWidth, ply )
+				
+				if ( traceForward.Hit ) then moveDirection = moveDirection - orientAng:Forward() * ( 1 - traceForward.Fraction ) * plyWidth end
+				if ( traceBack.Hit ) then moveDirection = moveDirection + orientAng:Forward() * ( 1 - traceBack.Fraction ) * plyWidth end
+				if ( traceRight.Hit ) then moveDirection = moveDirection - orientAng:Right() * ( 1 - traceRight.Fraction ) * plyWidth end
+				if ( traceLeft.Hit ) then moveDirection = moveDirection + orientAng:Right() * ( 1 - traceLeft.Fraction ) * plyWidth end
+				
+				local walk = localPos + moveDirection
+				ply:SetNWVector( "GASL:OrientationWalk", walk )
+				ply:SetPos( walk )
+				if ( !ply:KeyDown( IN_JUMP ) ) then
+					ply:SetVelocity( -ply:GetVelocity() )
+				end
+			end
 			
 		end
 		
@@ -486,32 +711,28 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 			continue
 		end
 
-		if ( IsValid( v:GetPhysicsObject() ) && !v:GetPhysicsObject():IsMotionEnabled( ) ) then continue end
+		-- skip if props is freezed or it is holding by the player
+		if ( IsValid( v:GetPhysicsObject() ) && !v:GetPhysicsObject():IsMotionEnabled( ) || v:IsPlayerHolding() ) then continue end
 		
-		if ( v.GASL_GelledType == 1 ) then
-			
-			local vPhys = v:GetPhysicsObject()
-			local dir = vPhys:GetVelocity() / 50
-			
-			if ( dir:Length() < 40 ) then
-			
-				if ( dir == Vector() ) then dir = Vector( 0, 0, -1 ) end
-				dir = dir:GetNormalized() * 40
-				
-			end
-			
-			local trace = { start = v:GetPos(), endpos = v:GetPos() + dir, filter = v }
+		local vPhys = v:GetPhysicsObject()
+		local dir = vPhys:GetVelocity() / 10
+		
+		local trace = util.TraceEntity( { 
+			start = v:GetPos()
+			, endpos = v:GetPos() + dir
+			, filter = v 
+		}, v )
 
-			local tr = util.TraceEntity( trace, v )
-
-			if ( tr.Hit ) then
+		if ( v.GASL_GelledType == PORTAL_GEL_BOUNCE ) then
+		
+			if ( trace.Hit ) then
 				
 				v:EmitSound( "GASL.GelBounceProp" )
 				-- makes negative z for local hitnormal
-				local WTL = WorldToLocal( vPhys:GetVelocity(), Angle( ), Vector( ), tr.HitNormal:Angle() + Angle( 90, 0, 0 ) )
+				local WTL = WorldToLocal( vPhys:GetVelocity(), Angle( ), Vector( ), trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
 				WTL.z = math.max( -WTL.z, 400 )
 				WTL = WTL + VectorRand() * 100
-				local LTW = LocalToWorld( WTL, Angle( ), Vector( ), tr.HitNormal:Angle() + Angle( 90, 0, 0 ) )
+				local LTW = LocalToWorld( WTL, Angle( ), Vector( ), trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
 				
 				vPhys:SetVelocity( LTW )
 				
@@ -520,6 +741,23 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 			end
 			
 		end
+		
+		if ( v.GASL_GelledType == PORTAL_GEL_STICKY ) then
+		
+			if ( trace.Hit && ( !IsValid( trace.Entity ) || IsValid( trace.Entity ) && !IsValid( constraint.Find( v, trace.Entity, "Weld", 0, 0 ) ) ) ) then
+				timer.Simple( dir:Length() / 1000, function()
+					if ( IsValid( v ) && IsValid( v:GetPhysicsObject() ) ) then
+						if ( trace.HitWorld ) then
+							v:GetPhysicsObject():EnableMotion( false )
+						elseif( IsValid( trace.Entity ) ) then
+							constraint.Weld( v, trace.Entity, 0, trace.PhysicsBone, 5000, collision == 0, false )
+						end
+					end
+				end )
+			end
+			
+		end
+		
 	end
 	
 	-- Handling dissolved entities

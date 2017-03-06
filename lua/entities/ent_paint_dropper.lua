@@ -88,30 +88,17 @@ end
 
 function ENT:MakePuddle( )
 
-	local ent = ents.Create( "ent_paint_puddle" )
-	ent:SetPos( self:LocalToWorld( ( Vector( 0, 0, -1 ) + VectorRand() ) * 5 ) )
-	ent:SetMoveType( MOVETYPE_NONE )
-	ent:Spawn()
-
-	ent:GetPhysicsObject():EnableCollisions( false )
-	ent:GetPhysicsObject():Wake()
-
-	if ( IsValid( self.Owner ) && self.Owner:IsPlayer() ) then ent:SetOwner( self.Owner ) end
-
-	ent.GASL_GelType = self.GASL_GelType
 	-- Randomize makes random size between maxsize and minsize by selected procent
 	local randSize = math.Rand( -self.GASL_GelRandomizeSize, self.GASL_GelRandomizeSize ) / 100 * APERTURESCIENCE.GEL_MAXSIZE
 
 	local rad = math.max( APERTURESCIENCE.GEL_MINSIZE, math.min( APERTURESCIENCE.GEL_MAXSIZE, self.GASL_GelRadius + randSize ) )
-	ent:GetPhysicsObject():SetVelocity( -self:GetUp() * self.GASL_GelLaunchSpeed + VectorRand() * ( APERTURESCIENCE.GEL_MAXSIZE - rad ) / 2 )
-	ent:SetGelRadius( rad )
-	ent.GASL_GelRandomizeSize = self.GASL_GelRandomizeSize
-	ent.GASL_GelAmount = self.GASL_GelAmount
-
-	local color = APERTURESCIENCE:GetColorByGelType( ent.GASL_GelType )
-	ent:SetColor( color )
+	local paint = APERTURESCIENCE:MakePaintPuddle( self.GASL_GelType, self:LocalToWorld( ( Vector( 0, 0, -3 ) + VectorRand() ) * 5 ), rad )
+	if ( IsValid( self.Owner ) && self.Owner:IsPlayer() ) then paint:SetOwner( self.Owner ) end
+	
+	paint:GetPhysicsObject():SetVelocity( -self:GetUp() * self.GASL_GelLaunchSpeed + VectorRand() * ( APERTURESCIENCE.GEL_MAXSIZE - rad ) / 2 )
 	
 	return ent
+	
 end
 
 function ENT:SetGelType( gelType )

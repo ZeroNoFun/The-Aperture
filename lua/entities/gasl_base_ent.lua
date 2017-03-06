@@ -244,7 +244,9 @@ function ENT:GetAllPortalPassages( pos, angle )
 			start = pEffectBuildPos,
 			endpos = pEffectBuildPos + pEffectBuildAng:Forward() * 100000,
 			filter = function( ent )
-				if ( ent == self || ent:GetClass() == "prop_portal" || ent:IsPlayer() || ent:IsNPC() || ent:GetPhysicsObject() && ent:GetPhysicsObject():IsValid() ) then return false end
+				if ( ent == self || ent:GetClass() == "prop_portal" || ent:IsPlayer() || ent:IsNPC() 
+					|| ent:GetPhysicsObject() && ent:GetPhysicsObject():IsValid() && ent:GetPhysicsObject():IsMotionEnabled() ) then return false end
+				return true
 			end
 		} )
 		
@@ -277,6 +279,13 @@ function ENT:GetAllPortalPassages( pos, angle )
 
 end
 
+function ENT:PEffectUpdate( )
+
+	self.GASL_PortalEffectUpdate.lastPos = Vector( )
+	self.GASL_PortalEffectUpdate.lastAngle = Angle( )
+	
+end
+
 function ENT:MakePEffect( )
 
 	-- If pEffect projector detect portal update pEffect
@@ -296,7 +305,7 @@ function ENT:MakePEffect( )
 		portalLoop = false
 		
 		-- Prev Hendling
-		if ( hitPortal && hitPortal:IsValid() ) then
+		if ( hitPortal && IsValid( hitPortal ) ) then
 			
 			-- Getting new position info of next trace test
 			local pEffectOffsetPos = hitPortal:WorldToLocal( tracePrevHitPos )
@@ -315,7 +324,9 @@ function ENT:MakePEffect( )
 			start = pEffectBuildPos,
 			endpos = pEffectBuildPos + pEffectBuildAng:Forward() * 100000,
 			filter = function( ent )
-				if ( ent == self || ent:GetClass() == "prop_portal" || ent:IsPlayer() || ent:IsNPC() || ent:GetPhysicsObject() && ent:GetPhysicsObject():IsValid() ) then return false end
+				if ( ent == self || ent:GetClass() == "prop_portal" || ent:IsPlayer() || ent:IsNPC() 
+					|| ent:GetPhysicsObject() && ent:GetPhysicsObject():IsValid() && ent:GetPhysicsObject():IsMotionEnabled() ) then return false end
+				return true
 			end
 		} )
 		
@@ -350,7 +361,7 @@ function ENT:MakePEffect( )
 		end
 		
 		-- Handling changes position or angles
-		if ( self.GASL_PortalEffectUpdate.lastPos != self:GetPos() or self.GASL_PortalEffectUpdate.lastAngle != self:GetAngles() ) then
+		if ( self.GASL_PortalEffectUpdate.lastPos != self:GetPos() || self.GASL_PortalEffectUpdate.lastAngle != self:GetAngles() ) then
 		
 			-- Rebuilding pEffect specific to this portal
 			local pEffect = self:PEffectBuild( trace, pEffectBuildPos, pEffectBuildAng, passages )

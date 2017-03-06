@@ -6,7 +6,6 @@ TOOL.ClientConVar[ "startreversed" ] = "0"
 
 if ( CLIENT ) then
 
-	language.Add( "aperture_science_tractor_beam", "Exursion Funnel" )
 	language.Add( "tool.aperture_science_tractor_beam.name", "Exursion Funnel" )
 	language.Add( "tool.aperture_science_tractor_beam.desc", "Creates Exursion Funnel" )
 	language.Add( "tool.aperture_science_tractor_beam.0", "Left click to use" )
@@ -15,6 +14,39 @@ if ( CLIENT ) then
 	language.Add( "tool.aperture_science_tractor_beam.startenabled", "Start Enabled" )
 	language.Add( "tool.aperture_science_tractor_beam.startreversed", "Start Reversed" )
 	language.Add( "tool.aperture_science_tractor_beam.toggle", "Toggle" )
+	
+end
+
+if ( SERVER ) then
+
+	function MakeTractorBeam( ply, startenabled, startreversed, Data )
+		
+		if ( IsValid( pl ) && !pl:CheckLimit( "tractor_beams" ) ) then return false end
+		local ent = ents.Create( "ent_tractor_beam" )
+		if ( !IsValid( ent ) ) then return end
+
+		duplicator.DoGeneric( ent, Data )
+		
+		ent:SetStartEnabled( tobool( startenabled ) )
+		ent:SetStartReversed( tobool( startreversed ) )
+		ent:Spawn()
+		
+		ent.startenabled = startenabled
+		ent.startreversed = startreversed
+		
+		if ( tobool( startenabled ) ) then ent:ToggleEnable( false ) end
+		if ( tobool( startenabled ) ) then ent:ToggleReverse( false ) end
+
+		if ( IsValid( ply ) ) then
+			ply:AddCleanup( "tractor_beams", ent )
+			ply:AddCount( "tractor_beams", ent )
+		end
+		
+		return ent
+		
+	end
+	
+	duplicator.RegisterEntityClass( "ent_tractor_beam", MakeTractorBeam, "startenabled", "startreversed", "Data" )
 	
 end
 
@@ -31,42 +63,19 @@ function TOOL:LeftClick( trace )
 	local startenabled = self:GetClientNumber( "startenabled" )
 	local startreverse = self:GetClientNumber( "startreversed" )
 	
-	local tractor_beam = MakeTractorBeam( ply, trace.HitNormal:Angle(), trace.HitPos + trace.HitNormal * 31, startenabled, startreverse, toggle, key_enable, key_reverse )
+	local ent = MakeTractorBeam( ply, startenabled, startreverse )
 	
-	return true
+	ent:SetPos( trace.HitPos + trace.HitNormal * 31 )
+	ent:SetAngles( trace.HitNormal:Angle() )
 	
-end
+	undo.Create( "Exursion Funnel" )
+		undo.AddEntity( ent )
+		undo.SetPlayer( ply )
+	undo.Finish()
 
-if ( SERVER ) then
-
-	function MakeTractorBeam( pl, ang, pos, startenabled, startreverse )
-		
-		local tractor_beam = ents.Create( "ent_tractor_beam" )
-		tractor_beam:SetPos( pos )
-		tractor_beam:SetAngles( ang )
-		tractor_beam:SetMoveType( MOVETYPE_NONE )
-		tractor_beam:Spawn()
-
-		tractor_beam:SetStartEnabled( tobool( startenabled ) )
-		tractor_beam:ToggleEnable( false )
-		tractor_beam:SetStartReversed( tobool( startreverse ) )
-		tractor_beam:ToggleReverse( false )
-		
-		undo.Create( "Excursion Funnel" )
-			undo.AddEntity( tractor_beam )
-			undo.SetPlayer( pl )
-		undo.Finish()
-		
-		return tractor_beam
-		
-	end
+	return true, ent
 	
 end
-
-function TOOL:RightClick( trace )
-
-end
-
 
 function TOOL:UpdateGhostWallProjector( ent, ply )
 

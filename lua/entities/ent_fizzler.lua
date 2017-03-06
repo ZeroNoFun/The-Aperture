@@ -107,7 +107,7 @@ if ( CLIENT ) then
 	function ENT:Think()
 	
 		self.BaseClass.Think( self )
-	
+		
 	end
 	
 	function ENT:Initialize()
@@ -132,7 +132,18 @@ end
 function ENT:HandleEntityInField( ent )
 
 	if ( ent:IsPlayer() ) then
+	
+		local weapon = ent:GetActiveWeapon( )
 		
+		if ( IsValid( weapon ) && weapon:GetClass() == "weapon_portalgun" ) then
+			weapon:CleanPortals()
+			weapon:IdleStuff()
+		end
+		
+	elseif ( ent:GetClass() == "projectile_portal_ball" || ent:GetClass() == "prop_portal" ) then
+	
+		ent:Remove()
+	
 	elseif ( ent:GetPhysicsObject():IsValid() ) then
 	
 		APERTURESCIENCE:DissolveEnt( ent )
@@ -148,6 +159,35 @@ function ENT:Think()
 
 	self.BaseClass.Think( self )
 
+	local DivCount = 10
+	local Height = 110
+	
+	self.GASL_AllreadyHandled = { }
+	
+	local SCANRAD = Vector( 1, 1, 1 ) * 100
+	for i = 0, DivCount do
+		local pos = self:LocalToWorld( Vector( 0, 0, -Height / 2 + i * ( Height / DivCount ) ) )
+		local pos2 = self:GetNWEntity( "GASL_ConnectedField" ):LocalToWorld( Vector( 0, 0, -Height / 2 + i * ( Height / DivCount ) ) )
+		
+		local tracer = util.TraceHull( {
+			start = pos,
+			endpos = pos2,
+			filter = function( ent ) 
+				if ( ent:GetClass() == "projectile_portal_ball" ) then return true end
+			end,
+			ignoreworld = true,
+			mins = -SCANRAD,
+			maxs = SCANRAD,
+			mask = MASK_SHOT_HULL
+		} )
+		
+		if ( IsValid( tracer.Entity ) ) then
+			self.GASL_AllreadyHandled[ tracer.Entity:EntIndex() ] = true
+			self:HandleEntityInField( tracer.Entity )
+		end
+		
+	end
+	
 	return true
 	
 end

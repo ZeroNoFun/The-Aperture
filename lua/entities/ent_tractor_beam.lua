@@ -51,7 +51,6 @@ function ENT:Initialize()
 		self:GetPhysicsObject():EnableMotion( false )
 		
 		self.GASL_TractorBeamLeavedEntities = { }
-		self.GASL_TractorBeamFields = { }
 		
 		self.GASL_EntInfo = { model = "models/tractor_beam_field/tractor_beam_field.mdl", length = 428.5, color = Color( 255, 255, 255 ), angle = Angle( 90, 0, 0 ), parent = true }
 		
@@ -98,12 +97,15 @@ function ENT:Draw()
 	local tractorBeamTrace = util.TraceLine( {
 		start = self:GetPos(),
 		endpos = self:LocalToWorld( Vector( 10000, 0, 0 ) ),
-		filter = function( ent ) if ( ent == self or ent:GetClass() == "player" or ent:GetClass() == "prop_physics" ) then return false end end
+		filter = function( ent )
+			if ( ent == self || ent:GetClass() == "prop_portal" || ent:IsPlayer() || ent:IsNPC() ) then
+				return false end
+		end
 	} )
 	
 	local totalDistance = self:GetPos():Distance( tractorBeamTrace.HitPos )
 
-	-- Handling changes position or angles 
+	-- Handling changes in distance to funnel end
 	if ( self.GASL_FunnelUpdate.lastPos != self:GetPos() or self.GASL_FunnelUpdate.lastAngle != self:GetAngles() ) then
 		self.GASL_FunnelUpdate.lastPos = self:GetPos()
 		self.GASL_FunnelUpdate.lastAngle = self:GetAngles()
@@ -112,6 +114,7 @@ function ENT:Draw()
 		min = Vector()
 		max = Vector()
 		
+		self:PEffectUpdate()
 		self:SetRenderBounds( min, max, Vector( totalDistance, 0, 0 ) )
 	end
 	
@@ -199,9 +202,10 @@ function ENT:Think()
 	-- Skip this tick if exursion funnel is disabled and removing effect if possible
 	if ( !self:GetEnable() ) then
 		
-		if ( self.GASL_FunnelUpdate.lastPos == self:GetPos() or self.GASL_FunnelUpdate.lastAngle == self:GetAngles() ) then
-			self.GASL_FunnelUpdate.lastPos = { }
-			
+		if ( self.GASL_FunnelUpdate.lastPos != Vector() || self.GASL_FunnelUpdate.lastAngle != Angle() ) then
+			self.GASL_FunnelUpdate.lastPos = Vector()
+			self.GASL_FunnelUpdate.lastAngle = Angle()
+				
 			-- Removing effects
 			self:ClearAllData( )
 			self:SetupTrails( )
@@ -226,7 +230,8 @@ function ENT:Think()
 			
 				if ( ent == self ) then return false end
 				
-				if ( !ent.GASL_Ignore and ( ent:IsPlayer() or ent:IsNPC() or ent:GetPhysicsObject():IsValid() ) ) then 
+				if ( !ent.GASL_Ignore and ( ent:GetClass() == "prop_portal" || ent:IsPlayer() || ent:IsNPC() 
+						|| IsValid( ent:GetPhysicsObject() ) && ent:GetPhysicsObject():IsValid() && ent:GetPhysicsObject():IsMotionEnabled() ) ) then 
 					
 					table.insert( TractorBeamEntities, ent:EntIndex(), ent )
 					ent.GASL_TravelingInBeamDir = ( v.endpos - v.startpos ):GetNormalized()
@@ -368,7 +373,7 @@ function ENT:Think()
 	self:MakePEffect()
 	
 	-- Handling changes position or angles
-	if ( self.GASL_FunnelUpdate.lastPos != self:GetPos() or self.GASL_FunnelUpdate.lastAngle != self:GetAngles() ) then
+	if ( self.GASL_FunnelUpdate.lastPos != self:GetPos() || self.GASL_FunnelUpdate.lastAngle != self:GetAngles() ) then
 		self.GASL_FunnelUpdate.lastPos = self:GetPos()
 		self.GASL_FunnelUpdate.lastAngle = self:GetAngles()
 		self:SetupTrails()
@@ -431,15 +436,6 @@ function ENT:SetupTrails( )
 
 end
 
-function ENT:TractorBeamEffectRemove( )
-
-	for k, v in pairs( self.GASL_TractorBeamFields ) do
-		if ( v:IsValid() ) then v:Remove() end
-	end
-	
-end
-
-
 function ENT:TriggerInput( iname, value )
 	if ( !WireAddon ) then return end
 	
@@ -499,12 +495,9 @@ function ENT:ToggleReverse( bDown )
 	
 end
 
--- Removing field effect 
 function ENT:OnRemove()
 
 	self:CheckForLeave()
-	
 	self:StopSound( "GASL.TractorBeamLoop" )
-	self:TractorBeamEffectRemove( )
 	
 end

@@ -67,6 +67,9 @@ if ( CLIENT ) then
 	
 end
 
+function ENT:ConnectFields( secondField )
+end
+
 function ENT:Initialize()
 	
 	self:PhysicsInit( SOLID_VPHYSICS )
@@ -102,11 +105,12 @@ function ENT:Think()
 	
 	if ( !self:GetEnable() ) then return end
 	
-	local DivCount = 10
+	local DivCount = 20
 	local Height = 110
 	
 	self.GASL_AllreadyHandled = { }
 	
+	local SCANRAD = Vector( 1, 1, 1 ) * 20
 	for i = 0, DivCount do
 		local pos = self:LocalToWorld( Vector( 0, 0, -Height / 2 + i * ( Height / DivCount ) ) )
 		local pos2 = self:GetNWEntity( "GASL_ConnectedField" ):LocalToWorld( Vector( 0, 0, -Height / 2 + i * ( Height / DivCount ) ) )
@@ -118,16 +122,14 @@ function ENT:Think()
 				if ( ( APERTURESCIENCE:IsValidEntity( ent ) || ent:IsPlayer() || ent:IsNPC() ) && !self.GASL_AllreadyHandled[ ent:EntIndex() ] ) then
 					return true
 				end
-				
-				return false
 			end,
 			ignoreworld = true,
-			mins = -Vector( 5, 5, 5 ),
-			maxs = Vector( 5, 5, 5 ),
+			mins = -SCANRAD,
+			maxs = SCANRAD,
 			mask = MASK_SHOT_HULL
 		} )
 		
-		if ( tracer.Entity && tracer.Entity:IsValid() ) then
+		if ( IsValid( tracer.Entity ) ) then
 			self.GASL_AllreadyHandled[ tracer.Entity:EntIndex() ] = true
 			self:HandleEntityInField( tracer.Entity )
 		end

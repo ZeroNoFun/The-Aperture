@@ -10,7 +10,8 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Bool", 2, "PRight" )
 	self:NetworkVar( "Bool", 3, "PForward" )
 	self:NetworkVar( "Bool", 4, "PBack" )
-	
+	self:NetworkVar( "Int", 5, "MatType" )
+
 end
 
 function ENT:Initialize()
@@ -20,7 +21,7 @@ function ENT:Initialize()
 		self:SetModel( "models/portal_paint/portal_paint.mdl" )
 		self:PhysicsInit( SOLID_NONE )
 		self:SetMoveType( MOVETYPE_NONE )
-		self:SetSolid( SOLID_BBOX )
+		self:SetSolid( SOLID_VPHYSICS )
 		self:DrawShadow( false )
 		self:SetCollisionGroup( COLLISION_GROUP_WORLD )
 		self.GASL_Untouchable = true
@@ -109,7 +110,7 @@ function ENT:UpdateGel()
 	
 end
 
-function ENT:DrawTranslucent()
+function ENT:Draw()
 
 	local left = self:GetPLeft()
 	local right = self:GetPRight()
