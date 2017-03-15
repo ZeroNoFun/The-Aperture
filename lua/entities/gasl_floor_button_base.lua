@@ -162,7 +162,7 @@ function ENT:CreateTrigger()
 		self.PlayerTrigger = nil
 	end
 
-	local ent = SpawnCPPI( "portalbutton_trigger", self.Owner )
+	local ent = SpawnCPPI( "gasl_floor_button_trigger", self.Owner )
 	if !IsValid( ent ) then return end
 
 	local pos = self:GetPos()
@@ -185,7 +185,7 @@ function ENT:CreatePhys( model )
 		self.ButtonPhysEnt = nil
 	end
 
-	local ent = SpawnCPPI( "portalbutton_phys", self.Owner )
+	local ent = SpawnCPPI( "gasl_floor_button_phys", self.Owner )
 	if !IsValid( ent ) then return end
 
 	local pos = self:GetPos()

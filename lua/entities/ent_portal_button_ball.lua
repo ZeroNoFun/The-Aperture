@@ -1,10 +1,5 @@
 AddCSLuaFile()
-DEFINE_BASECLASS("portalbutton_base")
-
-ENT.PrintName		= "Wired Button (Ball)"
-ENT.Spawnable		= istable(PortalButtons)
-ENT.AdminOnly		= false
-ENT.Category		= "Aperture Science"
+DEFINE_BASECLASS("gasl_floor_button_base")
 
 local WireAddon = WireAddon or WIRE_CLIENT_INSTALLED
 local PortalButtons = PortalButtons

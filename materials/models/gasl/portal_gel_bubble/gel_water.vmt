@@ -6,6 +6,6 @@ $envmaptint "[.5 .5 .5]"
 $translucent 1
 $surfaceprop glass
 "%keywords" Portal2
-$nocull 0
+$nocull 1
 $additive 1
 }

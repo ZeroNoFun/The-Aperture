@@ -1,11 +1,6 @@
 AddCSLuaFile( )
 
-ENT.Base 			= "gasl_base_ent"
-
-ENT.Editable		= true
-ENT.PrintName		= "Panel Arm"
-ENT.Category		= "Aperture Science"
-ENT.Spawnable		= true
+ENT.Base = "gasl_base_ent"
 ENT.AutomaticFrameAdvance = true
 
 function ENT:SetupDataTables()
@@ -50,9 +45,10 @@ function ENT:MovePanel( pos, ang )
 	if ( !timer.Exists( "GASL_Timer_ArmPanel"..self:EntIndex() ) ) then
 	
 		self:EmitSound( "world/interior_robot_arm/interior_arm_platform_open_01.wav" )
-		timer.Create( "GASL_Timer_ArmPanel"..self:EntIndex(), 2.0, 1, function() end )
 		
 	end
+	
+	timer.Create( "GASL_Timer_ArmPanel"..self:EntIndex(), 1.0, 1, function() end )
 	
 end
 
@@ -217,7 +213,7 @@ function ENT:Think()
 	
 	self:NextThink( CurTime() + 0.1 )
 	
-	local PanelMaxSpeed = 5 -- default 1
+	local PanelMaxSpeed = 10 -- default 5
 	local panel = self:GetBasePanel()
 	local armPos = self:LocalToWorld( self.GASL_ArmPos )
 	local armAng = self:LocalToWorldAngles( self.GASL_ArmAng )
@@ -244,7 +240,7 @@ function ENT:Think()
 	local angDir = self.GASL_SlowArmAng
 	local angleVel = panel:WorldToLocalAngles( angDir )
 	
-	panel:GetPhysicsObject():SetVelocity( ( dir - panel:GetPos() ) * 30 )
+	panel:GetPhysicsObject():SetVelocity( ( dir - panel:GetPos() ) * 30 - panel:GetVelocity() / 5 )
 	panel:GetPhysicsObject():AddAngleVelocity( Vector( angleVel.r, angleVel.p, angleVel.y ) * 100 - panel:GetPhysicsObject():GetAngleVelocity() )
 
 	return true
@@ -255,8 +251,8 @@ function ENT:TriggerInput( iname, value )
 	if ( !WireAddon ) then return end
 	
 	if ( iname == "Enable" ) then self:ToggleEnable( tobool( value ) )end
-	if ( iname == "Arm Position" ) then self:MovePanel( value, self:GetArmAng() ) end
-	if ( iname == "Arm Angle" ) then self:MovePanel( self:GetArmPos(), value ) end
+	if ( iname == "Arm Position" ) then self:MovePanel( Vector( value[1], value[2], value[3] ), self:GetArmAng() ) end
+	if ( iname == "Arm Angle" ) then self:MovePanel( self:GetArmPos(), Angle( value[1], value[2], value[3] ) ) end
 
 end
 

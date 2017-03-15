@@ -1,8 +1,7 @@
 AddCSLuaFile( )
 
 ENT.Type 			= "anim"
-ENT.Base 			= "gasl_base_ent"
-ENT.PrintName		= "Gel Dropper"
+ENT.Base = "gasl_base_ent"
 
 function ENT:SetupDataTables()
 
@@ -50,11 +49,10 @@ function ENT:Initialize()
 	self:GetPhysicsObject():EnableCollisions( false )
 	self:DrawShadow( false )
 	
-	self.GASL_GelType = 0
-	self.GASL_GelRadius = 0
-	self.GASL_GelRandomizeSize = 0
-	self.GASL_GelAmount = 0
-	self.GASL_GelLaunchSpeed = 0
+	self.GASL_PAINT_Type = PAINT_GEL_NONE
+	self.GASL_PAINT_Radius = 0
+	self.GASL_PAINT_Amount = 0
+	self.GASL_PAINT_LaunchSpeed = 0
 	
 	self:AddInput( "Enable", function( value ) self:ToggleEnable( value ) end )
 
@@ -78,7 +76,7 @@ function ENT:Think()
 
 	self:NextThink( CurTime() + 1 )
 	if ( self:GetEnable( ) ) then
-		self:NextThink( CurTime() + ( 100 / self.GASL_GelAmount ) / 20 )
+		self:NextThink( CurTime() + math.max( 1, 100 - self.GASL_PAINT_Amount ) / 50 )
 		self:MakePuddle( )
 	end	
 	
@@ -89,53 +87,54 @@ end
 function ENT:MakePuddle( )
 
 	-- Randomize makes random size between maxsize and minsize by selected procent
-	local randSize = math.Rand( -self.GASL_GelRandomizeSize, self.GASL_GelRandomizeSize ) / 100 * APERTURESCIENCE.GEL_MAXSIZE
+	local RandSize = math.Rand( -1, 1 ) * self.GASL_PAINT_Radius / 4
 
-	local rad = math.max( APERTURESCIENCE.GEL_MINSIZE, math.min( APERTURESCIENCE.GEL_MAXSIZE, self.GASL_GelRadius + randSize ) )
-	local paint = APERTURESCIENCE:MakePaintPuddle( self.GASL_GelType, self:LocalToWorld( ( Vector( 0, 0, -3 ) + VectorRand() ) * 5 ), rad )
+	local rad = math.max( APERTURESCIENCE.GEL_MINSIZE, math.min( APERTURESCIENCE.GEL_MAXSIZE, self.GASL_PAINT_Radius + RandSize ) )
+	local paint = APERTURESCIENCE:MakePaintPuddle( self.GASL_PAINT_Type, self:LocalToWorld( Vector( 0, 0, -50 ) + VectorRand() * ( 40 - ( rad / APERTURESCIENCE.GEL_MAXSIZE ) * 40 ) / 4 ), rad )
+
 	if ( IsValid( self.Owner ) && self.Owner:IsPlayer() ) then paint:SetOwner( self.Owner ) end
 	
-	paint:GetPhysicsObject():SetVelocity( -self:GetUp() * self.GASL_GelLaunchSpeed + VectorRand() * ( APERTURESCIENCE.GEL_MAXSIZE - rad ) / 2 )
+	paint:GetPhysicsObject():SetVelocity( -self:GetUp() * self.GASL_PAINT_LaunchSpeed + VectorRand():GetNormalized() * ( APERTURESCIENCE.GEL_MAXSIZE - rad ) * ( self.GASL_PAINT_LaunchSpeed / APERTURESCIENCE.GEL_MAX_LAUNCH_SPEED ) )
 	
 	return ent
 	
 end
 
-function ENT:SetGelType( gelType )
+function ENT:SetPaintType( paintType )
 
-	self:SetSkin( gelType )
-	self.GASL_GelType = gelType
+	self:SetSkin( paintType )
+	self.GASL_PAINT_Type = paintType
 
 end
 
-function ENT:SetGelRadius( gelRadius )
+function ENT:SetPaintRadius( paintRadius )
 
-	self.GASL_GelRadius = math.max( APERTURESCIENCE.GEL_MINSIZE, math.min( APERTURESCIENCE.GEL_MAXSIZE, gelRadius ) )
+	self.GASL_PAINT_Radius = paintRadius
 	
 end
 
-function ENT:SetGelRandomizeSize( randomizeSize )
+function ENT:SetPaintAmount( paintAmount )
 
-	self.GASL_GelRandomizeSize = math.max( 0, math.min( 100, randomizeSize ) )
+	self.GASL_PAINT_Amount = math.max( 0, paintAmount )
 	
 end
 
-function ENT:SetGelAmount( gelAmount )
+function ENT:SetPaintLaunchSpeed( launchSpeed )
 
-	self.GASL_GelAmount = math.max( 1, math.min( 100, gelAmount ) )
+	self.GASL_PAINT_LaunchSpeed = math.max( 0, launchSpeed )
 	
 end
 
-function ENT:TriggerInput( iname, value )
-	if ( !WireAddon ) then return end
+-- function ENT:TriggerInput( iname, value )
+	-- if ( !WireAddon ) then return end
 
-	if ( iname == "Enable" ) then self:SetEnable( tobool( value ) ) end
-	if ( iname == "Gel Radius" ) then self:SetGelRadius( value ) end
-	if ( iname == "Gel Randomize Size" ) then self:SetGelRandomizeSize( value ) end
-	if ( iname == "Gel Amount" ) then self:SetGelAmount( value ) end
-	if ( iname == "Gel Launch Speed" ) then self.GASL_GelLaunchSpeed = value end
+	-- if ( iname == "Enable" ) then self:SetEnable( tobool( value ) ) end
+	-- if ( iname == "Gel Radius" ) then self:SetGelRadius( value ) end
+	-- if ( iname == "Gel Randomize Size" ) then self:SetGelRandomizeSize( value ) end
+	-- if ( iname == "Gel Amount" ) then self:SetGelAmount( value ) end
+	-- if ( iname == "Gel Launch Speed" ) then self.GASL_GelLaunchSpeed = value end
 	
-end
+-- end
 
 function ENT:ToggleEnable( bDown )
 

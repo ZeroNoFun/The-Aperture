@@ -1,16 +1,11 @@
 AddCSLuaFile()
-DEFINE_BASECLASS("portalbutton_base")
-
-ENT.PrintName		= "Wired Button (Old)"
-ENT.Spawnable		= istable(PortalButtons)
-ENT.AdminOnly		= false
-ENT.Category		= "Aperture Science"
+DEFINE_BASECLASS("gasl_floor_button_base")
 
 local WireAddon = WireAddon or WIRE_CLIENT_INSTALLED
 local PortalButtons = PortalButtons
 
 if ( WireAddon ) then
-	ENT.WireDebugName = "Floor Button (Old)"
+	ENT.WireDebugName = "Floor Button (Normal)"
 end
 
 if CLIENT then
@@ -35,7 +30,7 @@ function ENT:SpawnFunction( ply, tr )
 
 	if ( !tr.Hit ) then return end
 	local SpawnPos = tr.HitPos + tr.HitNormal * 1
-	local ent = ents.Create( "sent_portalbutton_old" )
+	local ent = ents.Create( "sent_portalbutton_normal" )
 	if ( !IsValid( ent ) ) then return end
 
 	ent.Owner = ply
@@ -50,7 +45,7 @@ end
 
 local AcceptedModels = nil
 function ENT:Initialize()
-	self:SetModel( "models/portal_custom/underground_floor_button_custom.mdl" )
+	self:SetModel( "models/portal_custom/portal_button_custom.mdl" )
 	self:PhysicsInit( SOLID_VPHYSICS )
 	self:SetMoveType( MOVETYPE_VPHYSICS )
 	self:SetSolid( SOLID_VPHYSICS )
@@ -68,16 +63,16 @@ function ENT:Initialize()
 end
 
 function ENT:OnUpdateSettings()
-	self:CreatePhys("models/portal_custom/underground_floor_button_custom_phy.mdl")
+	self:CreatePhys("models/portal_custom/portal_button_custom_phy.mdl")
 	if !IsValid( self.ButtonPhysEnt ) then
 		self:Remove()
 		return
 	end
 
 	self.PressTriggerHeight = 17
-	self.PressTriggerSize = 32
+	self.PressTriggerSize = 17
 	self.UsePlayerTrigger = true
-	self.PressTraceCount = 8
+	self.PressTraceCount = 4
 end
 
 function ENT:Filter( ent )
@@ -87,32 +82,52 @@ function ENT:Filter( ent )
 	return true
 end
 
-local StopVector = Vector()
-
 function ENT:OnChangePressEnt(ent_new, ent_old)
 	if !AcceptedModels then return end
 
 	if IsValid(ent_old) then
 		if !ent_old:IsPlayer() then
+			local model = ent_old:GetModel()
+			local skin = ent_old:GetSkin()
+			local skindata = AcceptedModels[model] or {}
+
+			local SkinChange = (skindata.off or {})[skin]
+			if SkinChange then
+				ent_old:SetSkin(SkinChange)
+			end
+
 			ent_old:PhysWake()
 		end
 	end
 	
 	if IsValid(ent_new) then
-		self:EnableButtonPhys( false )
+		self:EnableButtonPhys(false)
 
 		if !ent_new:IsPlayer() then
+			local model = ent_new:GetModel()
+			local skin = ent_new:GetSkin()
+			local skindata = AcceptedModels[model] or {}
+
+			local SkinChange = (skindata.on or {})[skin]
+			if SkinChange then
+				ent_new:SetSkin(SkinChange)
+			end
+
 			ent_new:PhysWake()
 		end
 	end
 end
 
 function ENT:OnTurnOn()
+	self:SetSkin(1)
 	self:SetAnim(3)
+
 	self:EnableButtonPhys( false )
 end
 
 function ENT:OnTurnOFF()
+	self:SetSkin(0)
 	self:SetAnim(1)
+
 	self:EnableButtonPhys( true )
 end

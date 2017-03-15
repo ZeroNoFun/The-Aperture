@@ -24,8 +24,6 @@ function ENT:Initialize()
 		self:SetCollisionGroup( COLLISION_GROUP_IN_VEHICLE )
 		
 		self.GASL_GelType = 0
-		self.GASL_GelRandomizeSize = 0
-		self.GASL_GelAmount = 0
 		self.GASL_PAINTPUDDLE_PrevPos = self:GetPos()
 		
 	end
@@ -40,20 +38,21 @@ end
 
 function ENT:PaintGel( pl, pos, normal, rad )
 
-	local maxseg = math.floor( rad / APERTURESCIENCE.GEL_BOX_SIZE )
-	
 	local effectdata = EffectData()
 	effectdata:SetOrigin( pos )
 	effectdata:SetNormal( normal )
 	effectdata:SetRadius( self:GetGelRadius() )
 	effectdata:SetColor( self.GASL_GelType )
 	
-	if ( rad > 100 ) then
+	if ( rad >= 150 ) then
 		self:EmitSound( "GASL.GelSplatBig" )
+		util.Effect( "paint_bomb_effect", effectdata )
 	else
 		self:EmitSound( "GASL.GelSplat" )
+		util.Effect( "paint_splat_effect", effectdata )
 	end
-	util.Effect( "paint_splat_effect", effectdata )
+	
+	local maxseg = math.floor( rad / APERTURESCIENCE.GEL_BOX_SIZE )
 	
 	for x = -maxseg, maxseg do
 	for y = -maxseg, maxseg do
@@ -62,19 +61,25 @@ function ENT:PaintGel( pl, pos, normal, rad )
 		offset:Rotate( normal:Angle() + Angle( 90, 0, 0 ) )
 		
 		local location = pos + offset
-		local paint = APERTURESCIENCE:CheckForGel( location + normal * 10, -normal * 20, true ) 
+		local gridLocation = APERTURESCIENCE:ConvertToGridWithoutZ( location, normal:Angle() + Angle( 90, 0, 0 ), APERTURESCIENCE.GEL_BOX_SIZE )
+		local paint = APERTURESCIENCE:CheckForGel( gridLocation + normal * 10, -normal * 20, true ) 
 		
-		if ( location:Distance( pos ) > rad ) then continue end
+		if ( gridLocation:Distance( pos ) > rad ) then continue end
 		
 		if ( !IsValid( paint ) ) then
 			
 			-- Skip if paint type is water
 			if ( self.GASL_GelType == PORTAL_GEL_WATER ) then continue end
 			
+			
+			-- Skip if grided position is outside of the world
+			if ( !util.IsInWorld( gridLocation ) ) then continue end
+
 			local trace = util.TraceLine( {
-				start = location + normal * 10,
-				endpos = location - normal * 10,
+				start = gridLocation + normal * 10,
+				endpos = gridLocation - normal * 10,
 				filter = function( ent )
+					if ( ent:GetClass() == "env_portal_paint" ) then return false end
 					if ( !APERTURESCIENCE:IsValidEntity( ent ) ) then return true end
 				end
 			} )
@@ -82,15 +87,10 @@ function ENT:PaintGel( pl, pos, normal, rad )
 			-- Skip if tracer doesn't hit anything or it in the world
 			if ( !trace.Hit || trace.Fraction == 0 || !util.IsInWorld( trace.HitPos ) ) then continue end
 			
-			local gridPos = APERTURESCIENCE:ConvertToGridWithoutZ( trace.HitPos + trace.HitNormal, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), APERTURESCIENCE.GEL_BOX_SIZE )
-			
-			-- Skip if grided position is outside of the world
-			if ( !util.IsInWorld( gridPos ) ) then continue end
-			
 			local ent = ents.Create( "env_portal_paint" )
 			if( !IsValid( ent ) ) then return end
 			
-			ent:SetPos( gridPos )
+			ent:SetPos( trace.HitPos + normal )
 			ent:SetAngles( trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
 			ent:SetMoveType( MOVETYPE_NONE )
 			
@@ -202,6 +202,19 @@ end
 function ENT:DrawTranslucent()
 	
 	self:DrawModel()
+	
+	-- local entities = ents.FindInSphere( self:GetPos(), self:GetGelRadius() * 2 ) 
+	
+	-- for k, v in pairs( entities ) do
+	
+		-- if ( v:GetClass() == "ent_paint_puddle" ) then
+			
+			-- table.insert( APERTURESCIENCE.CONNECTED_PAINTS, 0, self )
+			-- break
+			
+		-- end
+		
+	-- end
 	
 end
 

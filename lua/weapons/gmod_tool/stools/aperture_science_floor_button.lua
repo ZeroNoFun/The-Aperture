@@ -33,10 +33,10 @@ end
 function TOOL:ModelToEntity( mdl )
 
 	local modelToEntity = {
-		["models/portal_custom/ball_button_custom.mdl"] = "sent_portalbutton_ball",
-		["models/portal_custom/box_socket_custom.mdl"] = "sent_portalbutton_box",
-		["models/portal_custom/portal_button_custom.mdl"] = "sent_portalbutton_normal",
-		["models/portal_custom/underground_floor_button_custom.mdl"] = "sent_portalbutton_old"
+		["models/portal_custom/ball_button_custom.mdl"] = "ent_portal_button_ball",
+		["models/portal_custom/box_socket_custom.mdl"] = "ent_portal_button_box",
+		["models/portal_custom/portal_button_custom.mdl"] = "ent_portal_button_normal",
+		["models/portal_custom/underground_floor_button_custom.mdl"] = "ent_portal_button_old"
 	}
 	
 	return modelToEntity[ mdl ]
@@ -48,6 +48,7 @@ if ( SERVER ) then
 	function MakePortalFloorButton( pl, class, pos, ang )
 		
 		local floor_button = ents.Create( class )
+		if ( !IsValid( floor_button ) ) then return end
 		floor_button:SetPos( pos )
 		floor_button:SetAngles( ang )
 		floor_button.Owner = pl
@@ -60,7 +61,7 @@ if ( SERVER ) then
 			undo.SetPlayer( pl )
 		undo.Finish()
 		
-		return true
+		return floor_button
 		
 	end
 

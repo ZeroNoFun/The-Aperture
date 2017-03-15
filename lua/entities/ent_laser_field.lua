@@ -1,12 +1,7 @@
 AddCSLuaFile( )
 
-ENT.Base 			= "ent_fizzler_base"
-
-ENT.Editable		= true
-ENT.PrintName		= "Laser Field"
-ENT.Category		= "Aperture Science"
-ENT.Spawnable		= true
-ENT.RenderGroup 	= RENDERGROUP_BOTH
+ENT.Base = "gasl_base_ent"
+ENT.RenderGroup = RENDERGROUP_BOTH
 ENT.AutomaticFrameAdvance = true
 
 function ENT:SpawnFunction( ply, trace, ClassName )

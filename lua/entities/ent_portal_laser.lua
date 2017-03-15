@@ -1,12 +1,7 @@
 AddCSLuaFile( )
 
-ENT.Base 			= "gasl_base_ent"
-
-ENT.PrintName 		= "Laser Beam"
-ENT.Category 		= "Aperture Science"
-ENT.Spawnable 		= true
-ENT.Editable		= true
-ENT.RenderGroup 	= RENDERGROUP_BOTH
+ENT.Base = "gasl_base_ent"
+ENT.RenderGroup = RENDERGROUP_BOTH
 ENT.AutomaticFrameAdvance = true
 
 function ENT:SpawnFunction( ply, trace, ClassName )
@@ -37,10 +32,7 @@ if ( CLIENT ) then
 
 	function ENT:Think()
 	
-		//if ( self.GASL_UpdateRenderBounds.mins != self.GASL_RenderBounds.mins || self.GASL_UpdateRenderBounds.maxs != self.GASL_RenderBounds.maxs ) then
-			//self.GASL_UpdateRenderBounds = { mins = self.GASL_RenderBounds.mins, maxs = self.GASL_RenderBounds.maxs }
-			self:SetRenderBounds( self.GASL_RenderBounds.mins, self.GASL_RenderBounds.maxs )
-		//end
+		self:SetRenderBounds( self.GASL_RenderBounds.mins, self.GASL_RenderBounds.maxs )
 		
 	end
 
@@ -102,12 +94,16 @@ end
 
 function ENT:DoLaser( startpos, ang, ignore )
 	
-	local points = self:GetAllPortalPassages( startpos, ang )
+	self.GASL_LASER_Reflections = self.GASL_LASER_Reflections + 1
+	
+	if ( self.GASL_LASER_Reflections > 256 ) then return end
+	
+	local points = self:GetAllPortalPassages( startpos, ang, ignore )
 	local trace = { }
 	local itter = 0
-	
+		
 	for k, v in pairs( points ) do
-	
+		
 		itter = itter + 1
 		
 		local offset = ( v.endpos - v.startpos ):GetNormalized()
@@ -117,9 +113,11 @@ function ENT:DoLaser( startpos, ang, ignore )
 			endpos = v.endpos + offset,
 			filter = function( ent )
 				if ( ( ent:IsNPC() || ent:IsPlayer() ) && SERVER ) then return false end
+				if ( ent:GetClass() == "env_portal_paint" && ent:GetGelType() == PORTAL_GEL_REFLECTION ) then return true end
 				if ( ent:GetClass() == "prop_portal" || ( ent:IsPlayer() || ent:IsNPC() ) && CLIENT || ent == ignore ) then return false end
 				if ( ent:GetClass() == "ent_laser_relay" ) then ent.GASL_LastHittedByLaser = CurTime() end
 				if ( APERTURESCIENCE:IsValidEntity( ent ) || ent:GetClass() == "ent_laser_catcher" || ent:GetClass() == "prop_physics" ) then return true end
+				
 				if( IsValid( ent ) ) then return true end
 
 			end
@@ -136,7 +134,7 @@ function ENT:DoLaser( startpos, ang, ignore )
 					if ( ent:GetClass() == "prop_portal" || ent == ignore ) then return false end
 					if ( ent:GetClass() == "ent_laser_relay" ) then ent.GASL_LastHittedByLaser = CurTime() end
 					if ( APERTURESCIENCE:IsValidEntity( ent ) || ent:GetClass() == "ent_laser_catcher" || ent:GetClass() == "prop_physics" ) then return true end
-					if( IsValid( ent ) ) then return true end
+					//if( IsValid( ent ) ) then return true end
 
 				end
 			} ).Entity
@@ -172,7 +170,7 @@ function ENT:DoLaser( startpos, ang, ignore )
 			if ( localEndPos.z < self.GASL_RenderBounds.mins.z ) then self.GASL_RenderBounds.mins.z = localEndPos.z end
 
 			render.SetMaterial( Material( "sprites/purplelaser1" ) )
-			render.DrawBeam( startpos, endpos, 80, distance / 100, 1, Color( 255, 255, 255 ) )
+			render.DrawBeam( startpos, endpos, 60, distance / 100, 1, Color( 255, 255, 255 ) )
 			
 		elseif ( IsValid( traceHitEntity ) ) then
 			
@@ -186,15 +184,32 @@ function ENT:DoLaser( startpos, ang, ignore )
 		
 		-- skip if 
 		if ( self.GASL_AllreadyHandled[ traceEnt:EntIndex() ] ) then break end
-		-- reflects when hit reflection cube
-		if ( traceEnt && traceEnt:IsValid() && ( traceEnt:GetModel() == "models/props/reflection_cube.mdl" ) ) then
+
+		if ( IsValid( traceEnt ) ) then
+		
+			-- reflect when hit reflection gel
+			if ( traceEnt:GetClass() == "env_portal_paint" && traceEnt:GetGelType() == PORTAL_GEL_REFLECTION
+				|| traceEnt.GASL_GelledType && traceEnt.GASL_GelledType == PORTAL_GEL_REFLECTION ) then
+				
+				local normal = trace.HitNormal 
+				APERTURESCIENCE:NormalFlipZeros( normal )
+				
+				local reflectionDir = normal:Dot(-offset) * normal * 2 + offset 
+				return self:DoLaser( trace.HitPos + trace.HitNormal / 10, reflectionDir:Angle(), traceEnt )
 			
-			if ( CLIENT ) then
-				self:DrawMuzzleEffect( traceEnt:GetPos(), traceEnt:GetForward() )
 			end
 
-			self.GASL_AllreadyHandled[ traceEnt:EntIndex() ] = true
-			return self:DoLaser( traceEnt:GetPos(), traceEnt:GetAngles(), traceEnt )
+			-- reflects when hit reflection cube
+			if ( traceEnt:GetModel() == "models/props/reflection_cube.mdl" ) then
+				
+				if ( CLIENT ) then
+					self:DrawMuzzleEffect( traceEnt:GetPos(), traceEnt:GetForward() )
+				end
+
+				self.GASL_AllreadyHandled[ traceEnt:EntIndex() ] = true
+				return self:DoLaser( traceEnt:GetPos(), traceEnt:GetAngles(), traceEnt )
+			end
+			
 		end
 		
 	end
@@ -207,6 +222,8 @@ end
 
 function ENT:Draw()
 
+	self.GASL_LASER_Reflections = 0
+
 	self:DrawModel()
 	
 	-- skip if disabled
@@ -218,6 +235,9 @@ function ENT:Draw()
 	self:DrawMuzzleEffect( startPos, self:GetForward() )
 	
 	local endtrace = self:DoLaser( self:LocalToWorld( self:ModelToStartCoord() ), self:GetAngles(), self )
+	
+	if ( !endtrace ) then return end
+	
 	local endpos = endtrace.HitPos
 	local endnormal = endtrace.HitNormal
 	local endentity = endtrace.Entity
@@ -270,6 +290,8 @@ end
 
 function ENT:Think()
 
+	self.GASL_LASER_Reflections = 0
+	
 	self:NextThink( CurTime() )
 	
 	-- skip if disabled
@@ -314,24 +336,6 @@ function ENT:ToggleEnable( bDown )
 	end
 	
 end
-
-numpad.Register( "aperture_science_laser_emitter_enable", function( pl, ent, keydown, idx )
-
-	if ( !IsValid( ent ) ) then return false end
-
-	if ( keydown ) then ent:ToggleEnable( true ) end
-	return true
-
-end )
-
-numpad.Register( "aperture_science_laser_emitter_disable", function( pl, ent, keydown )
-
-	if ( !IsValid( ent ) ) then return false end
-
-	if ( keydown ) then ent:ToggleEnable( false ) end
-	return true
-
-end )
 
 function ENT:OnRemove()
 

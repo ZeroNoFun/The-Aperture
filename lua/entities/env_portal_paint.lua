@@ -50,7 +50,7 @@ function ENT:UpdateGel()
 	local forward = APERTURESCIENCE:CheckForGel( self:LocalToWorld( Vector( -APERTURESCIENCE.GEL_BOX_SIZE, 0, 5 ) ), -self:GetUp() * 10, true )
 	local back = APERTURESCIENCE:CheckForGel( self:LocalToWorld( Vector( APERTURESCIENCE.GEL_BOX_SIZE, 0, 5 ) ), -self:GetUp() * 10, true )
 	
-	if ( left:IsValid() ) then
+	if ( IsValid( left ) ) then
 	
 		if ( self:GetGelType() == left:GetGelType() ) then
 			self.GASL_Link.left = left
@@ -64,7 +64,7 @@ function ENT:UpdateGel()
 		
 	end
 
-	if ( right:IsValid() ) then
+	if ( IsValid( right ) ) then
 
 		if ( self:GetGelType() == right:GetGelType() ) then
 			self.GASL_Link.right = right
@@ -78,7 +78,7 @@ function ENT:UpdateGel()
 		
 	end
 
-	if ( forward:IsValid() ) then
+	if ( IsValid( forward ) ) then
 	
 		if ( self:GetGelType() == forward:GetGelType() ) then
 			self.GASL_Link.forward = forward
@@ -92,7 +92,7 @@ function ENT:UpdateGel()
 		
 	end
 
-	if ( back:IsValid() ) then
+	if ( IsValid( back ) ) then
 
 		if ( self:GetGelType() == back:GetGelType() ) then
 			self.GASL_Link.back = back

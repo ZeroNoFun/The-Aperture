@@ -9,7 +9,7 @@ function EFFECT:Init( data )
 	
 	self.Emitter = ParticleEmitter( self.Start )
 	
-	for i = 1, 5 do
+	for i = 1, 10 do
 	
 		local vec = VectorRand()
 		vec = Vector( vec.x, vec.y, vec.z + 3 )
@@ -31,7 +31,7 @@ function EFFECT:Init( data )
 		
 	end
 	
-	for i = 1, 5 do
+	for i = 1, 20 do
 	
 		local vec = VectorRand()
 		vec = Vector( vec.x, vec.y, vec.z + 1 )
@@ -49,6 +49,31 @@ function EFFECT:Init( data )
 		p:SetRollDelta( math.Rand( -3, 3 ) )
 		p:SetVelocity( vec * 120 * self.Radius + self.Direction * math.Rand( 200, 250 ) )
 		p:SetGravity( Vector( 0, 0, -800 ) )
+		p:SetColor( color.r, color.g, color.b )
+		p:SetCollide( true )
+		
+	end
+	
+	
+	for i = 1, 20 do
+	
+		local vec = VectorRand()
+		local inx = 360 / 20 * i
+		vec = Vector( math.cos( inx ), math.sin( inx ), 0 )
+		vec:Rotate( self.Direction:Angle() + Angle( 90, 0, 0 ) )
+		
+		local p = self.Emitter:Add( "effects/splash1", self.Start + vec )
+		local size = math.random( 20, 40 ) * self.Radius * 2
+		
+		p:SetDieTime( math.Rand( 0.5, 0.25 ) )
+		p:SetStartAlpha( 200 )
+		p:SetEndAlpha( 200 )
+		p:SetStartSize( size )
+		p:SetEndSize( 0 )
+		p:SetRoll( math.Rand( 0, 360 ) )
+		p:SetRollDelta( math.Rand( -3, 3 ) )
+		p:SetVelocity( vec * 300 )
+		p:SetGravity( Vector( ) )
 		p:SetColor( color.r, color.g, color.b )
 		p:SetCollide( true )
 		

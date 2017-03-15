@@ -165,3 +165,14 @@ APERTURESCIENCE.GelSpeedExit =
 	pitch	= 100,
 }
 sound.Add( APERTURESCIENCE.GelSpeedExit )
+
+APERTURESCIENCE.GelFlow =
+{
+	channel	= CHAN_AUTO,
+	name	= "GASL.GelFlow",
+	level	= 70,
+	sound	= "physics/paint/paint_nozzle_waterfall_lp.wav",
+	volume	= 1.0,
+	pitch	= 100,
+}
+sound.Add( APERTURESCIENCE.GelFlow )

@@ -1,52 +1,7 @@
 AddCSLuaFile( )
 
-ENT.Base 			= "ent_fizzler_base"
-
-ENT.Editable		= true
-ENT.PrintName		= "Fizzler"
-ENT.Category		= "Aperture Science"
-ENT.Spawnable		= true
-ENT.RenderGroup 	= RENDERGROUP_BOTH
+ENT.Base = "gasl_fizzler_base"
 ENT.AutomaticFrameAdvance = true
-
-function ENT:SpawnFunction( ply, trace, ClassName )
-
-	if ( !trace.Hit ) then return end
-	
-	if ( !APERTURESCIENCE.ALLOWING.fizzler && !ply:IsSuperAdmin() ) then ply:PrintMessage( HUD_PRINTTALK, "This entity is blocked" ) return end
-
-	local mdl = "models/props/fizzler_dynamic.mdl"
-	
-	local firstFizzler = ents.Create( ClassName )
-	firstFizzler:SetPos( trace.HitPos )
-	firstFizzler:SetModel( mdl )
-	firstFizzler:SetAngles( trace.HitNormal:Angle() )
-	firstFizzler:Spawn()
-	firstFizzler:SetAngles( firstFizzler:LocalToWorldAngles( Angle( 0, -90, 0 ) ) )
-
-	local traceSecond = util.QuickTrace( firstFizzler:GetPos(), -firstFizzler:GetRight() * 1000, firstFizzler )
-	
-	local secondFizzler = ents.Create( ClassName )
-	secondFizzler:SetPos( traceSecond.HitPos )
-	secondFizzler:SetModel( mdl )
-	secondFizzler:SetAngles( firstFizzler:GetAngles() )
-	secondFizzler:Spawn()
-	secondFizzler:SetAngles( secondFizzler:LocalToWorldAngles( Angle( 0, 180, 0 ) ) )
-	
-	firstFizzler:SetNWEntity( "GASL_ConnectedField", secondFizzler )
-	secondFizzler:SetNWEntity( "GASL_ConnectedField", firstFizzler )
-	
-	constraint.Weld( secondFizzler, firstFizzler, 0, 0, 0, true, true )
-	
-	undo.Create( "LaserField" )
-		undo.AddEntity( firstFizzler )
-		undo.AddEntity( secondFizzler )
-		undo.SetPlayer( ply )
-	undo.Finish()
-	
-	return ent
-
-end
 
 function ENT:Draw()
 
@@ -59,9 +14,8 @@ function ENT:Draw()
 	local secondField = self:GetNWEntity( "GASL_ConnectedField" )
 	if ( !IsValid( secondField ) ) then return end
 
-	-- close objects field effect
-	
-	local Height = 110
+	--aproach object field effect
+	local Height = 120
 	
 	local closesEntities = { }
 	local tracer = util.TraceHull( {
@@ -80,6 +34,18 @@ function ENT:Draw()
 		mask = MASK_SHOT_HULL
 	} )
 	
+	local ClipNormalUp = self:LocalToWorld( -Vector( 0, 0, 1 ) ) - self:GetPos()
+	local ClipPosUp = clipNormal:Dot( self:LocalToWorld( Vector( 0, 0, Height / 2 ) ) )
+
+	local ClipNormalDown = self:LocalToWorld( Vector( 0, 0, 1 ) ) - self:GetPos()
+	local ClipPosDown = clipNormal2:Dot( self:LocalToWorld( Vector( 0, 0, -Height / 2 ) ) )
+	
+	render.SetMaterial( Material( "effects/fizzler_approach" ) )
+	
+	local oldEC = render.EnableClipping( true )
+	render.PushCustomClipPlane( clipNormal, clipPos )
+	render.PushCustomClipPlane( clipNormal2, clipPos2 )
+	
 	for _, ent in pairs( closesEntities ) do
 		
 		local localEntPos = self:WorldToLocal( ent:GetPos() )
@@ -95,10 +61,13 @@ function ENT:Draw()
 		local p4 = self:LocalToWorld( localEntPos + Vector( 0, -1, 1 ) * rad )
 		
 		local alpha = math.max( 0, math.min( 1, ( 50 + 50 - distToField ) / 50 ) ) * 255
-		render.SetMaterial( Material( "effects/fizzler_approach" ) )
 		render.DrawQuad( p1, p2, p3, p4, Color( 255, 255, 255, alpha ) )
 	
 	end
+
+	render.PopCustomClipPlane()
+	render.PopCustomClipPlane()
+	render.EnableClipping( oldEC )
 
 end
 

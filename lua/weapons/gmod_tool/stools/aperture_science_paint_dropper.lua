@@ -1,26 +1,36 @@
 TOOL.Category = "Aperture Science"
 TOOL.Name = "#tool.aperture_science_paint_dropper.name"
 
-TOOL.ClientConVar[ "gel_type" ] = "1"
-TOOL.ClientConVar[ "gel_radius" ] = "50"
-TOOL.ClientConVar[ "gel_randomize_size" ] = "0"
-TOOL.ClientConVar[ "gel_amount" ] = "10"
-TOOL.ClientConVar[ "gel_launch_speed" ] = "0"
+TOOL.ClientConVar[ "paint_type" ] = "1"
+TOOL.ClientConVar[ "paint_radius" ] = "50"
+TOOL.ClientConVar[ "paint_flow_type" ] = "10"
+TOOL.ClientConVar[ "paint_launch_speed" ] = "0"
 TOOL.ClientConVar[ "startenabled" ] = "0"
 
 if ( CLIENT ) then
 
-	language.Add( "aperture_science_paint_dropper", "Gel Dropper" )
 	language.Add( "tool.aperture_science_paint_dropper.name", "Gel Dropper" )
 	language.Add( "tool.aperture_science_paint_dropper.desc", "Creates Gel Dropper" )
 	language.Add( "tool.aperture_science_paint_dropper.0", "Left click to use" )
-	language.Add( "tool.aperture_science_paint_dropper.gelType", "Gel Type" )
-	language.Add( "tool.aperture_science_paint_dropper.gelRad", "Gel Radius" )
-	language.Add( "tool.aperture_science_paint_dropper.gelRandomizeSize", "Gel Randomize Size" )
-	language.Add( "tool.aperture_science_paint_dropper.gelAmount", "Gel Amount" )
-	language.Add( "tool.aperture_science_paint_dropper.gelLaunchSpeed", "Gel Launch Speed" )
+	language.Add( "tool.aperture_science_paint_dropper.paintType", "Gel Type" )
+	language.Add( "tool.aperture_science_paint_dropper.paintFlowType", "Gel Flow Type" )
+	language.Add( "tool.aperture_science_paint_dropper.paintLaunchSpeed", "Gel Launch Speed" )
 	language.Add( "tool.aperture_science_paint_dropper.startenabled", "Start Enabled" )
 	
+end
+
+local function FlowTypeToInfo( flowType )
+
+	local flowTypeToInfo = {
+		[1] = { amount = 96, radius = 50 },
+		[2] = { amount = 97, radius = 75 },
+		[3] = { amount = 98, radius = 120 },
+		[4] = { amount = 10, radius = 200 },
+		[5] = { amount = 80, radius = 1 }
+	}
+	
+	return flowTypeToInfo[ flowType ]
+
 end
 
 function TOOL:LeftClick( trace )
@@ -34,14 +44,12 @@ function TOOL:LeftClick( trace )
 
 	local ply = self:GetOwner()
 	
-	local gelType = self:GetClientNumber( "gel_type" )
-	local gelRad = self:GetClientNumber( "gel_radius" )
-	local gelRandomizeSize = self:GetClientNumber( "gel_randomize_size" )
-	local gelAmount = self:GetClientNumber( "gel_amount" )
-	local gelLaunchSpeed = self:GetClientNumber( "gel_launch_speed" )
 	local startenabled = self:GetClientNumber( "startenabled" )
-
-	local paint_dropper = MakePaintDropper( ply, trace.HitPos, trace.HitNormal:Angle() - Angle( 90, 0, 0 ), gelType, gelRad, gelAmount, gelRandomizeSize, gelLaunchSpeed, startenabled )
+	local paintType = self:GetClientNumber( "paint_type" )
+	local paintFlowType = self:GetClientNumber( "paint_flow_type" )
+	local paintLaunchSpeed = self:GetClientNumber( "paint_launch_speed" )
+	
+	local paint_dropper = MakePaintDropper( ply, trace.HitPos, trace.HitNormal:Angle() - Angle( 90, 0, 0 ), paintType, paintFlowType, paintLaunchSpeed, startenabled )
 	
 	return true
 	
@@ -49,7 +57,9 @@ end
 
 if ( SERVER ) then
 
-	function MakePaintDropper( pl, pos, ang, gelType, gelRad, gelAmount, gelRandomizeSize, gelLaunchSpeed, startenabled )
+	function MakePaintDropper( pl, pos, ang, paintType, paintFlowType, paintLaunchSpeed, startenabled )
+		
+		local FlowInfo = FlowTypeToInfo( paintFlowType )
 		
 		local paint_dropper = ents.Create( "ent_paint_dropper" )
 		paint_dropper:SetPos( pos )
@@ -58,11 +68,10 @@ if ( SERVER ) then
 		paint_dropper:Spawn()
 		paint_dropper.Owner = pl
 		
-		paint_dropper:SetGelType( gelType )
-		paint_dropper:SetGelRadius( gelRad )
-		paint_dropper:SetGelRandomizeSize( gelRandomizeSize )
-		paint_dropper.GASL_GelAmount = gelAmount
-		paint_dropper.GASL_GelLaunchSpeed = gelLaunchSpeed
+		paint_dropper:SetPaintType( paintType )
+		paint_dropper:SetPaintRadius( FlowInfo.radius )
+		paint_dropper:SetPaintAmount( FlowInfo.amount )
+		paint_dropper:SetPaintLaunchSpeed( paintLaunchSpeed )
 		
 		paint_dropper:SetStartEnabled( tobool( startenabled ) )
 		paint_dropper:ToggleEnable( false )
@@ -115,8 +124,8 @@ function TOOL:Think()
 		end
 		
 		if ( IsValid( self.GhostEntity ) ) then
-			local gelType = self:GetClientNumber( "gel_type" )
-			self.GhostEntity:SetSkin( gelType )
+			local paintType = self:GetClientNumber( "paint_type" )
+			self.GhostEntity:SetSkin( paintType )
 		end
 
 		self:UpdateGhostCatapult( self.GhostEntity, self:GetOwner() )
@@ -129,17 +138,22 @@ function TOOL.BuildCPanel( CPanel )
 
 	CPanel:AddControl( "Header", { Description = "#tool.aperture_science_paint_dropper.desc" } )
 
-	local combobox = CPanel:ComboBox( "#tool.aperture_science_paint_dropper.gelType", "aperture_science_paint_dropper_gel_type" )
+	local combobox = CPanel:ComboBox( "#tool.aperture_science_paint_dropper.paintType", "aperture_science_paint_dropper_paint_type" )
 	combobox:AddChoice( "Repulsion", 1 )
 	combobox:AddChoice( "Propulsion", 2 )
 	combobox:AddChoice( "Conversion", 3 )
 	combobox:AddChoice( "Cleansing", 4 )
-	combobox:AddChoice( "Adhesion Gel", 5 )
-		
-	CPanel:NumSlider( "#tool.aperture_science_paint_dropper.gelRad", "aperture_science_paint_dropper_gel_radius", APERTURESCIENCE.GEL_MINSIZE, APERTURESCIENCE.GEL_MAXSIZE )
-	CPanel:NumSlider( "#tool.aperture_science_paint_dropper.gelRandomizeSize", "aperture_science_paint_dropper_gel_randomize_size", 0, 100 )
-	CPanel:NumSlider( "#tool.aperture_science_paint_dropper.gelAmount", "aperture_science_paint_dropper_gel_amount", 1, 100 )
-	CPanel:NumSlider( "#tool.aperture_science_paint_dropper.gelLaunchSpeed", "aperture_science_paint_dropper_gel_launch_speed", 0, 1000 )
+	combobox:AddChoice( "Adhesion", 5 )
+	combobox:AddChoice( "Reflection", 6 )
+
+	local combobox = CPanel:ComboBox( "#tool.aperture_science_paint_dropper.paintFlowType", "aperture_science_paint_dropper_paint_flow_type" )
+	combobox:AddChoice( "Light", 1 )
+	combobox:AddChoice( "Medium", 2 )
+	combobox:AddChoice( "Hard", 3 )
+	combobox:AddChoice( "Bomb", 4 )
+	combobox:AddChoice( "Drip", 5 )
+	
+	CPanel:NumSlider( "#tool.aperture_science_paint_dropper.paintLaunchSpeed", "aperture_science_paint_dropper_paint_launch_speed", 0, APERTURESCIENCE.GEL_MAX_LAUNCH_SPEED )
 
 	CPanel:AddControl( "CheckBox", { Label = "#tool.aperture_science_paint_dropper.startenabled", Command = "aperture_science_paint_dropper_startenabled" } )
 

@@ -34,11 +34,11 @@ function TOOL:LeftClick( trace )
 	local angle = trace.HitNormal:Angle()
 
 	local firstFizzler = MakeFizzler( ply, model, angle, -90, trace.HitPos, startenabled, toggle, keyenable )
+	if ( !IsValid( firstFizzler ) ) then return end
+	local Trace = util.QuickTrace( firstFizzler:GetPos(), -firstFizzler:GetRight() * maxrad, firstFizzler )
 
-	trace = util.QuickTrace( firstFizzler:GetPos(), -firstFizzler:GetRight() * maxrad, firstFizzler )
-
-	local secondFizzler = MakeFizzler( ply, model, angle, 90, trace.HitPos, startenabled, toggle, keyenable )
-	
+	local secondFizzler = MakeFizzler( ply, model, angle, 90, Trace.HitPos, startenabled, toggle, keyenable )
+	if ( !IsValid( secondFizzler ) ) then return end
 	firstFizzler:SetNWEntity( "GASL_ConnectedField", secondFizzler )
 	secondFizzler:SetNWEntity( "GASL_ConnectedField", firstFizzler )
 
@@ -59,6 +59,8 @@ if ( SERVER ) then
 	function MakeFizzler( pl, model, ang, addAng, pos, startenabled, toggle, key_enable )
 		
 		local fizzler = ents.Create( "ent_fizzler" )
+		if( !IsValid( fizzler ) ) then return end
+		
 		fizzler:SetPos( pos )
 		fizzler:SetAngles( ang )
 		fizzler:SetModel( model )

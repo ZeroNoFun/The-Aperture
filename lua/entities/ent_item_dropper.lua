@@ -1,10 +1,7 @@
 AddCSLuaFile( )
 
-ENT.Type 			= "anim"
-ENT.Base 			= "gasl_base_ent"
-
-ENT.Editable		= true
-ENT.PrintName		= "Item Dropper"
+ENT.Type = "anim"
+ENT.Base = "gasl_base_ent"
 ENT.AutomaticFrameAdvance = true
 
 function ENT:SetupDataTables()

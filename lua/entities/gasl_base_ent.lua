@@ -206,35 +206,39 @@ function ENT:PEffectSpawnInit()
 	
 end
 
-function ENT:GetAllPortalPassages( pos, angle )
+function ENT:GetAllPortalPassages( pos, angle, ignore )
 
 	-- If pEffect projector detect portal update pEffect
 	local pEffectBuildPos = pos
 	local pEffectBuildAng = angle
 	local portalLoop = true
 	local hitPortal = nil
+	local lastHitPortal = nil
 	local hitPortalExit = nil
 	local tracePrevHitPos = Vector( )
 	local passages = 1
 
 	local points = { }
 	
+
 	while ( portalLoop ) do
 	
 		portalLoop = false
-		
-		-- Prev Hendling
-		if ( hitPortal && hitPortal:IsValid() ) then
+		if ( passages > 100 ) then print( 123 ) break end
+		-- Prev
+		if ( IsValid( hitPortal ) ) then
 			
 			-- Getting new position info of next trace test
 			local pEffectOffsetPos = hitPortal:WorldToLocal( tracePrevHitPos )
 			local pEffectOffsetAngle = hitPortal:WorldToLocalAngles( pEffectBuildAng )
 			pEffectOffsetPos.y = -pEffectOffsetPos.y
+
 			pEffectOffsetPos.x = 0
 
 			pEffectBuildPos = hitPortal:GetNWBool( "Potal:Other" ):LocalToWorld( pEffectOffsetPos )
 			pEffectBuildAng = hitPortal:GetNWBool( "Potal:Other" ):LocalToWorldAngles( pEffectOffsetAngle + Angle( 0, 180, 0 ) )
 
+			lastHitPortal = hitPortal
 			hitPortalExit = hitPortal:GetNWBool( "Potal:Other" )
 			hitPortal = nil
 			
@@ -244,23 +248,23 @@ function ENT:GetAllPortalPassages( pos, angle )
 			start = pEffectBuildPos,
 			endpos = pEffectBuildPos + pEffectBuildAng:Forward() * 100000,
 			filter = function( ent )
-				if ( ent == self || ent:GetClass() == "prop_portal" || ent:IsPlayer() || ent:IsNPC() 
-					|| ent:GetPhysicsObject() && ent:GetPhysicsObject():IsValid() && ent:GetPhysicsObject():IsMotionEnabled() ) then return false end
-				return true
+				if ( ent != self && ignore != ent && lastHitPortal != ent && !ent:IsPlayer() && !ent:IsNPC() && APERTURESCIENCE:IsValidStaticEntity( ent ) ) then return true end
 			end
 		} )
 		
+		//pEffectBuildPos.x = 0
 		table.insert( points, table.Count( points ) + 1, { startpos = pEffectBuildPos, endpos = trace.HitPos } )
 		
 		-- Portal loop if trace hit portal
 		for k, v in pairs( ents.FindByClass( "prop_portal" ) ) do
 			
 			local pos = v:WorldToLocal( trace.HitPos )
-			if ( pos.x > -1 && pos.x < 10 
+			
+			if ( pos.x > -30 && pos.x < 10 
 				&& pos.y > -30 && pos.y < 30
 				&& pos.z > -45 && pos.z < 45 ) then
 
-				if ( v:GetNWBool( "Potal:Other" ) && v:GetNWBool( "Potal:Other" ):IsValid() ) then
+				if ( IsValid( v:GetNWBool( "Potal:Other" ) ) ) then
 					tracePrevHitPos = trace.HitPos
 					passages = passages + 1
 					portalLoop = true
@@ -269,6 +273,7 @@ function ENT:GetAllPortalPassages( pos, angle )
 					
 					break
 				end
+				
 			end
 			
 		end
@@ -293,6 +298,7 @@ function ENT:MakePEffect( )
 	local pEffectBuildAng = self:LocalToWorldAngles( Angle( 0, 0, 0 ) )
 	local portalLoop = true
 	local hitPortal = nil
+	local lastHitPortal = nil
 	local hitPortalExit = nil
 	local tracePrevHitPos = Vector( )
 	local passages = 1
@@ -315,6 +321,7 @@ function ENT:MakePEffect( )
 			pEffectBuildPos = hitPortal:GetNWBool( "Potal:Other" ):LocalToWorld( pEffectOffsetPos )
 			pEffectBuildAng = hitPortal:GetNWBool( "Potal:Other" ):LocalToWorldAngles( pEffectOffsetAngle + Angle( 0, 180, 0 ) )
 
+			lastHitPortal = hitPortal
 			hitPortalExit = hitPortal:GetNWBool( "Potal:Other" )
 			hitPortal = nil
 			
@@ -324,9 +331,7 @@ function ENT:MakePEffect( )
 			start = pEffectBuildPos,
 			endpos = pEffectBuildPos + pEffectBuildAng:Forward() * 100000,
 			filter = function( ent )
-				if ( ent == self || ent:GetClass() == "prop_portal" || ent:IsPlayer() || ent:IsNPC() 
-					|| ent:GetPhysicsObject() && ent:GetPhysicsObject():IsValid() && ent:GetPhysicsObject():IsMotionEnabled() ) then return false end
-				return true
+				if ( ent != self && ignore != ent && lastHitPortal != ent && !ent:IsPlayer() && !ent:IsNPC() && APERTURESCIENCE:IsValidStaticEntity( ent ) ) then return true end
 			end
 		} )
 		
@@ -338,7 +343,7 @@ function ENT:MakePEffect( )
 				&& pos.y > -30 && pos.y < 30
 				&& pos.z > -45 && pos.z < 45 ) then
 
-				if ( v:GetNWBool( "Potal:Other" ) && v:GetNWBool( "Potal:Other" ):IsValid() ) then
+				if ( IsValid( v:GetNWBool( "Potal:Other" ) ) ) then
 
 					if ( !self.GASL_PortalsInfo[ v:EntIndex().."_"..( passages + 1 ) ] ) then
 					
@@ -370,10 +375,10 @@ function ENT:MakePEffect( )
 		end
 
 		-- Post Hendling
-		if ( hitPortal && hitPortal:IsValid() ) then
+		if ( IsValid( hitPortal ) ) then
 			
 			-- checking for another passing
-			if ( hitPortal:GetNWBool( "Potal:Other" ) && hitPortal:GetNWBool( "Potal:Other" ):IsValid() ) then
+			if ( IsValid( hitPortal:GetNWBool( "Potal:Other" ) ) ) then
 				tracePrevHitPos = trace.HitPos
 				passages = passages + 1
 				portalLoop = true
@@ -407,7 +412,7 @@ function ENT:RemovePEffect( index )
 
 	for k, v in pairs( self.GASL_EntitiesEffects[ index ] ) do
 	
-		if ( v && v:IsValid() ) then v:Remove() end
+		if ( IsValid( v ) ) then v:Remove() end
 	
 	end
 
@@ -427,7 +432,7 @@ function ENT:PEffectRemovePEffectFromPortal2End( index )
 	for k, portal in pairs( self.GASL_PortalsInfo ) do
 		
 		if ( portal.thrC > index ) then
-			if ( portal.ent && portal.ent:IsValid() && portal.ent:GetNWBool( "Potal:Other" ) && portal.ent:GetNWBool( "Potal:Other" ):IsValid() ) then
+			if ( IsValid( portal.ent ) && IsValid( portal.ent:GetNWBool( "Potal:Other" ) ) ) then
 				
 				local index = self.GASL_PortalsInfo[ portal.ent:GetNWBool( "Potal:Other" ):EntIndex().."_"..portal.thrC ]
 				self:RemovePEffect( index.thrC )
@@ -453,9 +458,9 @@ function ENT:PEffectCheckUpdate()
 	-- If portal changed update projector
 	for k, portal in pairs( self.GASL_PortalsInfo ) do
 	
-		if ( !removeAllNext && !portal.ent:IsValid() 
-			|| portal.ent:IsValid() && portal.pos != portal.ent:GetPos() 
-			|| portal.ent:IsValid() && portal.ang != portal.ent:GetAngles() ) then
+		if ( !removeAllNext && !IsValid( portal.ent ) 
+			|| IsValid( portal.ent ) && portal.pos != portal.ent:GetPos() 
+			|| IsValid( portal.ent ) && portal.ang != portal.ent:GetAngles() ) then
 			
 			removeAllNext = true
 			self.GASL_PortalEffectUpdate.lastPos = Vector( )
@@ -466,7 +471,7 @@ function ENT:PEffectCheckUpdate()
 		-- Removing all PEffect from that brigde whick was removed to end 
 		if ( removeAllNext ) then
 		
-			if ( portal.ent && portal.ent:IsValid() && portal.ent:GetNWBool( "Potal:Other" ) && portal.ent:GetNWBool( "Potal:Other" ):IsValid() ) then
+			if ( IsValid( portal.ent ) && IsValid( portal.ent:GetNWBool( "Potal:Other" ) ) ) then
 				
 				local index = self.GASL_PortalsInfo[ portal.ent:GetNWBool( "Potal:Other" ):EntIndex().."_"..portal.thrC ]
 				if ( index ) then
@@ -493,7 +498,7 @@ function ENT:PEffectBuild( trace, pEffectBuildPos, pEffectBuildAng, passages )
 	-- Removing all prev pEffects
 	if ( self.GASL_EntitiesEffects[ passages ] ) then
 	for k, v in pairs( self.GASL_EntitiesEffects[ passages ] ) do
-		if ( v:IsValid() ) then v:Remove() end
+		if ( IsValid( v ) ) then v:Remove() end
 	end
 	end
 	
@@ -526,7 +531,7 @@ function ENT:PEffectBuild( trace, pEffectBuildPos, pEffectBuildAng, passages )
 		// Portal Gun integration: activation ignore for portals
 		ent.isClone = true
 		
-		if ( ent:GetPhysicsObject():IsValid() ) then
+		if ( IsValid( ent:GetPhysicsObject() ) ) then
 		
 			local physEnt = ent:GetPhysicsObject( )
 			physEnt:SetMaterial( "item" )
