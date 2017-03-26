@@ -1,0 +1,15 @@
+{
+	"title"		:	"Gmod Aperture Science Laboratories",
+	"type"		:	"tool",
+	"tags"		:	[ "roleplay", "fun" ],
+	"ignore"	:
+	[
+		"*.psd",
+		"*.vcproj",
+		"*.svn*",
+		"*.git*",
+		"*.md",
+		"LICENSE",
+		"*.fgd"
+	]
+}

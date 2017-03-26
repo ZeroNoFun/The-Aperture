@@ -37,11 +37,16 @@ function TOOL:LeftClick( trace )
 		local armangle = math.max( -90, math.min( 90, self:GetClientNumber( "armangle" ) ) )
 		local armforward = math.max( -100, math.min( 100, self:GetClientNumber( "armforward" ) ) )
 		local armup = math.max( 0, math.min( 140, self:GetClientNumber( "armup" ) ) )
-		local pos = APERTURESCIENCE:ConvertToGridWithoutZ( trace.HitPos + trace.HitNormal * 20, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), 64 )
+		local pos = APERTURESCIENCE:ConvertToGridWithoutZ( trace.HitPos + trace.HitNormal * 70, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), APERTURESCIENCE.GRID_SIZE )
 		
 		local arm_panel = MakeArmPanel( ply, pos, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), startenabled, armangle, armforward, armup )
 		local normal = trace.HitNormal
 		normal = Vector( math.Round( normal.x ), math.Round( normal.y ), math.Round( normal.z ) )
+		
+		undo.Create( "Arm Panel" )
+			undo.AddEntity( arm_panel )
+			undo.SetPlayer( ply )
+		undo.Finish()
 		
 		if ( normal == Vector( 0, 0, 1 ) || normal == Vector( 0, 0, -1 ) ) then
 		
@@ -64,35 +69,36 @@ end
 function TOOL:RightClick( trace )
 	
 	-- Ignore if place target is Alive
-	if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then return false end
-
 	if ( CLIENT ) then return true end
-	
+	if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then return false end
 	if ( !self.GASL_LastPos ) then
-		
 		if ( !APERTURESCIENCE.ALLOWING.arm_panel && !self:GetOwner():IsSuperAdmin() ) then self:GetOwner():PrintMessage( HUD_PRINTTALK, "This tool is disabled" ) return end
-	
 		self.GASL_LastPos = trace.HitPos
 	else
-	
 		local ply = self:GetOwner()
 		local startenabled = self:GetClientNumber( "startenabled" )
 		local armangle = math.max( -90, math.min( 90, self:GetClientNumber( "armangle" ) ) )
 		local armforward = math.max( -100, math.min( 100, self:GetClientNumber( "armforward" ) ) )
 		local armup = math.max( 0, math.min( 140, self:GetClientNumber( "armup" ) ) )
 		local boxSize = WorldToLocal( self.GASL_LastPos, Angle(), trace.HitPos, trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
+		local Panels = { }
 		
 		for x = 0, math.abs( math.Round( boxSize.x / 64 ) ) do
 		for y = 0, math.abs( math.Round( boxSize.y / 64 ) ) do
 			local vec = Vector( x * ( boxSize.x / math.abs( boxSize.x ) ), y * ( boxSize.y / math.abs( boxSize.y ) ), 0 ) * 64
 			local pos = LocalToWorld( vec, Angle(), trace.HitPos + trace.HitNormal * 10, trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
 			local gridPos = APERTURESCIENCE:ConvertToGridWithoutZ( pos, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), 64 )
-			local arm_panel = MakeArmPanel( ply, gridPos, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), startenabled, armangle, armforward, armup )
+			local arm_panel = MakeArmPanel( ply, gridPos + trace.HitNormal * 70, trace.HitNormal:Angle() + Angle( 90, 0, 0 ), startenabled, armangle, armforward, armup )
+			table.insert( Panels, table.Count( Panels ) + 1, arm_panel )
 		end
 		end
+		
+		undo.Create( "Arm Panels" )
+			for _, k in pairs( Panels ) do undo.AddEntity( k ) end
+			undo.SetPlayer( ply )
+		undo.Finish()
 		
 		self.GASL_LastPos = nil
-		
 	end
 	
 end
@@ -108,11 +114,6 @@ if ( SERVER ) then
 		arm_panel:SetArmPos( Vector( -30 + armforward, 0, 45 + armup ) )
 		arm_panel:SetArmAng( Angle( armang, 0, 0 ) )
 		if ( tobool( startenabled ) ) then arm_panel:ToggleEnable( true ) end
-
-		undo.Create( "Arm Panel" )
-			undo.AddEntity( arm_panel )
-			undo.SetPlayer( pl )
-		undo.Finish()
 		
 		return arm_panel
 	end

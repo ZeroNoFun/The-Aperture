@@ -19,14 +19,15 @@ end
 
 if ( SERVER ) then
 
-	function MakeTractorBeam( ply, startenabled, startreversed, Data )
-		
+	function MakeTractorBeam( ply, pos, ang, startenabled, startreversed, Data )
 		if ( IsValid( pl ) && !pl:CheckLimit( "tractor_beams" ) ) then return false end
 		local ent = ents.Create( "ent_tractor_beam" )
 		if ( !IsValid( ent ) ) then return end
-
-		duplicator.DoGeneric( ent, Data )
 		
+		duplicator.DoGeneric( ent, Data )
+
+		ent:SetPos( pos )
+		ent:SetAngles( ang )
 		ent:SetStartEnabled( tobool( startenabled ) )
 		ent:SetStartReversed( tobool( startreversed ) )
 		ent:Spawn()
@@ -35,7 +36,7 @@ if ( SERVER ) then
 		ent.startreversed = startreversed
 		
 		if ( tobool( startenabled ) ) then ent:ToggleEnable( false ) end
-		if ( tobool( startenabled ) ) then ent:ToggleReverse( false ) end
+		if ( tobool( startreversed ) ) then ent:ToggleReverse( false ) end
 
 		if ( IsValid( ply ) ) then
 			ply:AddCleanup( "tractor_beams", ent )
@@ -43,7 +44,6 @@ if ( SERVER ) then
 		end
 		
 		return ent
-		
 	end
 	
 	duplicator.RegisterEntityClass( "ent_tractor_beam", MakeTractorBeam, "startenabled", "startreversed", "Data" )
@@ -54,19 +54,16 @@ function TOOL:LeftClick( trace )
 
 	-- Ignore if place target is Alive
 	if ( trace.Entity && trace.Entity:IsPlayer() ) then return false end
-	
 	if ( CLIENT ) then return true end
-	
 	if ( !APERTURESCIENCE.ALLOWING.tractor_beam && !self:GetOwner():IsSuperAdmin() ) then self:GetOwner():PrintMessage( HUD_PRINTTALK, "This tool is disabled" ) return end
 
 	local ply = self:GetOwner()
 	local startenabled = self:GetClientNumber( "startenabled" )
 	local startreverse = self:GetClientNumber( "startreversed" )
+	local Pos = trace.HitPos + trace.HitNormal * 31
+	local Ang = trace.HitNormal:Angle() + Angle( 90, 0, 0 )
 	
-	local ent = MakeTractorBeam( ply, startenabled, startreverse )
-	
-	ent:SetPos( trace.HitPos + trace.HitNormal * 31 )
-	ent:SetAngles( trace.HitNormal:Angle() )
+	local ent = MakeTractorBeam( ply, Pos, Ang, startenabled, startreverse )
 	
 	undo.Create( "Exursion Funnel" )
 		undo.AddEntity( ent )
@@ -92,8 +89,8 @@ function TOOL:UpdateGhostWallProjector( ent, ply )
 	
 	local CurPos = ent:GetPos()
 	
-	local ang = trace.HitNormal:Angle()
 	local pos = trace.HitPos + trace.HitNormal * 31
+	local ang = trace.HitNormal:Angle() + Angle( 90, 0, 0 )
 
 	ent:SetPos( pos )
 	ent:SetAngles( ang )
@@ -103,7 +100,7 @@ end
 
 function TOOL:Think()
 
-	local mdl = "models/props/tractor_beam_emitter.mdl"
+	local mdl = "models/gasl/tractor_beam_128.mdl"
 	if ( !util.IsValidModel( mdl ) ) then self:ReleaseGhostEntity() return end
 
 	if ( !IsValid( self.GhostEntity ) || self.GhostEntity:GetModel() != mdl ) then

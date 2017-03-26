@@ -9,7 +9,8 @@ AddCSLuaFile( )
 APERTURESCIENCE = { }
 
 -- Main 
-APERTURESCIENCE.DRAW_HALOS = false
+APERTURESCIENCE.DRAW_HALOS 	= false
+APERTURESCIENCE.GRID_SIZE 	= 64
 
 -- Funnel
 APERTURESCIENCE.FUNNEL_MOVE_SPEED = 173
@@ -116,6 +117,13 @@ function APERTURESCIENCE:ConvertToGridWithoutZ( pos, angle, rad )
 	
 end
 
+function APERTURESCIENCE:ConvertToGrid( pos, rad )
+
+	local pos = Vector( math.Round( pos.x / rad ) * rad, math.Round( pos.y / rad ) * rad, math.Round( pos.z / rad ) * rad )
+	return pos
+	
+end
+
 function APERTURESCIENCE:PlaySequence( self, seq, rate )
 
 	if ( !IsValid( self ) ) then return end
@@ -144,12 +152,13 @@ function APERTURESCIENCE:ConnectableStuff( ent )
 		|| ent:GetClass() == "ent_laser_relay"
 		|| ent:GetClass() == "ent_item_dropper"
 		|| ent:GetClass() == "ent_arm_panel"
+		|| ent:GetClass() == "ent_portal_door"
 		|| ent:GetClass() == "ent_portal_frame"
 		|| ent:GetClass() == "ent_portal_button"
-		|| ent:GetClass() == "sent_portalbutton_box"
-		|| ent:GetClass() == "sent_portalbutton_ball"
-		|| ent:GetClass() == "sent_portalbutton_normal"
-		|| ent:GetClass() == "sent_portalbutton_old" ) )
+		|| ent:GetClass() == "ent_portal_button_box"
+		|| ent:GetClass() == "ent_portal_button_ball"
+		|| ent:GetClass() == "ent_portal_button_normal"
+		|| ent:GetClass() == "ent_portal_button_old" ) )
 		
 end
 
@@ -170,11 +179,12 @@ function APERTURESCIENCE:GASLStuff( ent )
 		|| ent:GetClass() == "ent_portal_button"
 		|| ent:GetClass() == "ent_portal_bomb"
 		|| ent:GetClass() == "ent_catapult"
+		|| ent:GetClass() == "ent_portal_door"
 		|| ent:GetClass() == "ent_portal_frame"
-		|| ent:GetClass() == "sent_portalbutton_box"
-		|| ent:GetClass() == "sent_portalbutton_ball"
-		|| ent:GetClass() == "sent_portalbutton_normal"
-		|| ent:GetClass() == "sent_portalbutton_old" ) )
+		|| ent:GetClass() == "ent_portal_button_box"
+		|| ent:GetClass() == "ent_portal_button_ball"
+		|| ent:GetClass() == "ent_portal_button_normal"
+		|| ent:GetClass() == "ent_portal_button_old" ) )
 	
 end
 
@@ -182,15 +192,18 @@ function APERTURESCIENCE:IsValidEntity( ent )
 
 	return ( IsValid( ent ) && !ent.GASL_Ignore && ent:GetClass() != "prop_portal"
 		&& IsValid( ent:GetPhysicsObject() )
-		&& !APERTURESCIENCE:GASLStuff( ent ) )
+		&& !APERTURESCIENCE:GASLStuff( ent )
+		&& ent:GetClass() != "env_portal_wall" )
 		
 end
 
 function APERTURESCIENCE:IsValidStaticEntity( ent )
 
-	return ( IsValid( ent ) && !ent.GASL_Ignore && ent:GetClass() != "prop_portal"
+	return ( IsValid( ent ) 
+		&& ( !ent.GASL_Ignore && ent:GetClass() != "prop_portal"
 		&& IsValid( ent:GetPhysicsObject() ) && !ent:GetPhysicsObject():IsMotionEnabled()
-		&& !APERTURESCIENCE:GASLStuff( ent ) )
+		&& !APERTURESCIENCE:GASLStuff( ent ) 
+		|| ent:GetClass() == "env_portal_wall" ) )
 		
 end
 
@@ -257,7 +270,78 @@ net.Receive( "GASL_NW_Player_Achievements", function( len, pl )
 
 end )
 
-hook.Add( "PostDrawHUD", "GASL_HUDPaint", function()
+-- if ( CLIENT ) then
+	-- function draw.Circle( x, y, radius, rad2, seg )
+		-- local cir = {}
+
+		-- local rad = 10 
+		-- table.insert( cir, { x = math.Round( x / rad ) * rad, y = math.Round( y / rad ) * rad, u = 0.5, v = 0.5 } )
+		-- for i = 0, seg do
+			-- local a = math.rad( ( i / seg ) * -360 )
+			-- table.insert( cir, { 
+				-- x = x + math.Round( math.sin( a ) * radius / rad ) * rad, 
+				-- y = y + math.Round( math.cos( a ) * rad2 / rad ) * rad, 
+				-- u = math.sin( a ) / 2 + 0.5, v = math.cos( a ) / 2 + 0.5 
+			-- } )
+		-- end
+
+		-- local a = math.rad( 0 ) -- This is needed for non absolute segment counts
+		-- table.insert( cir, { 
+		-- x = math.Round( (x + math.sin( a ) * radius) / rad ) * rad, 
+		-- y = math.Round( (y + math.cos( a ) * rad2) / rad ) * rad, 
+		-- u = math.sin( a ) / 2 + 0.5, v = math.cos( a ) / 2 + 0.5 } )
+
+		-- surface.DrawPoly( cir )
+	-- end
+
+	-- hook.Add( "PostDrawOpaqueRenderables", "example", function()
+
+		-- local trace = LocalPlayer():GetEyeTrace()
+		-- local angle = trace.HitNormal:Angle()
+
+		-- render.DrawLine( trace.HitPos, trace.HitPos + 8 * angle:Forward(), Color( 255, 0, 0 ), true )
+		-- render.DrawLine( trace.HitPos, trace.HitPos + 8 * -angle:Right(), Color( 0, 255, 0 ), true )
+		-- render.DrawLine( trace.HitPos, trace.HitPos + 8 * angle:Up(), Color( 0, 0, 255 ), true )
+		-- //render.SetModelLighting( BOX_FRONT, 255, 255, 255 )
+		-- render.ComputeDynamicLighting( trace.HitPos, trace.HitNormal ) 
+		-- render.OverrideDepthEnable( true, false )
+		-- render.SetLightingMode( 2 ) 
+		-- render.SetLightmapTexture( Material( "paint/paint_fill" ):GetTexture( "$basetexture" ) )
+		-- render.SetMaterial( Material( "paint/paint_fill" ) )
+		-- render.SetLightingOrigin( Vector( 0, 0, 100 ) ) 
+
+		-- render.PushFlashlightMode( false ) 
+		-- cam.Start3D2D( trace.HitPos, angle + Angle( 90, 0, 0 ), 1 )
+
+			-- surface.SetMaterial( Material( "paint/paint_fill" ) )
+			-- surface.SetDrawColor( 255, 255, 255, 255 )
+			-- draw.Circle( 0, 0, 50 + math.sin( CurTime() ) * 30, 50 + math.cos( CurTime() ) * 30, math.sin( CurTime() ) + 25 )
+
+			-- --Usage:
+			-- --draw.Circle( x, y, radius, segments )
+		-- cam.End3D2D()
+		
+		-- render.PopFlashlightMode() 
+		-- render.OverrideDepthEnable( false, false )
+		-- render.SetLightingMode( 0 )
+	-- end )
+-- end
+
+hook.Add( "PostDrawTranslucentRenderables", "GASL:Render", function()
+
+	for k, v in pairs( ents.FindByClass( "ent_tractor_beam" ) ) do
+		v:Drawing()
+	end
+	for k, v in pairs( ents.FindByClass( "ent_portal_floor_turret" ) ) do
+		v:Drawing()
+	end
+	for k, v in pairs( ents.FindByClass( "ent_portal_laser" ) ) do
+		v:Drawing()
+	end
+	
+end )
+
+hook.Add( "PostDrawHUD", "GASL:HUDPaint", function()
 	
 	-- cam.Start3D()
 	
@@ -298,7 +382,6 @@ hook.Add( "PostDrawHUD", "GASL_HUDPaint", function()
 		end
 		
 		local achievementInfo = APERTURESCIENCE.ACHIEVEMENTS[ v.achievementInx ]
-
 		local timeToHide = ( v.timeToHide - CurTime() ) * 100
 		
 		if ( v.posY < AchivmentHeight && timeToHide > AchivmentHeight ) then
@@ -334,446 +417,8 @@ hook.Add( "PostDrawHUD", "GASL_HUDPaint", function()
 		
 end )
 
-if ( CLIENT ) then
+hook.Add( "Think", "GASL:Think", function()	
 
-	// STICKY gel camera orientation
-	hook.Add( "Think", "GASL_CamOrient", function()
-	
-		local eyeAngles = LocalPlayer():EyeAngles()
-		local newEyeAngle = Angle()
-		local orientation = LocalPlayer():GetNWVector( "GASL:Orientation" )
-
-		if ( !LocalPlayer():GetNWAngle( "GASL:OrientationAng" ) ) then LocalPlayer():SetNWAngle( "GASL:OrientationAng", eyeAngles ) end
-		if ( !LocalPlayer():GetNWAngle( "GASL:PlayerAng" ) ) then LocalPlayer():SetNWAngle( "GASL:PlayerAng", eyeAngles ) end
-		if ( !LocalPlayer():GetNWAngle( "GASL:PlayerEyeAngle" ) ) then LocalPlayer():SetNWAngle( "GASL:PlayerEyeAngle", eyeAngles ) end
-		local playerEyeAngle = LocalPlayer():GetNWAngle( "GASL:PlayerEyeAngle" )
-
-		if ( orientation == Vector( 0, 0, 1 ) ) then
-		
-			if ( math.abs( playerEyeAngle.r ) > 0.1 ) then
-				playerEyeAngle.r = math.ApproachAngle( playerEyeAngle.r, 0, FrameTime() * math.min( playerEyeAngle.r * 10, 160 ) )
-			elseif ( playerEyeAngle.r != 0 ) then
-				playerEyeAngle.r = 0
-			end
-			
-		end
-		
-		if ( newEyeAngle != eyeAngles ) then
-			
-			local orientationAng = LocalPlayer():GetNWAngle( "GASL:OrientationAng" )
-			
-			local playerAng = LocalPlayer():GetNWAngle( "GASL:PlayerAng" )
-
-			if ( playerAng != eyeAngles ) then
-			
-				local angOffset = ( eyeAngles - playerAng )
-				
-				playerEyeAngle.p = math.max( -88, math.min( 88, playerEyeAngle.p ) )
-				if ( playerEyeAngle.y > 360 ) then playerEyeAngle.y = playerEyeAngle.y - 360 end
-				if ( playerEyeAngle.y < -360 ) then playerEyeAngle.y = playerEyeAngle.y + 360 end
-				
-				LocalPlayer():SetNWAngle( "GASL:PlayerEyeAngle", playerEyeAngle + angOffset )
-				playerAng = eyeAngles
-				LocalPlayer():SetNWAngle( "GASL:PlayerAng", playerAng )
-				
-			end
-			
-			local orientAng = orientation:Angle() + Angle( 90, 0, 0 )
-			orientationAng.p = math.ApproachAngle( orientationAng.p, orientAng.p, FrameTime() * 150 )
-			orientationAng.y = math.ApproachAngle( orientationAng.y, orientAng.y, FrameTime() * 150 )
-			orientationAng.r = math.ApproachAngle( orientationAng.r, orientAng.r, FrameTime() * 150 )
-			LocalPlayer():SetNWAngle( "GASL:OrientationAng", orientationAng )
-			
-			_, newEyeAngle = LocalToWorld( Vector(), playerEyeAngle, Vector(), orientationAng )
-			
-			local plyAng = -LocalPlayer():GetAngles()
-			local _, orientAngToPly = WorldToLocal( Vector( ), plyAng, Vector( ), orientationAng )
-
-			// changing cam orientation when player is have different orientation or roll is inccorect
-			if ( orientation != Vector( 0, 0, 1 ) || orientation == Vector( 0, 0, 1 ) && math.abs( LocalPlayer():EyeAngles().r ) > 0.1 ) then
-				LocalPlayer():ManipulateBoneAngles( 0, Angle( 0, 0, 0 ) )
-				LocalPlayer():SetEyeAngles( newEyeAngle )
-				LocalPlayer():SetNWAngle( "GASL:PlayerAng", newEyeAngle )
-			end
-		end
-		
-	end )
-	
-end
-
-function APERTURESCIENCE:IsPlayerOnGround( ply )
-
-	local orientation = ply:GetNWVector( "GASL:Orientation" )
-	return orientation && orientation != Vector( 0, 0, 1 ) || ply:IsOnGround()
-	
-end
-
-function APERTURESCIENCE:InvertNormal( normal )
-
-	if ( normal.x != 0 ) then normal.x = normal.x * -1 end
-	if ( normal.y != 0 ) then normal.y = normal.y * -1 end
-	if ( normal.z != 0 ) then normal.z = normal.z * -1 end
-	
-end
-
-function APERTURESCIENCE:NormalFlipZeros( normal )
-
-	local lower = 0.000001
-	if ( math.abs( normal.x ) < lower ) then normal.x = 0 end
-	if ( math.abs( normal.y ) < lower ) then normal.y = 0 end
-	if ( math.abs( normal.z ) < lower ) then normal.z = 0 end
-	
-end
-
-if ( CLIENT ) then return end
-
-hook.Add( "Think", "GASL_HandlingGel", function()	
-
-	for i, ply in pairs( player.GetAll() ) do
-		
-		//ply:SetAngle( 0, Angle( 0, 0, 0 ) )
-		-- Checking if player stands or hit paint
-		if ( ply:GetNWVector( "GASL:Orientation" ) == Vector() ) then ply:SetNWVector( "GASL:Orientation", Vector( 0, 0, 1 ) ) end
-		if ( !ply:GetNWVector( "GASL:OrientationWalk" ) ) then ply:SetNWVector( "GASL:OrientationWalk", Vector( 0, 0, 0 ) ) end
-		if ( !ply.GASL_Player_Orient ) then ply.GASL_Player_Orient = Angle() end
-		if ( !ply.GASL_Player_PrevOrient ) then ply.GASL_Player_PrevOrient = Angle() end
-
-		local paint = NULL
-		local paintType = 0
-		local PaintNormal = Vector( )
-		local orientation = ply:GetNWVector( "GASL:Orientation" )
-		
-		// Handling changing orientation
-		if ( !ply.GASL_FloorDown || ply.GASL_FloorDown && ply.GASL_FloorDown:Distance( orientation ) > 0.000001 ) then
-		
-			ply.GASL_FloorDown = orientation
-			local orientPos = orientation * ply:GetModelRadius()
-			local plyAngle = ply:EyeAngles()
-			local plyOrientCenter = ply:GetPos() + orientation * ply:GetModelRadius() / 2
-			
-			ply:SetCurrentViewOffset( Vector( orientPos.x, orientPos.y, 0 )  )
-			ply:SetViewOffset( Vector( 0, 0, orientPos.z ) )
-			
-			//local _, localangle = WorldToLocal( Vector(), ply.GASL_Player_PrevOrient + Angle( 90, 0, 0 ), Vector(), orientation:Angle() + Angle( 90, 0, 0 ) )
-			-- localangle = Angle( 0, localangle.y, 0 )
-			-- local _, worldangle = LocalToWorld( Vector(), localangle, Vector(), orientation:Angle() - Angle( 90, 0, 0 ) )
-			-- worldangle = Angle( 0, worldangle.y, 0 )
-			//plyAngle.yaw = plyAngle.yaw - ( ply.GASL_Player_Orient.yaw - ply.GASL_Player_PrevOrient.yaw )
-			//ply:SetEyeAngles( plyAngle )
-			//print( ply.GASL_Player_PrevOrient, "_____", ply.GASL_Player_Orient )
-			//ply.GASL_Player_PrevOrient = ply.GASL_Player_Orient
-			
-			local trace = util.QuickTrace( plyOrientCenter, -orientation * ( ply:GetModelRadius() + 50 ), ply )
-			ply:SetPos( trace.HitPos )
-			
-			// cooldown for changing
-			timer.Create( "GASL_Player_Changed"..ply:EntIndex(), 0.1, 1, function() end ) // disable changeabling for a second
-			
-		end
-		
-		local eyeAngle = ply:EyeAngles()
-		
-		if ( APERTURESCIENCE:IsPlayerOnGround( ply ) || orientation != Vector( 0, 0, 1 ) ) then
-			paint, paintType, PaintNormal = APERTURESCIENCE:CheckForGel( ply:GetPos() + orientation * ply:GetModelRadius() / 2, -orientation * ( ply:GetModelRadius() + 50 ) )
-		else
-			local dir = ply:GetVelocity() / 20
-			
-			if ( dir:Length() < ply:GetModelRadius() ) then
-				dir = dir:GetNormalized() * ply:GetModelRadius()
-			end
-			
-			paint, paintType, PaintNormal = APERTURESCIENCE:CheckForGel( ply:GetPos() + orientation * ply:GetModelRadius() / 2, dir )
-		end
-
-		-- Checking Wall when on Sticky Gel
-		local speed = ply:KeyDown( IN_SPEED ) and ply:GetRunSpeed() or ply:GetWalkSpeed()
-		local moveDirection = Vector( 0, 0, 0 )
-		local plyOrientCenter = ply:GetPos() + orientation * ply:GetModelRadius() / 2
-		
-		if ( ply:KeyDown( IN_FORWARD ) ) then moveDirection.x = 1 end
-		if ( ply:KeyDown( IN_BACK ) ) then moveDirection.x = -1 end
-		if ( ply:KeyDown( IN_MOVELEFT ) ) then moveDirection.y = 1 end
-		if ( ply:KeyDown( IN_MOVERIGHT ) ) then moveDirection.y = -1 end
-		moveDirection:Normalize() 
-		moveDirection = moveDirection * ply:GetModelRadius() / 2
-		
-		local eyeAng = ply:EyeAngles()
-		local orientAng = orientation:Angle() + Angle( 90, 0, 0 )
-		local _, localangle = WorldToLocal( Vector(), eyeAng, Vector(), orientAng )
-		localangle = Angle( 0, localangle.yaw, 0 )
-		local _, worldangle = LocalToWorld( Vector(), localangle, Vector(), orientAng )
-		moveDirection:Rotate( worldangle )
-
-		local p, pT, pN = APERTURESCIENCE:CheckForGel( plyOrientCenter, moveDirection )
-		
-		if ( IsValid( p ) && pT == PORTAL_GEL_STICKY && !timer.Exists( "GASL_Player_Changed"..ply:EntIndex() ) ) then
-			orientation = pN
-			ply.GASL_Player_Orient = pN:Angle() + Angle( 90, 0, 0 )
-
-			ply:SetNWVector( "GASL:Orientation", orientation )
-			
-			local trace = util.QuickTrace( plyOrientCenter, -orientation * ( ply:GetModelRadius() + 50 ), ply )
-			ply:SetNWVector( "GASL:OrientationWalk", trace.HitPos )
-			ply:SetPos( trace.HitPos )
-			ply:SetVelocity( -ply:GetVelocity() )
-
-		end
-		
-		-- Exiting Gel
-		if ( ply.GASL_LastStandingGelType && CurTime() > ply.GASL_LastTimeOnGel + 0.25 ) then
-		
-			if ( ply.GASL_LastStandingGelType == PORTAL_GEL_BOUNCE ) then
-				ply:EmitSound( "GASL.GelBounceExit" )
-			end
-			
-			if ( ply.GASL_LastStandingGelType == PORTAL_GEL_SPEED ) then
-				ply:EmitSound( "GASL.GelSpeedExit" )
-			end
-			
-			if ( ply.GASL_LastStandingGelType == PORTAL_GEL_STICKY ) then
-				local offset = orientation * ( orientation - Vector( 0, 0, 1 ) ):Length() * ply:GetModelRadius() / 1.5
-				local traceFloor = util.QuickTrace( ply:GetPos() + offset, Vector( 0, 0, -ply:GetModelRadius() ), ply )
-				offset = offset - Vector( 0, 0, traceFloor.Fraction * ply:GetModelRadius() )
-				
-				ply:SetPos( ply:GetPos() + offset )
-				ply:SetNWVector( "GASL:Orientation", Vector( 0, 0, 1 ) )
-				ply:SetNWVector( "GASL:OrientationWalk", Vector( ) )
-			end
-
-			ply.GASL_LastStandingGelType = 0
-		
-		end
-
-		if ( !IsValid( paint ) ) then
-		
-			-- if ( orientation != Vector( 0, 0, 1 ) ) then
-				-- ply:SetNWVector( "GASL:Orientation", Vector( 0, 0, 1 ) )
-			-- end
-			
-			-- Skip if paint doesn't found
-			continue
-		end
-		APERTURESCIENCE:NormalFlipZeros( PaintNormal )
-		
-		-- Footsteps sounds
-		if ( APERTURESCIENCE:IsPlayerOnGround( ply ) && !timer.Exists( "GASL_GelFootsteps"..ply:EntIndex() )
-			&& ( ply:KeyDown( IN_FORWARD )
-			|| ply:KeyDown( IN_BACK )
-			|| ply:KeyDown( IN_MOVERIGHT )
-			|| ply:KeyDown( IN_MOVELEFT ) ) ) then
-		
-			ply:EmitSound( "GASL.GelFootsteps" )
-
-			local tick
-			if ( ply:KeyDown( IN_SPEED ) ) then
-				tick = 0.2
-			else
-				tick = 0.4
-			end
-			
-			timer.Create( "GASL_GelFootsteps"..ply:EntIndex(), tick, 1, function() end )
-			
-		end
-		
-		-- Entering Gel
-		if ( APERTURESCIENCE:IsPlayerOnGround( ply ) ) then
-			
-			if ( !ply.GASL_LastTimeOnGel || ply.GASL_LastTimeOnGel && CurTime() > ply.GASL_LastTimeOnGel + 0.25 ) then
-			
-				if ( paintType == PORTAL_GEL_BOUNCE ) then
-					ply:EmitSound( "GASL.GelBounceEnter" )
-				end
-				
-				if ( paintType == PORTAL_GEL_SPEED ) then
-					ply:EmitSound( "GASL.GelSpeedEnter" )
-				end
-				
-				if ( paintType == PORTAL_GEL_STICKY ) then
-					local plyOrientCenter = ply:GetPos() + orientation * ply:GetModelRadius() / 2
-					local trace = util.QuickTrace( plyOrientCenter, -orientation * ( ply:GetModelRadius() + 50 ), ply )
-					orientation = ply:GetNWVector( "GASL:Orientation" )
-					
-					ply:SetNWVector( "GASL:OrientationWalk", trace.HitPos )
-					ply.GASL_Player_Orient = PaintNormal:Angle() + Angle( 90, 0, 0 )
-					ply:SetPos( trace.HitPos )
-					ply:SetVelocity( -ply:GetVelocity() )
-				end
-				
-				-- doesn't change if player ran on repulsion paint when he was on propulsion paint
-				if ( !( paintType == PORTAL_GEL_BOUNCE && ply.GASL_LastStandingGelType == 2 && plyVelocity:Length() > 400 ) ) then
-					ply.GASL_LastStandingGelType = paintType
-				end
-				
-			end
-			
-			ply.GASL_LastTimeOnGel = CurTime()
-		
-		end
-		
-		-- if player stand on repulsion paint
-		if ( paintType == PORTAL_GEL_BOUNCE && !ply:KeyDown( IN_DUCK ) ) then
-		
-			local plyVelocity = ply:GetVelocity()
-			
-			-- skip if player stand on the ground
-			-- doesn't skip if player ran on repulsion paint when he was on propulsion paint
-			if ( APERTURESCIENCE:IsPlayerOnGround( ply ) && !( ply.GASL_LastStandingGelType == 2 && plyVelocity:Length() > 400 ) ) then continue end
-			
-			local WTL = WorldToLocal( paint:GetPos() + plyVelocity, Angle( ), paint:GetPos(), paint:GetAngles() )
-			WTL = Vector( 0, 0, math.max( -WTL.z * 2, 800 ) )
-			local LTW = LocalToWorld( WTL, Angle( ), paint:GetPos(), paint:GetAngles() ) - paint:GetPos()
-			LTW.z = math.max( 200, LTW.z / 2 )
-			
-			ply:SetVelocity( LTW - Vector( 0, 0, ply:GetVelocity().z ) )
-			ply:EmitSound( "GASL.GelBounce" )
-
-		end
-		
-		-- if player stand on propulsion paint
-		if ( paintType == PORTAL_GEL_SPEED ) then
-		
-			local plyVelocity = ply:GetVelocity()
-
-			if ( !ply.GASL_GelPlayerVelocity ) then ply.GASL_GelPlayerVelocity = Vector( ) end
-			
-			if ( plyVelocity:Length() > ply.GASL_GelPlayerVelocity:Length() ) then ply.GASL_GelPlayerVelocity = ply.GASL_GelPlayerVelocity + plyVelocity / 10 end
-			
-			if ( ply:KeyDown( IN_FORWARD ) ) then
-				ply.GASL_GelPlayerVelocity = ply.GASL_GelPlayerVelocity + Vector( ply:GetForward().x, ply:GetForward().y, 0 ) * 20
-			end
-
-			ply:SetVelocity( Vector( ply.GASL_GelPlayerVelocity.x, ply.GASL_GelPlayerVelocity.y, 0 ) * FrameTime() * 40 )
-			ply.GASL_GelPlayerVelocity = ply.GASL_GelPlayerVelocity / 2
-			
-		end
-		
-		-- if player stand on sticky paint
-		if ( paintType == PORTAL_GEL_STICKY && ply:GetNWVector( "GASL:OrientationWalk" ) != Vector() ) then
-
-			orientation = ply:GetNWVector( "GASL:Orientation" )
-			
-			if ( !timer.Exists( "GASL_Player_Changed"..ply:EntIndex() ) && PaintNormal:Distance( orientation ) > 0.000001 ) then
-				orientation = PaintNormal
-
-				APERTURESCIENCE:NormalFlipZeros( orientation )
-				ply.GASL_Player_Orient = PaintNormal:Angle() + Angle( 90, 0, 0 )
-				ply:SetNWVector( "GASL:Orientation", orientation )
-				
-				//print( ply.GASL_Player_Orient )
-				
-			end
-			
-			local localPos = ply:GetNWVector( "GASL:OrientationWalk" )
-			
-			if ( localPos != Vector( ) && orientation != Vector( 0, 0, 1 ) ) then
-				
-				local eyeAng = ply:EyeAngles()
-				
-				local speed = ply:KeyDown( IN_SPEED ) and ply:GetRunSpeed() or ply:GetWalkSpeed()
-				local moveDirection = Vector( 0, 0, 0 )
-
-				if ( ply:KeyDown( IN_FORWARD ) ) then moveDirection.x = 1 end
-				if ( ply:KeyDown( IN_BACK ) ) then moveDirection.x = -1 end
-				if ( ply:KeyDown( IN_MOVELEFT ) ) then moveDirection.y = 1 end
-				if ( ply:KeyDown( IN_MOVERIGHT ) ) then moveDirection.y = -1 end
-				
-				moveDirection = moveDirection:GetNormalized() * speed / 50
-				
-				local orientAng = orientation:Angle() + Angle( 90, 0, 0 )
-				local _, localangle = WorldToLocal( Vector(), eyeAng, Vector(), orientAng )
-				localangle = Angle( 0, localangle.yaw, 0 )
-				local _, worldangle = LocalToWorld( Vector(), localangle, Vector(), orientAng )
-				moveDirection:Rotate( worldangle )
-
-				if ( ply:KeyDown( IN_JUMP ) ) then
-					local traceFloor = util.QuickTrace( ply:GetPos(), Vector( 0, 0, -ply:GetModelRadius() ), ply )
-					moveDirection = orientation * ( orientation - Vector( 0, 0, 1 ) ):Length() * ply:GetModelRadius() / 1.5 - Vector( 0, 0, ply:GetModelRadius() * traceFloor.Fraction )
-					ply:SetNWVector( "GASL:Orientation", Vector( 0, 0, 1 ) )
-					ply:SetNWVector( "GASL:OrientationWalk", Vector( ) )
-					ply:SetVelocity( orientation * ply:GetJumpPower() )
-				end
-
-				local plyWidth = 30
-				local traceForward = util.QuickTrace( ply:GetPos() + orientation * ply:GetModelRadius() / 2, orientAng:Forward() * plyWidth, ply )
-				local traceBack = util.QuickTrace( ply:GetPos() + orientation * ply:GetModelRadius() / 2, -orientAng:Forward() * plyWidth, ply )
-				local traceRight = util.QuickTrace( ply:GetPos() + orientation * ply:GetModelRadius() / 2, orientAng:Right() * plyWidth, ply )
-				local traceLeft = util.QuickTrace( ply:GetPos() + orientation * ply:GetModelRadius() / 2, -orientAng:Right() * plyWidth, ply )
-				
-				if ( traceForward.Hit ) then moveDirection = moveDirection - orientAng:Forward() * ( 1 - traceForward.Fraction ) * plyWidth end
-				if ( traceBack.Hit ) then moveDirection = moveDirection + orientAng:Forward() * ( 1 - traceBack.Fraction ) * plyWidth end
-				if ( traceRight.Hit ) then moveDirection = moveDirection - orientAng:Right() * ( 1 - traceRight.Fraction ) * plyWidth end
-				if ( traceLeft.Hit ) then moveDirection = moveDirection + orientAng:Right() * ( 1 - traceLeft.Fraction ) * plyWidth end
-				
-				local walk = localPos + moveDirection
-				ply:SetNWVector( "GASL:OrientationWalk", walk )
-				ply:SetPos( walk )
-				if ( !ply:KeyDown( IN_JUMP ) ) then
-					ply:SetVelocity( -ply:GetVelocity() )
-				end
-			end
-			
-		end
-		
-	end
-	
-	-- Handling paintled entities
-	for k, v in pairs( APERTURESCIENCE.GELLED_ENTITIES ) do
-	
-		-- skip and remove if entity is not exist
-		if ( !IsValid( v ) ) then
-			APERTURESCIENCE.GELLED_ENTITIES[ k ] = nil
-			continue
-		end
-
-		-- skip if props is freezed or it is holding by the player
-		if ( IsValid( v:GetPhysicsObject() ) && !v:GetPhysicsObject():IsMotionEnabled( ) || v:IsPlayerHolding() ) then continue end
-		
-		local vPhys = v:GetPhysicsObject()
-		local dir = vPhys:GetVelocity() / 10
-		
-		local trace = util.TraceEntity( { 
-			start = v:GetPos()
-			, endpos = v:GetPos() + dir
-			, filter = v 
-		}, v )
-
-		if ( v.GASL_GelledType == PORTAL_GEL_BOUNCE ) then
-		
-			if ( trace.Hit ) then
-				
-				v:EmitSound( "GASL.GelBounceProp" )
-				-- makes negative z for local hitnormal
-				local WTL = WorldToLocal( vPhys:GetVelocity(), Angle( ), Vector( ), trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
-				WTL.z = math.max( -WTL.z, 400 )
-				WTL = WTL + VectorRand() * 100
-				local LTW = LocalToWorld( WTL, Angle( ), Vector( ), trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
-				
-				vPhys:SetVelocity( LTW )
-				
-				v:GetPhysicsObject():AddAngleVelocity( VectorRand() * 400 )
-				
-			end
-			
-		end
-		
-		if ( v.GASL_GelledType == PORTAL_GEL_STICKY ) then
-		
-			if ( trace.Hit && ( !IsValid( trace.Entity ) || IsValid( trace.Entity ) && !IsValid( constraint.Find( v, trace.Entity, "Weld", 0, 0 ) ) ) ) then
-				timer.Simple( dir:Length() / 1000, function()
-					if ( IsValid( v ) && IsValid( v:GetPhysicsObject() ) ) then
-						if ( trace.HitWorld ) then
-							v:GetPhysicsObject():EnableMotion( false )
-						elseif( IsValid( trace.Entity ) ) then
-							constraint.Weld( v, trace.Entity, 0, trace.PhysicsBone, 5000, collision == 0, false )
-						end
-					end
-				end )
-			end
-			
-		end
-		
-	end
-	
 	-- Handling dissolved entities
 	for k, v in pairs( APERTURESCIENCE.DISSOLVE_ENTITIES ) do
 	
@@ -788,11 +433,9 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 		
 		-- turning entity into black and then fadeout alpha
 		local colorBlack = ( math.max( 0, APERTURESCIENCE.DISSOLVE_SPEED - v.GASL_Dissolve * 1.75 ) / APERTURESCIENCE.DISSOLVE_SPEED ) * 255
-		
 		local alpha = math.max( 0, v.GASL_Dissolve - APERTURESCIENCE.DISSOLVE_SPEED / 1.1 ) / ( APERTURESCIENCE.DISSOLVE_SPEED - APERTURESCIENCE.DISSOLVE_SPEED / 1.1 )
 		alpha = 255 - alpha * 255
 		v:SetColor( Color( colorBlack, colorBlack, colorBlack, alpha ) )
-		
 		if ( alpha < 255 ) then v:SetRenderMode( RENDERMODE_TRANSALPHA ) end
 
 		local effectdata = EffectData()
@@ -800,12 +443,9 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 		util.Effect( "fizzler_dissolve", effectdata )
 		
 		if ( v.GASL_Dissolve >= APERTURESCIENCE.DISSOLVE_SPEED ) then
-		
 			APERTURESCIENCE.DISSOLVE_ENTITIES[ k ] = nil
 			v:Remove()
-			
 		end
-		
 	end
 
 	-- Handling entities in diversity vent
@@ -831,28 +471,21 @@ hook.Add( "Think", "GASL_HandlingGel", function()
 		end
 		
 		if ( v:IsPlayer() || v:IsNPC() ) then
-			
 			local dir = ( moveTo - Vector( 0, 0, v:GetModelRadius() / 2 ) - v:GetPos() ):GetNormalized()
 			v:SetVelocity( dir * 1000 + VectorRand() * math.max( 0, 200 - v:GetVelocity():Length() ) * 10 - v:GetVelocity() )
-		
 		elseif ( IsValid( v:GetPhysicsObject() ) ) then
-
 			local dir = ( moveTo - v:GetPos() ):GetNormalized()
-
 			local vPhys = v:GetPhysicsObject()
 			vPhys:SetVelocity( vPhys:GetVelocity() / 2 + dir * 400 )
-			
 		end
-		
 	end
-
 end )
 
-hook.Add( "PhysgunPickup", "GASL_DisablePhysgunPickup", function( ply, ent )
+hook.Add( "PhysgunPickup", "GASL:DisablePhysgunPickup", function( ply, ent )
 	if ( ent.GASL_Untouchable ) then return false end
 end )
 
-hook.Add( "KeyPress", "GASL_HandlePlayerJump", function( ply, key )
+hook.Add( "KeyPress", "GASL:HandlePlayerJump", function( ply, key )
 
 	if ( key != IN_JUMP || !ply:IsOnGround() ) then return end
 	
@@ -861,11 +494,7 @@ hook.Add( "KeyPress", "GASL_HandlePlayerJump", function( ply, key )
 	local paintType = 0
 	
 	if ( IsValid( ent ) ) then
-		if ( ent:GetClass() == "env_portal_paint" ) then
-			paintType = ent:GetGelType()
-		else
-			paintType = 0
-		end
+		paintType = ent:GetClass() == "env_portal_paint" and ent:GetGelType() or 0
 	else
 		ent, paintType = APERTURESCIENCE:CheckForGel( ply:GetPos(), Vector( 0, 0, -100 ) )
 	end
@@ -878,16 +507,11 @@ hook.Add( "KeyPress", "GASL_HandlePlayerJump", function( ply, key )
 	if ( ent:GetModel() == "models/wall_projector_bridge/wall.mdl" ) then
 		ent:EmitSound( "GASL.WallProjectorFootsteps" )
 	elseif ( ent:GetClass() == "env_portal_paint" ) then
-	
 		ent:EmitSound( "GASL.GelFootsteps" )
-		
 		if ( paintType == PORTAL_GEL_BOUNCE ) then
-			
 			ply:SetVelocity( Vector( 0, 0, 400 ) )
 			ply:EmitSound( "GASL.GelBounce" )
-			
 		end
-		
 	end
 	
 end )

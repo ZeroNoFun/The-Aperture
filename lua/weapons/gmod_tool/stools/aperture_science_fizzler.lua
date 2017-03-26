@@ -19,19 +19,17 @@ end
 function TOOL:LeftClick( trace )
 
 	-- Ignore if place target is Alive
-	if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then return false end
-	
 	if ( CLIENT ) then return true end
-	
+	if ( trace.Entity && ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:IsValidEntity( trace.Entity ) ) ) then return false end
 	if ( !APERTURESCIENCE.ALLOWING.fizzler && !self:GetOwner():IsSuperAdmin() ) then self:GetOwner():PrintMessage( HUD_PRINTTALK, "This tool is disabled" ) return end
 
-	local ply = self:GetOwner()
-	local model = self:GetClientInfo( "model" )
-	local maxrad = self:GetClientNumber( "maxrad" )
-	local toggle = self:GetClientNumber( "toggle" )
-	local keyenable = self:GetClientNumber( "keyenable" )
-	local startenabled = self:GetClientNumber( "startenabled" )
-	local angle = trace.HitNormal:Angle()
+	local ply 			= self:GetOwner()
+	local model 		= self:GetClientInfo( "model" )
+	local maxrad 		= self:GetClientNumber( "maxrad" )
+	local toggle 		= self:GetClientNumber( "toggle" )
+	local keyenable 	= self:GetClientNumber( "keyenable" )
+	local startenabled 	= self:GetClientNumber( "startenabled" )
+	local angle 		= trace.HitNormal:Angle()
 
 	local firstFizzler = MakeFizzler( ply, model, angle, -90, trace.HitPos, startenabled, toggle, keyenable )
 	if ( !IsValid( firstFizzler ) ) then return end
@@ -39,8 +37,7 @@ function TOOL:LeftClick( trace )
 
 	local secondFizzler = MakeFizzler( ply, model, angle, 90, Trace.HitPos, startenabled, toggle, keyenable )
 	if ( !IsValid( secondFizzler ) ) then return end
-	firstFizzler:SetNWEntity( "GASL_ConnectedField", secondFizzler )
-	secondFizzler:SetNWEntity( "GASL_ConnectedField", firstFizzler )
+	firstFizzler:ConnectFields( secondFizzler )
 
 	constraint.Weld( secondFizzler, firstFizzler, 0, 0, 0, true, true )
 
@@ -67,18 +64,13 @@ if ( SERVER ) then
 		fizzler:SetAngles( fizzler:LocalToWorldAngles( Angle( 0, addAng, 0 ) ) )
 		fizzler:SetMoveType( MOVETYPE_NONE )
 		fizzler:Spawn()
-
-		fizzler.NumEnableDown = numpad.OnDown( pl, key_enable, "aperture_science_fizzler_enable", fizzler, 1 )
-		fizzler.NumEnableUp = numpad.OnUp( pl, key_enable, "aperture_science_fizzler_disable", fizzler, 1 )
 		
 		fizzler:SetStartEnabled( tobool( startenabled ) )
 		fizzler:ToggleEnable( false )
 		fizzler:SetToggle( tobool( toggle ) )
 		
 		return fizzler
-		
 	end
-	
 end
 
 function TOOL:GetPlacingHeight( fizzler )

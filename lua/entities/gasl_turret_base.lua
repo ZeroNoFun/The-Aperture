@@ -29,10 +29,8 @@ function ENT:SpawnFunction( ply, trace, ClassName )
 
 end
 
-function ENT:Draw()
+function ENT:Drawing()
 
-	self:DrawModel()
-	
 	if ( self:GetTotalDisable() ) then return end
 	
 	local eyePos = self:LocalToWorld( Vector( 11, 0, 36.7 ) )

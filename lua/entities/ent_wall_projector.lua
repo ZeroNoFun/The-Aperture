@@ -91,7 +91,7 @@ function ENT:Initialize()
 		self:SetSolid( SOLID_VPHYSICS )
 		self:GetPhysicsObject():EnableMotion( false )
 		
-		self.GASL_EntInfo = { model = "models/wall_projector_bridge/wall.mdl", length = 200.393692, color = Color( 255, 255, 255 ) }
+		self.GASL_EntInfo = { model = "models/wall_projector_bridge/wall.mdl", length = 200.393692, angle = Angle( ), color = Color( 255, 255, 255 ) }
 
 		self:AddInput( "Enable", function( value ) self:ToggleEnable( value ) end )
 

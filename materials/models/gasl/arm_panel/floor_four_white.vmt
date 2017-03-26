@@ -1,0 +1,9 @@
+VertexlitGeneric
+{
+$basetexture "models\gasl\arm_panel\floor_four_white"
+$bumpmap "models\gasl\arm_panel\floor_four_white_normal"
+$phong 1
+$phongboost 2
+$phongexponent 10
+$phongfresnelranges "[.1 .5 1]"
+}

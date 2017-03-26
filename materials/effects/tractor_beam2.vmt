@@ -45,14 +45,14 @@ resultvar $detail2scrollrate
 TextureScroll
 {
 texturescrollvar $basetexturetransform
-texturescrollrate $scrollrate
-texturescrollangle 70
+texturescrollrate 0.3
+texturescrollangle 90
 }
 TextureScroll
 {
 texturescrollvar $detailtexturetransform
-texturescrollrate $detailscrollrate
-texturescrollangle 90
+texturescrollrate -0.3
+texturescrollangle 0
 }
 TextureScroll
 {

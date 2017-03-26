@@ -76,7 +76,7 @@ function ENT:Think()
 	local trace = util.TraceHull( {
 		start = self:GetPos(),
 		endpos = self:GetPos() + self:GetUp() * BoxSize,
-		filter = self,
+		filter = function( ent ) if ( APERTURESCIENCE:IsValidEntity( ent ) ) then return true end end,
 		ignoreworld = true,
 		mins = Vector( -BoxSize, -BoxSize, -BoxSize ),
 		maxs = Vector( BoxSize, BoxSize, BoxSize ),
@@ -84,10 +84,8 @@ function ENT:Think()
 	} )
 	
 	-- launch init
-	if ( trace.Entity:IsValid() && self.GASL_Cooldown == 0 && self:GetEnable()
-		&& ( trace.Entity:IsNPC() 
-		|| trace.Entity:IsPlayer() 
-		|| trace.Entity:GetPhysicsObject():IsValid() ) ) then
+	if ( self.GASL_Cooldown == 0 && self:GetEnable()
+		&& trace.Hit && IsValid( trace.Entity ) ) then
 
 		local ent = trace.Entity
 		

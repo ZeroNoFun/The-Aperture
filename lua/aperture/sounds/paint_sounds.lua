@@ -124,20 +124,6 @@ APERTURESCIENCE.GelBounceEnter =
 }
 sound.Add( APERTURESCIENCE.GelBounceEnter )
 
-APERTURESCIENCE.GelSpeedEnter =
-{
-	channel	= CHAN_AUTO,
-	name	= "GASL.GelSpeedEnter",
-	level	= 75,
-	sound	= { "player/paint/player_enter_speed_paint_01.wav"
-		, "player/paint/player_enter_speed_paint_02.wav"
-		, "player/paint/player_enter_speed_paint_03.wav"
-	},
-	volume	= 1.0,
-	pitch	= 100,
-}
-sound.Add( APERTURESCIENCE.GelSpeedEnter )
-
 APERTURESCIENCE.GelBounceExit =
 {
 	channel	= CHAN_AUTO,
@@ -152,6 +138,20 @@ APERTURESCIENCE.GelBounceExit =
 }
 sound.Add( APERTURESCIENCE.GelBounceExit )
 
+APERTURESCIENCE.GelSpeedEnter =
+{
+	channel	= CHAN_AUTO,
+	name	= "GASL.GelSpeedEnter",
+	level	= 75,
+	sound	= { "player/paint/player_enter_speed_paint_01.wav"
+		, "player/paint/player_enter_speed_paint_02.wav"
+		, "player/paint/player_enter_speed_paint_03.wav"
+	},
+	volume	= 1.0,
+	pitch	= 100,
+}
+sound.Add( APERTURESCIENCE.GelSpeedEnter )
+
 APERTURESCIENCE.GelSpeedExit =
 {
 	channel	= CHAN_AUTO,
@@ -165,6 +165,34 @@ APERTURESCIENCE.GelSpeedExit =
 	pitch	= 100,
 }
 sound.Add( APERTURESCIENCE.GelSpeedExit )
+
+APERTURESCIENCE.GelStickEnter =
+{
+	channel	= CHAN_AUTO,
+	name	= "GASL.GelStickEnter",
+	level	= 75,
+	sound	= { "player/paint/player_enter_stick_paint_01.wav"
+		, "player/paint/player_enter_stick_paint_02.wav"
+		, "player/paint/player_enter_stick_paint_03.wav"
+	},
+	volume	= 1.0,
+	pitch	= 100,
+}
+sound.Add( APERTURESCIENCE.GelStickEnter )
+
+APERTURESCIENCE.GelStickExit =
+{
+	channel	= CHAN_AUTO,
+	name	= "GASL.GelStickExit",
+	level	= 75,
+	sound	= { "player/paint/player_exit_stick_paint_01.wav"
+		, "player/paint/player_exit_stick_paint_02.wav"
+		, "player/paint/player_exit_stick_paint_03.wav"
+	},
+	volume	= 1.0,
+	pitch	= 100,
+}
+sound.Add( APERTURESCIENCE.GelStickExit )
 
 APERTURESCIENCE.GelFlow =
 {

@@ -1,26 +1,56 @@
 AddCSLuaFile( )
 
-SWEP.Weight = 3
-SWEP.Spawnable = true
-SWEP.AdminSpawnable = true
+if ( SERVER ) then
+	SWEP.Weight                     = 4
+	SWEP.AutoSwitchTo               = false
+	SWEP.AutoSwitchFrom             = false
+end
 
-SWEP.PrintName = "Paint Gun"
-SWEP.Slot = 0
-SWEP.Slotpos = 0
-SWEP.CSMuzzleFlashes = false
-SWEP.DrawAmmo = false
-SWEP.DrawCrosshair = true
-SWEP.Category = "Aperture Science"
- 
-SWEP.HoldType = "ar2"
-SWEP.Purpose = "Shoot gel"
-SWEP.Instructions = "Mouse 1 to spawn shoot gel Mouse 2 to select gel type"
-SWEP.ViewModelFOV = 45
-SWEP.ViewModel = "models/weapons/v_aperture_paintgun.mdl" 
-SWEP.WorldModel = "models/weapons/w_aperture_paintgun.mdl"
+if ( CLIENT ) then
+	//SWEP.WepSelectIcon 		= surface.GetTextureID("weapons/portalgun_inventory")
+	SWEP.PrintName          = "Paint Gun"
+	SWEP.Author             = "CrishNate"
+	SWEP.Purpose            = "Shoot Different Gels"
+	SWEP.ViewModelFOV       = 45
+	SWEP.Instructions       = "Left/Right Mouse shoot gel, Reload change gel types"
+	SWEP.Slot = 0
+	SWEP.Slotpos = 0
+	SWEP.CSMuzzleFlashes    = false
 
-SWEP.Primary.Automatic = true
-SWEP.Secondary.Automatic = true
+end
+
+SWEP.HoldType			= "crossbow"
+SWEP.EnableIdle			= false	
+SWEP.BobScale 			= 0
+SWEP.SwayScale 			= 0
+
+SWEP.DrawAmmo 			= false
+SWEP.DrawCrosshair 		= true
+SWEP.Category 			= "Aperture Science"
+
+SWEP.Spawnable			= true
+SWEP.AdminSpawnable		= true
+
+SWEP.ViewModel 			= "models/weapons/v_aperture_paintgun.mdl" 
+SWEP.WorldModel 		= "models/weapons/w_aperture_paintgun.mdl"
+
+SWEP.ViewModelFlip 		= false
+
+SWEP.Delay              = .5
+
+SWEP.Primary.ClipSize		= -1
+SWEP.Primary.DefaultClip	= -1
+SWEP.Primary.Automatic		= true
+SWEP.Primary.Ammo				= "none"
+
+SWEP.Secondary.ClipSize		= -1
+SWEP.Secondary.DefaultClip	= -1
+SWEP.Secondary.Automatic	= true
+SWEP.Secondary.Ammo				= "none"
+
+SWEP.RunBob = 0.5
+SWEP.RunSway = 2.0
+
 
 SWEP.HoldenProp			= false
 SWEP.NextAllowedPickup	= 0
@@ -179,30 +209,12 @@ function SWEP:DrawHUD()
 	local firstPaint = self:GetNWInt( "GASL:FirstPaint" )
 	local secondPaint = self:GetNWInt( "GASL:SecondPaint" )
 	
-	if ( LocalPlayer():KeyDown( IN_RELOAD ) ) then
-		
-		if ( animation < 1 ) then self.HUDAnimation = math.min( 1, animation + FrameTime() * 2 ) end
-		
-		if ( !self.CursorEnabled ) then
-			self.CursorEnabled = true
-			gui.EnableScreenClicker( true )
-		end
-
-	else
-	
-		if ( animation > 0 ) then self.HUDAnimation = math.max( 0, animation - FrameTime() * 2 ) end
-		if ( self.CursorEnabled ) then
-			self.CursorEnabled = false
-			gui.EnableScreenClicker( false )
-		end
-		
-	end
-	
 	local CursorX, CursorY = input.GetCursorPos()
 	local curpos = Vector( CursorX - ScrW() / 2, CursorY - ScrH() / 2 )
 	local angle = math.atan2( curpos.x, curpos.y ) * 180 / math.pi
 	local OffsetY = 200
 	local ImgSize = 64 * animation
+	local PointerSize = 80 * animation
 	local GelCount = PORTAL_GEL_COUNT
 	local Separating = 50
 	local SelectCircleAddictionSize = 5
@@ -211,6 +223,22 @@ function SWEP:DrawHUD()
 	local roundAngle = math.Round( ( angle - 90 ) / roundDegTo ) * roundDegTo
 	local selectionDeg = math.Round( ConvectTo360( -angle + 90 ) / roundDegTo ) * roundDegTo
 	if ( selectionDeg == 360 ) then selectionDeg = 0 end
+	
+	if ( LocalPlayer():KeyDown( IN_RELOAD ) ) then
+		if ( animation < 1 ) then self.HUDAnimation = math.min( 1, animation + FrameTime() * 2 ) end
+		
+		if ( !self.CursorEnabled ) then
+			self.CursorEnabled = true
+			gui.EnableScreenClicker( true )
+		end
+	else
+		if ( animation > 0 ) then self.HUDAnimation = math.max( 0, animation - FrameTime() * 2 ) end
+		
+		if ( self.CursorEnabled ) then
+			self.CursorEnabled = false
+			gui.EnableScreenClicker( false )
+		end
+	end
 	
 	if ( animation != 0 ) then
 		
@@ -237,9 +265,7 @@ function SWEP:DrawHUD()
 							net.WriteString( "first" )
 							net.WriteInt( i, 8 )
 						net.SendToServer()
-					end
-					
-					if ( input.IsMouseDown( MOUSE_RIGHT ) ) then
+					elseif ( input.IsMouseDown( MOUSE_RIGHT ) ) then
 						net.Start( "GASL_NW_PaintGun_SwitchPaint" )
 							net.WriteString( "second" )
 							net.WriteInt( i, 8 )
@@ -285,7 +311,6 @@ function SWEP:DrawHUD()
 
 			end
 
-			
 			if ( DrawHalo ) then
 				surface.SetMaterial( Material( "vgui/paint_type_select_circle" ) )
 				surface.DrawTexturedRect( 
@@ -309,8 +334,8 @@ function SWEP:DrawHUD()
 		self.HUDSmoothCursor =  math.ApproachAngle( self.HUDSmoothCursor, selectionDeg, FrameTime() * 500 )
 		
 		surface.SetDrawColor( Color( 255, 255, 255 ) )
-		surface.SetMaterial( Material( "vgui/hpwrewrite/arrow" ) )
-		surface.DrawTexturedRectRotated( ScrW() / 2, ScrH() / 2, ImgSize, ImgSize, -self.HUDSmoothCursor )
+		surface.SetMaterial( Material( "vgui/hud/paint_type_select_arrow" ) )
+		surface.DrawTexturedRectRotated( ScrW() / 2, ScrH() / 2, PointerSize, PointerSize, -self.HUDSmoothCursor - 90 )
 	end
 
 end

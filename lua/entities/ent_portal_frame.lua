@@ -83,8 +83,8 @@ function ENT:ClearPortal()
 
 	if ( !IsValid( self.GASL_PortalFrame_Portal ) ) then return end
 	self.GASL_PortalFrame_Portal:SuccessEffect()
-	//self.GASL_PortalFrame_Portal:GetNWBool( "Potal:Other" ):SetNetworkedBool( "orange", false, true )
-	//self.GASL_PortalFrame_Portal:GetNWBool( "Potal:Other" ):SuccessEffect()
+	self.GASL_PortalFrame_Portal:GetNWBool( "Potal:Other" ):SetNetworkedBool( "orange", false, true )
+	self.GASL_PortalFrame_Portal:GetNWBool( "Potal:Other" ):SuccessEffect()
 	self.GASL_PortalFrame_Portal:Remove()
 
 end
@@ -114,12 +114,12 @@ function ENT:OpenPortal( type )
 	   
 		if type == TYPE_BLUE then
    
-			//self.Owner:SetNWEntity( "Portal:Blue", Portal )
+			self.Owner:SetNWEntity( "Portal:Blue", Portal )
 			Portal:SetNetworkedBool( "blue", true, true )
 		   
 		else
 	   
-			//self.Owner:SetNWEntity( "Portal:Orange", Portal )
+			self.Owner:SetNWEntity( "Portal:Orange", Portal )
 			Portal:SetNetworkedBool( "blue", false, true )
 		   
 		end

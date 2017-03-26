@@ -42,7 +42,6 @@ if ( CLIENT ) then
 
 		local min, max = self:GetRenderBounds() 
 		self.GASL_RenderBounds = { mins = min, maxs = max }
-		self.GASL_UpdateRenderBounds = { mins = Vector(), maxs = Vector() }
 		
 	end
 	
@@ -222,9 +221,14 @@ end
 
 function ENT:Draw()
 
-	self.GASL_LASER_Reflections = 0
-
 	self:DrawModel()
+
+end
+
+
+function ENT:Drawing()
+
+	self.GASL_LASER_Reflections = 0
 	
 	-- skip if disabled
 	if ( !self:GetEnable() ) then return end

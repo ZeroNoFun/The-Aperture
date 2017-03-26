@@ -253,7 +253,7 @@ function ENT:GetAllPortalPassages( pos, angle, ignore )
 		} )
 		
 		//pEffectBuildPos.x = 0
-		table.insert( points, table.Count( points ) + 1, { startpos = pEffectBuildPos, endpos = trace.HitPos } )
+		table.insert( points, table.Count( points ) + 1, { startpos = pEffectBuildPos, angles = pEffectBuildAng, endpos = trace.HitPos } )
 		
 		-- Portal loop if trace hit portal
 		for k, v in pairs( ents.FindByClass( "prop_portal" ) ) do
@@ -295,7 +295,7 @@ function ENT:MakePEffect( )
 
 	-- If pEffect projector detect portal update pEffect
 	local pEffectBuildPos = self:LocalToWorld( Vector( 0, 0, -1 ) )
-	local pEffectBuildAng = self:LocalToWorldAngles( Angle( 0, 0, 0 ) )
+	local pEffectBuildAng = self:LocalToWorldAngles( self.GASL_EntInfo.angle )
 	local portalLoop = true
 	local hitPortal = nil
 	local lastHitPortal = nil
@@ -513,6 +513,7 @@ function ENT:PEffectBuild( trace, pEffectBuildPos, pEffectBuildAng, passages )
 		ent:SetPos( pEffectBuildPos + pEffectBuildAng:Forward() * addingDist )
 		ent:SetAngles( pEffectBuildAng )
 		ent:Spawn()
+		ent:DrawShadow( false )
 		ent:SetColor( self.GASL_EntInfo.color )
 		ent:SetPersistent( true )
 		ent.GASL_Ignore = true
@@ -525,18 +526,15 @@ function ENT:PEffectBuild( trace, pEffectBuildPos, pEffectBuildAng, passages )
 		if ( self.GASL_EntInfo.angleoffset ) then
 			ent:SetAngles( ent:LocalToWorldAngles( self.GASL_EntInfo.angleoffset ) )
 		end
-
-		ent:DrawShadow( false )
+		
 		if ( self.GASL_EntInfo.parent ) then ent:SetParent( self ) end
 		// Portal Gun integration: activation ignore for portals
 		ent.isClone = true
 		
 		if ( IsValid( ent:GetPhysicsObject() ) ) then
-		
 			local physEnt = ent:GetPhysicsObject( )
 			physEnt:SetMaterial( "item" )
 			physEnt:EnableMotion( false )
-			
 		end
 		
 		table.insert( pEffect, table.Count( pEffect ) + 1, ent )
