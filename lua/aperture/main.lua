@@ -487,31 +487,23 @@ end )
 
 hook.Add( "KeyPress", "GASL:HandlePlayerJump", function( ply, key )
 
+	if CLIENT then return end
 	if ( key != IN_JUMP || !ply:IsOnGround() ) then return end
 	
 	local trace = { start = ply:GetPos(), endpos = ply:GetPos() - Vector( 0, 0, 100 ), filter = ply }
 	local ent = util.TraceEntity( trace, ply ).Entity
-	local paintType = 0
-	
-	if ( IsValid( ent ) ) then
-		paintType = ent:GetClass() == "env_portal_paint" and ent:GetGelType() or 0
-	else
-		ent, paintType = APERTURESCIENCE:CheckForGel( ply:GetPos(), Vector( 0, 0, -100 ) )
-	end
+	local paintType = APERTURESCIENCE:CheckForGel( ply:GetPos(), Vector( 0, 0, -100 ) )
 	
 	-- Skip if it's not bridge or paint
-	if ( !ent:IsValid() || ent:IsValid() 
-		&& ( ent:GetModel() != "models/wall_projector_bridge/wall.mdl"
-		&& ent:GetClass() != "env_portal_paint" ) ) then return end
-		
-	if ( ent:GetModel() == "models/wall_projector_bridge/wall.mdl" ) then
-		ent:EmitSound( "GASL.WallProjectorFootsteps" )
-	elseif ( ent:GetClass() == "env_portal_paint" ) then
+	if ent:GetModel() != "models/wall_projector_bridge/wall.mdl" && paintType == nil then return end
+	if paintType != nil then
 		ent:EmitSound( "GASL.GelFootsteps" )
 		if ( paintType == PORTAL_GEL_BOUNCE ) then
 			ply:SetVelocity( Vector( 0, 0, 400 ) )
 			ply:EmitSound( "GASL.GelBounce" )
 		end
+	elseif ent:GetModel() == "models/wall_projector_bridge/wall.mdl" then
+		ent:EmitSound( "GASL.WallProjectorFootsteps" )
 	end
 	
 end )

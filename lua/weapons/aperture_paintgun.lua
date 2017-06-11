@@ -181,7 +181,6 @@ function SWEP:PrimaryAttack()
 	
 	local firstPaint = self:GetNWInt( "GASL:FirstPaint" )
 	self:MakePuddle( firstPaint )
-	
 end
 
 function SWEP:SecondaryAttack()
@@ -189,7 +188,6 @@ function SWEP:SecondaryAttack()
 	
 	local secondPaint = self:GetNWInt( "GASL:SecondPaint" )
 	self:MakePuddle( secondPaint )
-	
 end
 
 function SWEP:Reload()
@@ -197,10 +195,8 @@ function SWEP:Reload()
 end
 
 local function ConvectTo360( angle )
-	
-	if ( angle < 0 ) then return 360 + angle end
+	if angle < 0 then return 360 + angle end
 	return angle
-	
 end
 
 function SWEP:DrawHUD()
@@ -256,9 +252,9 @@ function SWEP:DrawHUD()
 			local XPos = ScrW() / 2 + ( Cos * WheelRad - ImgSize / 2 ) * animation
 			local YPos = ScrH() / 2 + ( Sin * WheelRad - ImgSize / 2 ) * animation
 			
-			if ( selectionDeg == Deg && LocalPlayer():KeyDown( IN_RELOAD )  ) then
+			if ( selectionDeg == Deg and LocalPlayer():KeyDown( IN_RELOAD )  ) then
 
-				if ( firstPaint != i && secondPaint != i ) then
+				if ( firstPaint != i and secondPaint != i ) then
 				
 					if ( input.IsMouseDown( MOUSE_LEFT ) ) then
 						net.Start( "GASL_NW_PaintGun_SwitchPaint" )
@@ -285,7 +281,7 @@ function SWEP:DrawHUD()
 			elseif ( i == secondPaint ) then 
 				DrawColor = Color( 255, 200, 0 )
 				DrawHalo = true
-			elseif ( selectionDeg == Deg && animation == 1 ) then 
+			elseif ( selectionDeg == Deg and animation == 1 ) then 
 				DrawColor = Color( 255, 255, 255 )
 				DrawHalo = true 
 			end
@@ -365,235 +361,235 @@ if ( SERVER ) then
 	
 end
 
-if ( CLIENT ) then
+-- if ( CLIENT ) then
 
-	net.Receive( "GASL_NW_PaintGun_Holster", function( len, pl )
+	-- net.Receive( "GASL_NW_PaintGun_Holster", function( len, pl )
 		
-		local pl = net.ReadEntity()
+		-- local pl = net.ReadEntity()
 
-		if ( IsValid( pl ) ) then
-			local ViewModel = pl:GetNWEntity( "GASL:ViewModel" )
+		-- if ( IsValid( pl ) ) then
+			-- local ViewModel = pl:GetNWEntity( "GASL:ViewModel" )
 
-			if ( IsValid( ViewModel ) ) then
-				ViewModel:SetSubMaterial( 3, Material( "" ) )
-				ViewModel:SetSubMaterial( 2, Material( "" ) )
-			end
-		end
+			-- if ( IsValid( ViewModel ) ) then
+				-- ViewModel:SetSubMaterial( 3, Material( "" ) )
+				-- ViewModel:SetSubMaterial( 2, Material( "" ) )
+			-- end
+		-- end
 		
-	end )
+	-- end )
 	
-	net.Receive( 'PAINTGUN_PICKUP_PROP', function()
-		local self = net.ReadEntity()
-		local ent = net.ReadEntity()
+	-- net.Receive( 'PAINTGUN_PICKUP_PROP', function()
+		-- local self = net.ReadEntity()
+		-- local ent = net.ReadEntity()
 		
-		if !IsValid( ent ) then
-			--Drop it.
-			if self.PickupSound then
-				self.PickupSound:Stop()
-				self.PickupSound = nil
-				EmitSound( Sound( 'player/object_use_stop_01.wav' ), self:GetPos(), 1, CHAN_AUTO, 0.4, 100, 0, 100 )
-			end
-			if self.ViewModelOverride then
-				self.ViewModelOverride:Remove()
-			end
-		else
-			--Pick it up.
-			if !self.PickupSound and CLIENT then
-				self.PickupSound = CreateSound( self, 'player/object_use_lp_01.wav' )
-				self.PickupSound:Play()
-				self.PickupSound:ChangeVolume( 0.5, 0 )
-			end
+		-- if !IsValid( ent ) then
+			-- --Drop it.
+			-- if self.PickupSound then
+				-- self.PickupSound:Stop()
+				-- self.PickupSound = nil
+				-- EmitSound( Sound( 'player/object_use_stop_01.wav' ), self:GetPos(), 1, CHAN_AUTO, 0.4, 100, 0, 100 )
+			-- end
+			-- if self.ViewModelOverride then
+				-- self.ViewModelOverride:Remove()
+			-- end
+		-- else
+			-- --Pick it up.
+			-- if !self.PickupSound and CLIENT then
+				-- self.PickupSound = CreateSound( self, 'player/object_use_lp_01.wav' )
+				-- self.PickupSound:Play()
+				-- self.PickupSound:ChangeVolume( 0.5, 0 )
+			-- end
 			
-			-- self.ViewModelOverride = true
+			-- -- self.ViewModelOverride = true
 			
-			self.ViewModelOverride = ClientsideModel(self.ViewModel,RENDERGROUP_OPAQUE)
-			self.ViewModelOverride:SetPos(EyePos()-LocalPlayer():GetForward()*(self.ViewModelFOV/5))
-			self.ViewModelOverride:SetAngles(EyeAngles())
-			self.ViewModelOverride.AutomaticFrameAdvance = true
-			self.ViewModelOverride.startCarry = false
-			-- self.ViewModelOverride:SetParent(self.Owner)
-			function self.ViewModelOverride.PreDraw(vm)
-				vm:SetColor(Color(255,255,255))
-				local oldorigin = EyePos() -- -EyeAngles():Forward()*10
-				local pos, ang = self:CalcViewModelView(vm,oldorigin,EyeAngles(),vm:GetPos(),vm:GetAngles())
-				return pos, ang
-			end
+			-- self.ViewModelOverride = ClientsideModel(self.ViewModel,RENDERGROUP_OPAQUE)
+			-- self.ViewModelOverride:SetPos(EyePos()-LocalPlayer():GetForward()*(self.ViewModelFOV/5))
+			-- self.ViewModelOverride:SetAngles(EyeAngles())
+			-- self.ViewModelOverride.AutomaticFrameAdvance = true
+			-- self.ViewModelOverride.startCarry = false
+			-- -- self.ViewModelOverride:SetParent(self.Owner)
+			-- function self.ViewModelOverride.PreDraw(vm)
+				-- vm:SetColor(Color(255,255,255))
+				-- local oldorigin = EyePos() -- -EyeAngles():Forward()*10
+				-- local pos, ang = self:CalcViewModelView(vm,oldorigin,EyeAngles(),vm:GetPos(),vm:GetAngles())
+				-- return pos, ang
+			-- end
 			
-		end
+		-- end
 		
-		self.HoldenProp = ent
-	end )
+		-- self.HoldenProp = ent
+	-- end )
 
-end
+-- end
 
-if SERVER then
-	util.AddNetworkString( 'PAINTGUN_PICKUP_PROP' )
+-- if SERVER then
+	-- util.AddNetworkString( 'PAINTGUN_PICKUP_PROP' )
 
-	hook.Add( 'AllowPlayerPickup', 'PaintgunPickup', function( ply, ent )
-		if IsValid( ply:GetActiveWeapon() ) and IsValid( ent ) and ply:GetActiveWeapon():GetClass() == 'aperture_paintgun' then --and (table.HasValue( pickable, ent:GetModel() ) or table.HasValue( pickable, ent:GetClass() )) then
-			return false
-		end
-	end )
-end
+	-- hook.Add( 'AllowPlayerPickup', 'PaintgunPickup', function( ply, ent )
+		-- if IsValid( ply:GetActiveWeapon() ) and IsValid( ent ) and ply:GetActiveWeapon():GetClass() == 'aperture_paintgun' then --and (table.HasValue( pickable, ent:GetModel() ) or table.HasValue( pickable, ent:GetClass() )) then
+			-- return false
+		-- end
+	-- end )
+-- end
 
-hook.Add("Think", "Paintgun Holding Item", function()
-	for k, v in pairs(player.GetAll())do
+-- hook.Add("Think", "Paintgun Holding Item", function()
+	-- for k, v in pairs(player.GetAll())do
 		
-		local Weap = v:GetActiveWeapon()
+		-- local Weap = v:GetActiveWeapon()
 		
-		if IsValid( Weap.HoldenProp ) && SERVER
-			&& Weap.HoldenProp:GetModel() == "models/props/reflection_cube.mdl" then
+		-- if IsValid( Weap.HoldenProp ) and SERVER
+			-- and Weap.HoldenProp:GetModel() == "models/props/reflection_cube.mdl" then
 			
-			local Angles = Weap.HoldenProp:GetAngles()
+			-- local Angles = Weap.HoldenProp:GetAngles()
 			
-			Weap.HoldenProp:SetAngles( Angle( 0, v:EyeAngles().y, 0 ) )
+			-- Weap.HoldenProp:SetAngles( Angle( 0, v:EyeAngles().y, 0 ) )
 			
-		end
+		-- end
 
-		if v:KeyDown(IN_USE) then
+		-- if v:KeyDown(IN_USE) then
 				
-			if( Weap.UseReleased ) then end
-			if Weap.NextAllowedPickup and Weap.NextAllowedPickup < CurTime() && Weap.UseReleased then
-				Weap.UseReleased = false
-				if IsValid( Weap.HoldenProp ) then
-					Weap:OnDroppedProp()
-				end
-			end
+			-- if( Weap.UseReleased ) then end
+			-- if Weap.NextAllowedPickup and Weap.NextAllowedPickup < CurTime() and Weap.UseReleased then
+				-- Weap.UseReleased = false
+				-- if IsValid( Weap.HoldenProp ) then
+					-- Weap:OnDroppedProp()
+				-- end
+			-- end
 			
-		else
-			Weap.UseReleased = true
-		end
-	end
+		-- else
+			-- Weap.UseReleased = true
+		-- end
+	-- end
 	
-end)
+-- end)
 
-function SWEP:Think()
+-- function SWEP:Think()
 	
-	-- -- HOLDING FUNC
+	-- -- -- HOLDING FUNC
 	
-	if SERVER then
-		if self.Owner:KeyDown( IN_USE ) and self.UseReleased then
-			self.UseReleased = false
-			if self.NextAllowedPickup < CurTime() and !IsValid(self.HoldenProp) then
+	-- if SERVER then
+		-- if self.Owner:KeyDown( IN_USE ) and self.UseReleased then
+			-- self.UseReleased = false
+			-- if self.NextAllowedPickup < CurTime() and !IsValid(self.HoldenProp) then
 			
-				local ply = self.Owner
-				self.NextAllowedPickup = CurTime() + 0.4
+				-- local ply = self.Owner
+				-- self.NextAllowedPickup = CurTime() + 0.4
 
-				local tr = util.TraceLine( { 
-					start = ply:EyePos(),
-					endpos = ply:EyePos() + ply:GetForward() * 150,
-					filter = ply
-				} )
+				-- local tr = util.TraceLine( { 
+					-- start = ply:EyePos(),
+					-- endpos = ply:EyePos() + ply:GetForward() * 150,
+					-- filter = ply
+				-- } )
 					
-				--PICKUP FUNC
-				if IsValid( tr.Entity ) then
-					if tr.Entity.isClone then tr.Entity = tr.Entity.daddyEnt end
-					local entsize = ( tr.Entity:OBBMaxs() - tr.Entity:OBBMins() ):Length() / 2
-					if entsize > 45 then return end
-					if !IsValid( self.HoldenProp ) and tr.Entity:GetMoveType() != 2 then
-						if !self:PickupProp( tr.Entity ) then
-							self:EmitSound( 'player/object_use_failure_01.wav' )
-							//self:SendWeaponAnim( ACT_VM_DRYFIRE )
-						end
-					end
-				end
+				-- --PICKUP FUNC
+				-- if IsValid( tr.Entity ) then
+					-- if tr.Entity.isClone then tr.Entity = tr.Entity.daddyEnt end
+					-- local entsize = ( tr.Entity:OBBMaxs() - tr.Entity:OBBMins() ):Length() / 2
+					-- if entsize > 45 then return end
+					-- if !IsValid( self.HoldenProp ) and tr.Entity:GetMoveType() != 2 then
+						-- if !self:PickupProp( tr.Entity ) then
+							-- self:EmitSound( 'player/object_use_failure_01.wav' )
+							-- //self:SendWeaponAnim( ACT_VM_DRYFIRE )
+						-- end
+					-- end
+				-- end
 				
-				--PICKUP THROUGH PORTAL FUNC
-				--TODO
+				-- --PICKUP THROUGH PORTAL FUNC
+				-- --TODO
 				
-			end
-		end
+			-- end
+		-- end
 		
-		if IsValid(self.HoldenProp) and (!self.HoldenProp:IsPlayerHolding() or self.HoldenProp.Holder != self.Owner) then
-			self:OnDroppedProp()
-		elseif self.HoldenProp and not IsValid(self.HoldenProp) then
-			self:OnDroppedProp()
-		end
+		-- if IsValid(self.HoldenProp) and (!self.HoldenProp:IsPlayerHolding() or self.HoldenProp.Holder != self.Owner) then
+			-- self:OnDroppedProp()
+		-- elseif self.HoldenProp and not IsValid(self.HoldenProp) then
+			-- self:OnDroppedProp()
+		-- end
 
-	end
+	-- end
 
-	if CLIENT and self.EnableIdle then return end
+	-- if CLIENT and self.EnableIdle then return end
 	
-	-- no more client side
-	if ( CLIENT ) then return end
+	-- -- no more client side
+	-- if ( CLIENT ) then return end
 	
-	if self.idledelay and CurTime() > self.idledelay then
-		self.idledelay = nil
-		//self:SendWeaponAnim(ACT_VM_IDLE)
-	end
+	-- if self.idledelay and CurTime() > self.idledelay then
+		-- self.idledelay = nil
+		-- //self:SendWeaponAnim(ACT_VM_IDLE)
+	-- end
 
-	if ( self.Owner:KeyDown( IN_ATTACK ) || self.Owner:KeyDown( IN_ATTACK2 ) ) then
-		if ( !self.IsShooting ) then
-			self.Owner:EmitSound( "GASL.GelFlow" )
-			self.IsShooting = true
-		end
-	elseif( self.IsShooting ) then
-		self.Owner:StopSound( "GASL.GelFlow" )
-		self.IsShooting = false
-	end
+	-- if ( self.Owner:KeyDown( IN_ATTACK ) || self.Owner:KeyDown( IN_ATTACK2 ) ) then
+		-- if ( !self.IsShooting ) then
+			-- self.Owner:EmitSound( "GASL.GelFlow" )
+			-- self.IsShooting = true
+		-- end
+	-- elseif( self.IsShooting ) then
+		-- self.Owner:StopSound( "GASL.GelFlow" )
+		-- self.IsShooting = false
+	-- end
 
-end
+-- end
 
-function SWEP:PickupProp( ent )
-	if true then
-		if self.Owner:GetGroundEntity() == ent then return false end
+-- function SWEP:PickupProp( ent )
+	-- if true then
+		-- if self.Owner:GetGroundEntity() == ent then return false end
 		
-		if ent:GetModel() == "models/props/reflection_cube.mdl" then
+		-- if ent:GetModel() == "models/props/reflection_cube.mdl" then
 			
-			local Angles = ent:GetAngles()
+			-- local Angles = ent:GetAngles()
 			
-			ent:SetAngles( Angle( 0, self.Owner:EyeAngles().y, 0 ) )
+			-- ent:SetAngles( Angle( 0, self.Owner:EyeAngles().y, 0 ) )
 			
-		end
+		-- end
 		
-		--Take it from other players.
-		if ent:IsPlayerHolding() and ent.Holder and ent.Holder:IsValid() then
-			ent.Holder:GetActiveWeapon():OnDroppedProp()
-		end
+		-- --Take it from other players.
+		-- if ent:IsPlayerHolding() and ent.Holder and ent.Holder:IsValid() then
+			-- ent.Holder:GetActiveWeapon():OnDroppedProp()
+		-- end
 		
-		self.HoldenProp = ent
-		ent.Holder = self.Owner
+		-- self.HoldenProp = ent
+		-- ent.Holder = self.Owner
 		
-		--Rotate it first
-		local angOffset = hook.Call("GetPreferredCarryAngles",GAMEMODE,ent) 
-		if angOffset then
-			ent:SetAngles(self.Owner:EyeAngles() + angOffset)
-		end
+		-- --Rotate it first
+		-- local angOffset = hook.Call("GetPreferredCarryAngles",GAMEMODE,ent) 
+		-- if angOffset then
+			-- ent:SetAngles(self.Owner:EyeAngles() + angOffset)
+		-- end
 		
-		--Pick it up.
-		self.Owner:PickupObject(ent)
+		-- --Pick it up.
+		-- self.Owner:PickupObject(ent)
 		
-		//self:SendWeaponAnim( ACT_VM_DEPLOY )
+		-- //self:SendWeaponAnim( ACT_VM_DEPLOY )
 		
-		if SERVER then
-			net.Start( 'PAINTGUN_PICKUP_PROP' )
-				net.WriteEntity( self )
-				net.WriteEntity( ent )
-			net.Send( self.Owner )
-		end
-		return true
-	end
-	return false
-end
+		-- if SERVER then
+			-- net.Start( 'PAINTGUN_PICKUP_PROP' )
+				-- net.WriteEntity( self )
+				-- net.WriteEntity( ent )
+			-- net.Send( self.Owner )
+		-- end
+		-- return true
+	-- end
+	-- return false
+-- end
 
-function SWEP:OnDroppedProp()
+-- function SWEP:OnDroppedProp()
 
-	if not self.HoldenProp then return end
+	-- if not self.HoldenProp then return end
 		
-	//self:SendWeaponAnim(ACT_VM_RELEASE)
-	if SERVER then
-		self.Owner:DropObject()
-	end
+	-- //self:SendWeaponAnim(ACT_VM_RELEASE)
+	-- if SERVER then
+		-- self.Owner:DropObject()
+	-- end
 	
-	self.HoldenProp.Holder = nil
-	self.HoldenProp = nil
-	if SERVER then
-		net.Start( 'PAINTGUN_PICKUP_PROP' )
-			net.WriteEntity( self )
-			net.WriteEntity( NULL )
-		net.Send( self.Owner )
-	end
-end
+	-- self.HoldenProp.Holder = nil
+	-- self.HoldenProp = nil
+	-- if SERVER then
+		-- net.Start( 'PAINTGUN_PICKUP_PROP' )
+			-- net.WriteEntity( self )
+			-- net.WriteEntity( NULL )
+		-- net.Send( self.Owner )
+	-- end
+-- end
 
 function SWEP:OnRemove( )
 
@@ -617,99 +613,98 @@ function SWEP:OnRemove( )
 	
 end
 
-local GravityLight,GravityBeam = Material("sprites/light_glow02_add"),Material("particle/bendibeam")
-local GravitySprites = {
-	{bone = "ValveBiped.Arm1_C", pos = Vector(-1.25 ,-0.10, 1.06), size = { x = 0.02, y = 0.02 }},
-	{bone = "ValveBiped.Arm2_C", pos = Vector(0.10, 1.25, 1.00), size = { x = 0.02, y = 0.02 }},
-	{bone = "ValveBiped.Arm3_C", pos = Vector(0.10, 1.25, 1.05), size = { x = 0.02, y = 0.02 }}
-}
-local inx = -1
-function SWEP:DrawPickupEffects(ent)
+-- local GravityLight,GravityBeam = Material("sprites/light_glow02_add"),Material("particle/bendibeam")
+-- local GravitySprites = {
+	-- {bone = "ValveBiped.Arm1_C", pos = Vector(-1.25 ,-0.10, 1.06), size = { x = 0.02, y = 0.02 }},
+	-- {bone = "ValveBiped.Arm2_C", pos = Vector(0.10, 1.25, 1.00), size = { x = 0.02, y = 0.02 }},
+	-- {bone = "ValveBiped.Arm3_C", pos = Vector(0.10, 1.25, 1.05), size = { x = 0.02, y = 0.02 }}
+-- }
+-- local inx = -1
+-- function SWEP:DrawPickupEffects(ent)
 	
-	//Draw the lights
-	local lightOrigins = {}
-	local col = Color( 200, 255, 220, 255 )
+	-- //Draw the lights
+	-- local lightOrigins = {}
+	-- local col = Color( 200, 255, 220, 255 )
 	
-	for k,v in pairs(GravitySprites) do
-		local bone = ent:LookupBone(v.bone)
+	-- for k,v in pairs(GravitySprites) do
+		-- local bone = ent:LookupBone(v.bone)
 
-		if (!bone) then return end
+		-- if (!bone) then return end
 		
-		local pos, ang = Vector(0,0,0), Angle(0,0,0)
-		local m = ent:GetBoneMatrix(0)
-		if (m) then
-			pos, ang = m:GetTranslation(), m:GetAngles()
-		end
+		-- local pos, ang = Vector(0,0,0), Angle(0,0,0)
+		-- local m = ent:GetBoneMatrix(0)
+		-- if (m) then
+			-- pos, ang = m:GetTranslation(), m:GetAngles()
+		-- end
 		
-		if ( k == 1 ) then
-			pos = pos + ang:Right() * 42 - ang:Forward() * 15.5 + ang:Up() * 26
-		elseif( k == 2 ) then
-			pos = pos + ang:Right() * 42 - ang:Forward() * 12 + ang:Up() * 20
-		elseif( k == 3 ) then
-			pos = pos + ang:Right() * 40 - ang:Forward() * 15 + ang:Up() * 17
-		end
+		-- if ( k == 1 ) then
+			-- pos = pos + ang:Right() * 42 - ang:Forward() * 15.5 + ang:Up() * 26
+		-- elseif( k == 2 ) then
+			-- pos = pos + ang:Right() * 42 - ang:Forward() * 12 + ang:Up() * 20
+		-- elseif( k == 3 ) then
+			-- pos = pos + ang:Right() * 40 - ang:Forward() * 15 + ang:Up() * 17
+		-- end
 
-		if (IsValid(self.Owner) and self.Owner:IsPlayer() and 
-			ent == self.Owner:GetViewModel() and self.ViewModelFlip) then
-			ang.r = -ang.r // Fixes mirrored models
-		end
+		-- if (IsValid(self.Owner) and self.Owner:IsPlayer() and 
+			-- ent == self.Owner:GetViewModel() and self.ViewModelFlip) then
+			-- ang.r = -ang.r // Fixes mirrored models
+		-- end
 			
-		if (!pos) then continue end
+		-- if (!pos) then continue end
 		
-		local drawpos = pos + ang:Forward() * v.pos.x + ang:Right() * v.pos.y + ang:Up() * v.pos.z
-		local _sin = math.abs( math.sin( CurTime() * ( 0.1 ) * math.Rand(1,3))); //math.sinwave( 25, 3, true )
+		-- local drawpos = pos + ang:Forward() * v.pos.x + ang:Right() * v.pos.y + ang:Up() * v.pos.z
+		-- local _sin = math.abs( math.sin( CurTime() * ( 0.1 ) * math.Rand(1,3))); //math.sinwave( 25, 3, true )
 		
-		render.SetMaterial(GravityLight)
+		-- render.SetMaterial(GravityLight)
 		
-		for loops = 1, 5 do
-			render.DrawSprite(drawpos, v.size.x*300+_sin, v.size.y*300+_sin, col)
-		end
+		-- for loops = 1, 5 do
+			-- render.DrawSprite(drawpos, v.size.x*300+_sin, v.size.y*300+_sin, col)
+		-- end
 		
-		lightOrigins[k] = drawpos
+		-- lightOrigins[k] = drawpos
 			
-	end
+	-- end
 	
 	
-	//Draw the beams and center sprite.
-	local bone = ent:GetBoneMatrix(0)
-	local endpos,ang = bone:GetTranslation(),bone:GetAngles()
-	endpos = endpos + ang:Right() * 40 - ang:Forward() * 15 + ang:Up() * 17
+	-- //Draw the beams and center sprite.
+	-- local bone = ent:GetBoneMatrix(0)
+	-- local endpos,ang = bone:GetTranslation(),bone:GetAngles()
+	-- endpos = endpos + ang:Right() * 40 - ang:Forward() * 15 + ang:Up() * 17
 
-	local _sin = math.abs( math.sin( 1+CurTime( ) * 3 ) ) * 1
-	local _sin1 = math.sin( 1+CurTime( ) * 4 + math.pi / 2 + _sin * math.pi ) * 2
-	local _sin2 = math.sin( 1+CurTime( ) * 4 + _sin * math.pi ) * 2
-	endpos = endpos + ang:Up()*6 + ang:Right()*-1.8
+	-- local _sin = math.abs( math.sin( 1+CurTime( ) * 3 ) ) * 1
+	-- local _sin1 = math.sin( 1+CurTime( ) * 4 + math.pi / 2 + _sin * math.pi ) * 2
+	-- local _sin2 = math.sin( 1+CurTime( ) * 4 + _sin * math.pi ) * 2
+	-- endpos = endpos + ang:Up()*6 + ang:Right()*-1.8
 	
-	render.DrawSprite(endpos, 20+_sin * 4, 20+_sin* 4, col)
+	-- render.DrawSprite(endpos, 20+_sin * 4, 20+_sin* 4, col)
 	
-	render.SetMaterial(GravityBeam)
-	render.DrawBeam(lightOrigins[1],endpos,4 + _sin2,-CurTime( ),-CurTime( ) + 1,Color(200,150,255,255))
-	render.DrawBeam(lightOrigins[2],endpos,4 + _sin1,-CurTime( ) / 2,-CurTime( ) / 2 + 1,Color(200,150,255,255))
-	render.DrawBeam(lightOrigins[3],endpos,4 + _sin1,-CurTime( ) / 2,-CurTime( ) / 2 + 1,Color(200,150,255,255))
+	-- render.SetMaterial(GravityBeam)
+	-- render.DrawBeam(lightOrigins[1],endpos,4 + _sin2,-CurTime( ),-CurTime( ) + 1,Color(200,150,255,255))
+	-- render.DrawBeam(lightOrigins[2],endpos,4 + _sin1,-CurTime( ) / 2,-CurTime( ) / 2 + 1,Color(200,150,255,255))
+	-- render.DrawBeam(lightOrigins[3],endpos,4 + _sin1,-CurTime( ) / 2,-CurTime( ) / 2 + 1,Color(200,150,255,255))
 
-end
+-- end
 
-function SWEP:MakePuddle( gel_type )
+function SWEP:MakePuddle(paintType)
 
-	if ( timer.Exists( "GASL_Player_ShootingPaint"..self.Owner:EntIndex() ) ) then return end
-	timer.Create( "GASL_Player_ShootingPaint"..self.Owner:EntIndex(), 0.01, 1, function() end )
+	if timer.Exists("TA_Player_ShootingPaint"..self.Owner:EntIndex()) then return end
+	timer.Create("TA_Player_ShootingPaint"..self.Owner:EntIndex(), 0.01, 1, function() end)
 	
-	if gel_type <= 0 then return end
+	if not paintType then return end
 
-	local OwnerShootPos = self.Owner:GetShootPos()
-	local OwnerEyeAngles = self.Owner:EyeAngles()
-	local forward = OwnerEyeAngles:Forward()
-	local traceForce = util.QuickTrace( OwnerShootPos, forward * 1000, self.Owner )
-	local force = traceForce.HitPos:Distance( OwnerShootPos )
+	local ownerEyeAngles = self.Owner:EyeAngles()
+	local offset = Vector(25, -30, -30)
+	offset:Rotate(ownerEyeAngles)
+	local ownerShootPos = self.Owner:GetShootPos() + offset
+	local forward = ownerEyeAngles:Forward()
+	local traceForce = util.QuickTrace(ownerShootPos, forward * 1000, self.Owner)
+	local force = traceForce.HitPos:Distance(ownerShootPos)
 	
 	-- Randomize makes random size between maxsize and minsize by selected procent
-	local randSize = math.Rand( 0, 1 )
-	local rad = math.max( APERTURESCIENCE.GEL_MINSIZE, math.min( APERTURESCIENCE.GEL_MAXSIZE, randSize * 140 ) )
+	local randSize = math.Rand(APERTURESCIENCE.GEL_MINSIZE, (APERTURESCIENCE.GEL_MAXSIZE + APERTURESCIENCE.GEL_MINSIZE) / 2)
+	local paint = APERTURESCIENCE:MakePaintPuddle(paintType, ownerShootPos, randSize)
+	paint:GetPhysicsObject():SetVelocity(forward * math.max(100, math.min(200, force - 100)) * 8)
 
-	local paint = APERTURESCIENCE:MakePaintPuddle( gel_type, OwnerShootPos, rad )
-	
-	paint:GetPhysicsObject():SetVelocity( forward * math.max( 100, math.min( 200, force - 100 ) ) * 8 )
-
-	if ( IsValid( self.Owner ) && self.Owner:IsPlayer() ) then paint:SetOwner( self.Owner ) end
+	if IsValid(self.Owner) and self.Owner:IsPlayer() then paint:SetOwner(self.Owner) end
 	
 end
