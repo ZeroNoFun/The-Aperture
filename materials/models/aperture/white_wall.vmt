@@ -1,7 +1,7 @@
 VertexLitGeneric
 {
-$basetexture "models\gasl\panel\panel_white"
-$bumpmap "models\gasl\panel\panel_white_normal"
+$basetexture "models\aperture\white_wall"
+$bumpmap "models\aperture\white_wall_normal"
 $phong 1
 $phongboost 2
 $phongexponent 10

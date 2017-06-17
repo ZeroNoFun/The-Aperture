@@ -507,3 +507,18 @@ hook.Add( "KeyPress", "GASL:HandlePlayerJump", function( ply, key )
 	end
 	
 end )
+
+-- hook.Add( "Move", "ZeroGravity", function( ply, mv )
+
+-- 	if SERVER then return end
+
+-- 	local vel = ply:GetVelocity()
+-- 	local g = physenv:GetGravity()
+
+-- 	mv:SetUpSpeed( -g.z * 2 )
+
+-- 	return true;
+	
+-- end )
+
+-- hook.Remove( "Move", "ZeroGravity")

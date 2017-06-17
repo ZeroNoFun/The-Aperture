@@ -56,7 +56,7 @@ function ENT:Think()
 
 	local ply = self:GetNWEntity( "Player" )
 	local EyeAngle = ply:EyeAngles()
-	local Orientation = ply:GetNWVector( "GASL:Orientation" )
+	local Orientation = ply:GetNWVector( "TA:Orientation" )
 	local OrientAng = Orientation:Angle() + Angle( 90, 0, 0 )
 	
 	local _, localangle = WorldToLocal( Vector(), EyeAngle, Vector(), OrientAng )
@@ -84,7 +84,7 @@ end
 
 function ENT:SetPlayer( pl )
 
-	pl:SetNWEntity( "GASL:Avatar", self )
+	pl:SetNWEntity( "TA:Avatar", self )
 	self:SetNWEntity( "Player", pl )
 
 	if ( IsValid( pl ) && pl:IsPlayer() ) then

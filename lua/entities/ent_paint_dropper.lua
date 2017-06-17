@@ -84,17 +84,19 @@ function ENT:Think()
 	
 end
 
-function ENT:MakePuddle( )
+function ENT:MakePuddle()
 
 	-- Randomize makes random size between maxsize and minsize by selected procent
 	local RandSize = math.Rand( -1, 1 ) * self.GASL_PAINT_Radius / 4
 
-	local rad = math.max( APERTURESCIENCE.GEL_MINSIZE, math.min( APERTURESCIENCE.GEL_MAXSIZE, self.GASL_PAINT_Radius + RandSize ) )
-	local paint = APERTURESCIENCE:MakePaintPuddle( self.GASL_PAINT_Type, self:LocalToWorld( Vector( 0, 0, -50 ) + VectorRand() * ( 40 - ( rad / APERTURESCIENCE.GEL_MAXSIZE ) * 40 ) / 4 ), rad )
-
-	if ( IsValid( self.Owner ) && self.Owner:IsPlayer() ) then paint:SetOwner( self.Owner ) end
+	local rad = math.max(APERTURESCIENCE.GEL_MINSIZE, math.min(APERTURESCIENCE.GEL_MAXSIZE, self.GASL_PAINT_Radius + RandSize))
+	local randomSpread = VectorRand():GetNormalized() * (APERTURESCIENCE.GEL_MAXSIZE - rad) * (self.GASL_PAINT_LaunchSpeed / APERTURESCIENCE.GEL_MAX_LAUNCH_SPEED)
+	local velocity = -self:GetUp() * self.GASL_PAINT_LaunchSpeed + randomSpread
+	local pos = self:LocalToWorld(Vector(0, 0, -50) + VectorRand() * (40 - (rad / APERTURESCIENCE.GEL_MAXSIZE ) * 40) / 4)
 	
-	paint:GetPhysicsObject():SetVelocity( -self:GetUp() * self.GASL_PAINT_LaunchSpeed + VectorRand():GetNormalized() * ( APERTURESCIENCE.GEL_MAXSIZE - rad ) * ( self.GASL_PAINT_LaunchSpeed / APERTURESCIENCE.GEL_MAX_LAUNCH_SPEED ) )
+	local paint = APERTURESCIENCE:MakePaintPuddle(self.GASL_PAINT_Type, pos, velocity, rad)
+
+	if IsValid(self.Owner) and self.Owner:IsPlayer() then paint:SetOwner(self.Owner) end
 	
 	return ent
 	

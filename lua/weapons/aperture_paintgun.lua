@@ -67,52 +67,52 @@ local SwayAng = nil
 local SwayOldAng = Angle()
 local SwayDelta = Angle()
 
-if ( CLIENT ) then
+-- if ( CLIENT ) then
 
-	/*---------------------------------------------------------
-	   Name: CalcViewModelView
-	   Desc: Overwrites the default GMod v_model system.
-	---------------------------------------------------------*/
+	-- /*---------------------------------------------------------
+	   -- Name: CalcViewModelView
+	   -- Desc: Overwrites the default GMod v_model system.
+	-- ---------------------------------------------------------*/
 
-	local sin, abs, pi, clamp, min = math.sin, math.abs, math.pi, math.Clamp, math.min
-	function SWEP:CalcViewModelView(ViewModel, oldPos, oldAng, pos, ang)
+	-- local sin, abs, pi, clamp, min = math.sin, math.abs, math.pi, math.Clamp, math.min
+	-- function SWEP:CalcViewModelView(ViewModel, oldPos, oldAng, pos, ang)
 
-		local pPlayer = self.Owner
+		-- local pPlayer = self.Owner
 
-		local CT = CurTime()
-		local FT = FrameTime()
+		-- local CT = CurTime()
+		-- local FT = FrameTime()
 
-		local RunSpeed = pPlayer:GetRunSpeed()
-		local Speed = clamp(pPlayer:GetVelocity():Length2D(), 0, RunSpeed)
+		-- local RunSpeed = pPlayer:GetRunSpeed()
+		-- local Speed = clamp(pPlayer:GetVelocity():Length2D(), 0, RunSpeed)
 
-		local BobCycleMultiplier = Speed / pPlayer:GetRunSpeed()
+		-- local BobCycleMultiplier = Speed / pPlayer:GetRunSpeed()
 
-		BobCycleMultiplier = (BobCycleMultiplier > 1 and min(1 + ((BobCycleMultiplier - 1) * 0.2), 5) or BobCycleMultiplier)
-		BobTime = BobTime + (CT - BobTimeLast) * (Speed > 0 and (Speed / pPlayer:GetWalkSpeed()) or 0)
-		BobTimeLast = CT
-		local BobCycleX = sin(BobTime * 0.5 % 1 * pi * 2) * BobCycleMultiplier
-		local BobCycleY = sin(BobTime % 1 * pi * 2) * BobCycleMultiplier
+		-- BobCycleMultiplier = (BobCycleMultiplier > 1 and min(1 + ((BobCycleMultiplier - 1) * 0.2), 5) or BobCycleMultiplier)
+		-- BobTime = BobTime + (CT - BobTimeLast) * (Speed > 0 and (Speed / pPlayer:GetWalkSpeed()) or 0)
+		-- BobTimeLast = CT
+		-- local BobCycleX = sin(BobTime * 0.5 % 1 * pi * 2) * BobCycleMultiplier
+		-- local BobCycleY = sin(BobTime % 1 * pi * 2) * BobCycleMultiplier
 
-		oldPos = oldPos + oldAng:Right() * (BobCycleX * 1.5)
-		oldPos = oldPos
-		oldPos = oldPos + oldAng:Up() * BobCycleY/2
+		-- oldPos = oldPos + oldAng:Right() * (BobCycleX * 1.5)
+		-- oldPos = oldPos
+		-- oldPos = oldPos + oldAng:Up() * BobCycleY/2
 
-		SwayAng = oldAng - SwayOldAng
-		if abs(oldAng.y - SwayOldAng.y) > 180 then
-			SwayAng.y = (360 - abs(oldAng.y - SwayOldAng.y)) * abs(oldAng.y - SwayOldAng.y) / (SwayOldAng.y - oldAng.y)
-		else
-			SwayAng.y = oldAng.y - SwayOldAng.y
-		end
-		SwayOldAng.p = oldAng.p
-		SwayOldAng.y = oldAng.y
-		SwayAng.p = math.Clamp(SwayAng.p, -3, 3)
-		SwayAng.y = math.Clamp(SwayAng.y, -3, 3)
-		SwayDelta = LerpAngle(clamp(FT * 5, 0, 1), SwayDelta, SwayAng)
+		-- SwayAng = oldAng - SwayOldAng
+		-- if abs(oldAng.y - SwayOldAng.y) > 180 then
+			-- SwayAng.y = (360 - abs(oldAng.y - SwayOldAng.y)) * abs(oldAng.y - SwayOldAng.y) / (SwayOldAng.y - oldAng.y)
+		-- else
+			-- SwayAng.y = oldAng.y - SwayOldAng.y
+		-- end
+		-- SwayOldAng.p = oldAng.p
+		-- SwayOldAng.y = oldAng.y
+		-- SwayAng.p = math.Clamp(SwayAng.p, -3, 3)
+		-- SwayAng.y = math.Clamp(SwayAng.y, -3, 3)
+		-- SwayDelta = LerpAngle(clamp(FT * 5, 0, 1), SwayDelta, SwayAng)
 		
-		return oldPos + oldAng:Up() * SwayDelta.p + oldAng:Right() * SwayDelta.y + oldAng:Up() * oldAng.p / 90 * 2, oldAng
-	end
+		-- return oldPos + oldAng:Up() * SwayDelta.p + oldAng:Right() * SwayDelta.y + oldAng:Up() * oldAng.p / 90 * 2, oldAng
+	-- end
 
-end
+-- end
 
 function SWEP:Initialize()
 
@@ -702,8 +702,7 @@ function SWEP:MakePuddle(paintType)
 	
 	-- Randomize makes random size between maxsize and minsize by selected procent
 	local randSize = math.Rand(APERTURESCIENCE.GEL_MINSIZE, (APERTURESCIENCE.GEL_MAXSIZE + APERTURESCIENCE.GEL_MINSIZE) / 2)
-	local paint = APERTURESCIENCE:MakePaintPuddle(paintType, ownerShootPos, randSize)
-	paint:GetPhysicsObject():SetVelocity(forward * math.max(100, math.min(200, force - 100)) * 8)
+	local paint = APERTURESCIENCE:MakePaintPuddle(paintType, ownerShootPos, forward * math.max(100, math.min(200, force - 100)) * 8 + VectorRand() * 100, randSize)
 
 	if IsValid(self.Owner) and self.Owner:IsPlayer() then paint:SetOwner(self.Owner) end
 	

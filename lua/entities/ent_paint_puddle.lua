@@ -125,9 +125,10 @@ function ENT:Think()
 
 	self:NextThink(CurTime() + 0.1)
 	
+
 	// puddle animation
 	if CLIENT then
-		local rotation = CurTime() * 1.5 + self:EntIndex() * 10 * 4
+		local rotation = ( CurTime() + self:EntIndex() * 10 ) * 4
 		local scale = Vector(1 + math.cos(rotation) / 4, 1 + math.sin(rotation) / 4, 1) * (self:GetGelRadius() / 110)
 		local mat = Matrix()
 		mat:Scale(scale)
