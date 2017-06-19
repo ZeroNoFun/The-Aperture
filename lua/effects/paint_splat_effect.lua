@@ -5,7 +5,7 @@ function EFFECT:Init( data )
 	self.Color = data:GetColor()
 	self.Radius = math.max( 0.6, data:GetRadius() / 150 )
 	
-	local color = APERTURESCIENCE:GetColorByGelType( self.Color )
+	local color = APERTURESCIENCE:PaintTypeToColor( self.Color )
 	
 	self.Emitter = ParticleEmitter( self.Start )
 	

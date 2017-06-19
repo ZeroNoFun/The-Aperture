@@ -9,7 +9,7 @@ ENT.RenderGroup 	= RENDERGROUP_BOTH
 ENT.AutomaticFrameAdvance = true
 
 function ENT:SpawnFunction( ply, trace, ClassName )
-	if ( !trace.Hit ) then return end
+	if (!trace.Hit) then return end
 	local ent = ents.Create( ClassName )
 	ent:SetPos(trace.HitPos + trace.HitNormal)
 	ent:Spawn()
@@ -24,7 +24,6 @@ end
 function ENT:SetupDataTables()
 	self:NetworkVar("Bool", 0, "Active")
 end
-
 
 function ENT:Draw()
 	self:DrawModel()

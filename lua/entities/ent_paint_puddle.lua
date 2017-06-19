@@ -41,7 +41,7 @@ function ENT:PaintGel(pos, normal, radius)
 		util.Effect("paint_splat_effect", effectdata)
 	end
 	
-	local color = APERTURESCIENCE:GetColorByGelType(self.GASL_GelType)
+	local color = APERTURESCIENCE:PaintTypeToColor(self.GASL_GelType)
 	if self.GASL_GelType == PORTAL_GEL_WATER then
 		
 	else

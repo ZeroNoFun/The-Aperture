@@ -125,20 +125,20 @@ function SWEP:Initialize()
 	
 end
 
-local function IndexToMaterial( index )
+-- local function IndexToMaterial( index )
 	
-	local indexToMaterial = {
-		[PORTAL_GEL_BOUNCE] = "models/weapons/v_models/aperture_paintgun/blue_paint"
-		, [PORTAL_GEL_SPEED] = "models/weapons/v_models/aperture_paintgun/red_paint"
-		, [PORTAL_GEL_PORTAL] = "models/weapons/v_models/aperture_paintgun/white_paint"
-		, [PORTAL_GEL_WATER] = "models/gasl/portal_gel_bubble/gel_water"
-		, [PORTAL_GEL_STICKY] = "models/weapons/v_models/aperture_paintgun/purple_paint"
-		, [PORTAL_GEL_REFLECTION] = "models/weapons/v_models/aperture_paintgun/white_paint"
-	}
+	-- local indexToMaterial = {
+		-- [PORTAL_PAINT_BOUNCE] = "models/weapons/v_models/aperture_paintgun/blue_paint"
+		-- , [PORTAL_PAINT_SPEED] = "models/weapons/v_models/aperture_paintgun/red_paint"
+		-- , [PORTAL_PAINT_PORTAL] = "models/weapons/v_models/aperture_paintgun/white_paint"
+		-- , [PORTAL_PAINT_WATER] = "models/gasl/PORTAL_PAINT_bubble/gel_water"
+		-- , [PORTAL_PAINT_STICKY] = "models/weapons/v_models/aperture_paintgun/purple_paint"
+		-- , [PORTAL_PAINT_REFLECTION] = "models/weapons/v_models/aperture_paintgun/white_paint"
+	-- }
 	
-	return indexToMaterial[ index ]
+	-- return indexToMaterial[ index ]
 	
-end
+-- end
 
 function SWEP:ViewModelDrawn( ViewModel ) 
 	
@@ -146,8 +146,8 @@ function SWEP:ViewModelDrawn( ViewModel )
 	local firstPaint = self:GetNWInt( "GASL:FirstPaint" )
 	local secondPaint = self:GetNWInt( "GASL:SecondPaint" )
 
-	ViewModel:SetSubMaterial( 3, IndexToMaterial( firstPaint ) )
-	ViewModel:SetSubMaterial( 2, IndexToMaterial( secondPaint ) )
+	-- ViewModel:SetSubMaterial( 3, IndexToMaterial( firstPaint ) )
+	-- ViewModel:SetSubMaterial( 2, IndexToMaterial( secondPaint ) )
 	
 end
 
@@ -211,7 +211,7 @@ function SWEP:DrawHUD()
 	local OffsetY = 200
 	local ImgSize = 64 * animation
 	local PointerSize = 80 * animation
-	local GelCount = PORTAL_GEL_COUNT
+	local GelCount = PORTAL_PAINT_COUNT
 	local Separating = 50
 	local SelectCircleAddictionSize = 5
 	local roundDegTo = 360 / GelCount
@@ -321,7 +321,7 @@ function SWEP:DrawHUD()
 			surface.SetMaterial( Material( "vgui/paint_type_back" ) )
 			surface.DrawTexturedRect( XPos - AddingSize / 2, YPos - AddingSize / 2, ImgSize + AddingSize, ImgSize + AddingSize )
 			
-			surface.SetDrawColor( APERTURESCIENCE:GetColorByGelType( i ) )
+			surface.SetDrawColor( APERTURESCIENCE:PaintTypeToColor( i ) )
 			surface.SetMaterial( Material( "vgui/paint_icon" ) )
 			surface.DrawTexturedRect( XPos - AddingSize / 2, YPos - AddingSize / 2, ImgSize + AddingSize, ImgSize + AddingSize )
 			

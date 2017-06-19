@@ -16,10 +16,27 @@ function ENT:SetupDataTables()
 	
 end
 
+local function IKAngle(startpos, endpos, dofLength1, dofLength2)
+	local dist = (startpos - endpos):Length()
+	local a = dofLength1 * dofLength1 + dofLength2 * dofLength2 - dist * dist
+	local b = a / (2 * dofLength1 * dofLength2)
+	local angle = math.acos(b)
+	return math.deg(angle)
+end
+
 function ENT:Draw()
 
 	self:DrawModel()
-
+	
+	-- if ( CLIENT ) then
+		-- render.SetMaterial(Material("models/wireframe"))
+		-- render.DrawBox(firstDofPos, LTWA1, -debugBoxSize, debugBoxSize, Color(255, 255, 255), 0) 
+		-- render.DrawBox(secondDofPos, LTWA2, -debugBoxSize, debugBoxSize, Color(255, 255, 255), 0) 
+		
+		-- render.DrawBox((startPos + firstDofPos) / 2, LTWA1, -Vector(dofLength1 / 2, 2, 2), Vector(dofLength1 / 2, 2, 2), Color(255, 255, 255), 0) 
+		-- render.DrawBox((firstDofPos + secondDofPos) / 2, LTWA2, -Vector(dofLength2 / 2, 2, 2), Vector(dofLength2 / 2, 2, 2), Color(255, 255, 255), 0) 
+	-- end
+	
 end
 
 function ENT:MovePanel( pos, ang )

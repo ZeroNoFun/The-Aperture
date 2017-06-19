@@ -3,9 +3,9 @@
 	APERTURE API MAIN
 	
 ]]
-
 AddCSLuaFile( )
 
+LIB_APERTURE = {}
 APERTURESCIENCE = { }
 
 -- Main 
@@ -65,6 +65,7 @@ include( "aperture/sounds/portal_turret_different_sounds.lua" )
 include( "aperture/sounds/portal_turret_defective_sounds.lua" )
 include( "aperture/sounds/potatoos_sounds.lua" )
 include( "aperture/sounds/radio_sounds.lua" )
+include( "aperture/sounds/crusher_sounds.lua" )
 
 include( "aperture/paint.lua" )
 
@@ -150,7 +151,10 @@ function APERTURESCIENCE:ConnectableStuff( ent )
 		|| ent:GetClass() == "ent_portal_laser"
 		|| ent:GetClass() == "ent_laser_catcher"
 		|| ent:GetClass() == "ent_laser_relay"
+		|| ent:GetClass() == "ent_portal_crusher"
 		|| ent:GetClass() == "ent_item_dropper"
+		|| ent:GetClass() == "ent_ball_catcher"
+		|| ent:GetClass() == "ent_ball_launcher"
 		|| ent:GetClass() == "ent_arm_panel"
 		|| ent:GetClass() == "ent_portal_door"
 		|| ent:GetClass() == "ent_portal_frame"
@@ -492,18 +496,16 @@ hook.Add( "KeyPress", "GASL:HandlePlayerJump", function( ply, key )
 	
 	local trace = { start = ply:GetPos(), endpos = ply:GetPos() - Vector( 0, 0, 100 ), filter = ply }
 	local ent = util.TraceEntity( trace, ply ).Entity
-	local paintType = APERTURESCIENCE:CheckForGel( ply:GetPos(), Vector( 0, 0, -100 ) )
-	
+	local paintType, paintNormal = APERTURESCIENCE:GetPaintInfo(ply:GetPos(), Vector(0, 0, -100))
+	local paintInfo = LIB_APERTURE.PAINT_TYPES[paintType]
+
 	-- Skip if it's not bridge or paint
-	if ent:GetModel() != "models/wall_projector_bridge/wall.mdl" && paintType == nil then return end
-	if paintType != nil then
-		ent:EmitSound( "GASL.GelFootsteps" )
-		if ( paintType == PORTAL_GEL_BOUNCE ) then
-			ply:SetVelocity( Vector( 0, 0, 400 ) )
-			ply:EmitSound( "GASL.GelBounce" )
-		end
+	if ent:GetModel() != "models/wall_projector_bridge/wall.mdl" and not paintType then return end
+	if paintType then
+		ent:EmitSound("GASL.GelFootsteps")
+		if paintInfo.OnJump then paintInfo:OnJump(ply, paintNormal) end
 	elseif ent:GetModel() == "models/wall_projector_bridge/wall.mdl" then
-		ent:EmitSound( "GASL.WallProjectorFootsteps" )
+		ent:EmitSound("GASL.WallProjectorFootsteps")
 	end
 	
 end )
