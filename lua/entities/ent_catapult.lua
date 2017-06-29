@@ -1,26 +1,24 @@
 AddCSLuaFile( )
 
-ENT.Base = "gasl_base_ent"
-ENT.RenderGroup = RENDERGROUP_BOTH
-ENT.AutomaticFrameAdvance = true
+DEFINE_BASECLASS("base_aperture_ent")
 
-function ENT:SpawnFunction( ply, trace, ClassName )
+-- function ENT:SpawnFunction( ply, trace, ClassName )
 
-	if ( !trace.Hit ) then return end
+-- 	if ( !trace.Hit ) then return end
 	
-	if ( !APERTURESCIENCE.ALLOWING.catapult && !ply:IsSuperAdmin() ) then ply:PrintMessage( HUD_PRINTTALK, "This entity is blocked" ) return end
+-- 	if ( !APERTURESCIENCE.ALLOWING.catapult && !ply:IsSuperAdmin() ) then ply:PrintMessage( HUD_PRINTTALK, "This entity is blocked" ) return end
 
-	local ent = ents.Create( ClassName )
-	ent:SetPos( trace.HitPos + trace.HitNormal * 10 )
-	ent:SetModel( "models/props/faith_plate.mdl" )
-	ent:SetAngles( trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
-	ent:Spawn()
-	ent:SetSkin( 1 )
-	ent:Activate()
+-- 	local ent = ents.Create( ClassName )
+-- 	ent:SetPos( trace.HitPos + trace.HitNormal * 10 )
+-- 	ent:SetModel( "models/aperture/faith_plate_128.mdl" )
+-- 	ent:SetAngles( trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
+-- 	ent:Spawn()
+-- 	ent:SetSkin( 1 )
+-- 	ent:Activate()
 
-	return ent
+-- 	return ent
 
-end
+-- end
 
 function ENT:SetupDataTables()
 
@@ -33,32 +31,40 @@ function ENT:SetupDataTables()
 
 end
 
+function ENT:Initialize()
+
+	self.BaseClass.Initialize(self)
+
+	if SERVER then
+		self:SetModel("models/aperture/faith_plate_128.mdl")
+		self:PhysicsInit(SOLID_VPHYSICS)
+		self:SetMoveType(MOVETYPE_VPHYSICS)
+		self:SetSolid(SOLID_VPHYSICS)
+		self:GetPhysicsObject():EnableMotion(false)
+				
+		-- self:AddInput("Enable", function(value) self:ToggleEnable(value) end)
+		-- self:AddInput("Reverse", function(value) self:ToggleReverse(value) end)
+		
+		self:SetStartEnabled(true)
+		
+		if not WireAddon then return end
+		self.Inputs = Wire_CreateInputs(self, {"Enable"})
+	end
+
+	if CLIENT then
+		self.BaseRotation = 0
+		self.FieldEffects = {}
+		
+		if not self:GetStartEnabled() then
+			--APERTURESCIENCE:PlaySequence( self, "tractor_beam_idle", 1.0 )
+		end
+	end
+
+end
+
 function ENT:Draw()
 
 	self:DrawModel()
-	
-end
-
-function ENT:Initialize()
-
-	self.BaseClass.Initialize( self )
-
-	-- no more client side
-	if ( CLIENT ) then return end
-
-	self:PhysicsInit( SOLID_VPHYSICS )
-	self:SetMoveType( MOVETYPE_NONE )
-	self:SetSolid( SOLID_VPHYSICS )
-
-	self:AddInput( "Enable", function( value ) self:ToggleEnable( value ) end )
-	
-	self.GASL_Cooldown = 0
-	self.GASL_LaunchedEntities = { }
-	self.GASL_TrajectoryCurve = { }
-	self.GASL_CatapultUpdate = Vector( )
-	self.GASL_LaunchAngle = 0
-	self.GASL_LaunchForce = 0
-	self.GASL_FlyTime = 0
 	
 end
 
@@ -249,6 +255,7 @@ function ENT:LaunchEntity( entity )
 	end
 end
 
+-- Wiremod
 function ENT:TriggerInput( iname, value )
 	if ( !WireAddon ) then return end
 

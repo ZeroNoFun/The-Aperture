@@ -1,5 +1,0 @@
-VertexlitGeneric
-{
-	$basetexture "models/portal_custom/portal_button_orange"
-	$selfIllum 1
-}

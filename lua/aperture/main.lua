@@ -6,272 +6,160 @@
 AddCSLuaFile( )
 
 LIB_APERTURE = {}
-APERTURESCIENCE = { }
+
+-- Loading sounds
+local paint_types = file.Find("sounds/*.lua", "LUA")
+for _, plugin in ipairs(paint_types) do
+	include("sounds/" .. plugin)
+end
+
+-- Loading math
+include("aperture/math.lua")
+
+-- Loading achievement
+include("aperture/achievement.lua")
+
+-- Loading paint
+include("aperture/paint.lua")
 
 -- Main 
-APERTURESCIENCE.DRAW_HALOS 	= false
-APERTURESCIENCE.GRID_SIZE 	= 64
+-- LIB_APERTURE.DRAW_HALOS = false
+-- LIB_APERTURE.GRID_SIZE 	= 64
 
--- Funnel
-APERTURESCIENCE.FUNNEL_MOVE_SPEED = 173
-APERTURESCIENCE.FUNNEL_COLOR = Color( 0, 150, 255 )
-APERTURESCIENCE.FUNNEL_REVERSE_COLOR = Color( 255, 150, 0 )
+-- -- Funnel
+-- LIB_APERTURE.FUNNEL_MOVE_SPEED = 173
+-- LIB_APERTURE.FUNNEL_COLOR = Color(0, 150, 255)
+-- LIB_APERTURE.FUNNEL_REVERSE_COLOR = Color(255, 150, 0)
 
--- Fizzle
-APERTURESCIENCE.DISSOLVE_SPEED = 150
-APERTURESCIENCE.DISSOLVE_ENTITIES = { }
+-- -- Fizzle
+-- LIB_APERTURE.DISSOLVE_SPEED = 150
+-- LIB_APERTURE.DISSOLVE_ENTITIES = { }
 
--- Diversity Vent
-APERTURESCIENCE.DIVVENT_ENTITIES = { }
+-- -- Diversity Vent
+-- LIB_APERTURE.DIVVENT_ENTITIES = { }
 
--- Achievement
-APERTURESCIENCE.ACHIEVEMENTS = {
-	[1] = { img = "achievement/turret_sing", text = "The Turret Song!" },
-	[2] = { img = "achievement/fried_potato", text = "Fried Potato" },
-	[3] = { img = "achievement/turret_fly", text = "Turret can fly" },
-	[4] = { img = "achievement/cake", text = "Cake is not a lie!" },
-	[5] = { img = "achievement/radio", text = "Strange channel" },
-}
-APERTURESCIENCE.HUD_ACHIEVEMENTS = { }
+-- LIB_APERTURE.HUD_ACHIEVEMENTS = { }
 
 -- Allowing
-APERTURESCIENCE.ALLOWING = {
-	arm_panel = true
-	, button = true
-	, catapult = true
-	, fizzler = true
-	, item_dopper = true
-	, laser_catcher = true
-	, laser = true
-	, laser_field = true
-	, linker = true
-	, paint = true
-	, tractor_beam = true
-	, wall_projector = true
-	, turret = true
-}
+-- LIB_APERTURE.ALLOWED = { }
 
-include( "aperture/sounds/paint_sounds.lua" )
-include( "aperture/sounds/tractor_beam_sounds.lua" )
-include( "aperture/sounds/catapult_sounds.lua" )
-include( "aperture/sounds/wall_projector_sounds.lua" )
-include( "aperture/sounds/monster_box_sounds.lua" )
-include( "aperture/sounds/fizzler_sounds.lua" )
-include( "aperture/sounds/laser_sounds.lua" )
-include( "aperture/sounds/item_dropper_sounds.lua" )
-include( "aperture/sounds/portal_button_sounds.lua" )
-include( "aperture/sounds/portal_turret_sounds.lua" )
-include( "aperture/sounds/portal_turret_different_sounds.lua" )
-include( "aperture/sounds/portal_turret_defective_sounds.lua" )
-include( "aperture/sounds/potatoos_sounds.lua" )
-include( "aperture/sounds/radio_sounds.lua" )
-include( "aperture/sounds/crusher_sounds.lua" )
-
-include( "aperture/paint.lua" )
-
+--
 -- Console commands
-APERTURESCIENCE.Convars = {}
-APERTURESCIENCE.Convars[ "aperture_science_allow_arm_panel" ] = CreateConVar( "aperture_science_allow_arm_panel", "1", FCVAR_NONE, "Allowing Arm Panel" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_button" ] = CreateConVar( "aperture_science_allow_button", "1", FCVAR_NONE, "Allowing Button" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_catapult" ] = CreateConVar( "aperture_science_allow_catapult", "1", FCVAR_NONE, "Allowing Catapult" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_fizzler" ] = CreateConVar( "aperture_science_allow_fizzler", "1", FCVAR_NONE, "Allowing Fizzler" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_item_dropper" ] = CreateConVar( "aperture_science_allow_item_dropper", "1", FCVAR_NONE, "Allowing Item Dropper" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_laser_catcher" ] = CreateConVar( "aperture_science_allow_laser_catcher", "1", FCVAR_NONE, "Allowing Laser Catcher" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_laser" ] = CreateConVar( "aperture_science_allow_laser", "1", FCVAR_NONE, "Allowing Laser Emiter" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_laser_field" ] = CreateConVar( "aperture_science_allow_laser_field", "1", FCVAR_NONE, "Allowing Laser Field" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_linker" ] = CreateConVar( "aperture_science_allow_linker", "1", FCVAR_NONE, "Allowing Linker" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_paint" ] = CreateConVar( "aperture_science_allow_paint", "1", FCVAR_NONE, "Allowing Gel" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_tractor_beam" ] = CreateConVar( "aperture_science_allow_tractor_beam", "1", FCVAR_NONE, "Allowing Excursion Funnel" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_wall_projector" ] = CreateConVar( "aperture_science_allow_wall_projector", "1", FCVAR_NONE, "Allowing Hard Light Bridge" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_turret" ] = CreateConVar( "aperture_science_allow_turret", "1", FCVAR_NONE, "Allowing Arm Turrets" )
-APERTURESCIENCE.Convars[ "aperture_science_allow_floor_button" ] = CreateConVar( "aperture_science_allow_floor_button", "1", FCVAR_NONE, "Allowing Floor Button" )
+-- LIB_APERTURE.Convars = {}
+-- LIB_APERTURE.Convars[ "aperture_science_allow_arm_panel" ] = CreateConVar( "aperture_science_allow_arm_panel", "1", FCVAR_NONE, "ALLOWED Arm Panel" )
+-- LIB_APERTURE.Convars[ "aperture_science_allow_button" ] = CreateConVar( "aperture_science_allow_button", "1", FCVAR_NONE, "ALLOWED Button" )
+-- LIB_APERTURE.Convars[ "aperture_science_allow_catapult" ] = CreateConVar( "aperture_science_allow_catapult", "1", FCVAR_NONE, "ALLOWED Catapult" )
+-- LIB_APERTURE.Convars[ "aperture_science_allow_fizzler" ] = CreateConVar( "aperture_science_allow_fizzler", "1", FCVAR_NONE, "ALLOWED Fizzler" )
+-- LIB_APERTURE.Convars[ "aperture_science_allow_item_dropper" ] = CreateConVar( "aperture_science_allow_item_dropper", "1", FCVAR_NONE, "ALLOWED Item Dropper" )
+-- LIB_APERTURE.Convars[ "aperture_science_allow_laser_catcher" ] = CreateConVar( "aperture_science_allow_laser_catcher", "1", FCVAR_NONE, "ALLOWED Laser Catcher" )
+-- LIB_APERTURE.Convars[ "aperture_science_allow_laser" ] = CreateConVar( "aperture_science_allow_laser", "1", FCVAR_NONE, "ALLOWED Laser Emiter" )
+-- LIB_APERTURE.Convars[ "aperture_science_allow_laser_field" ] = CreateConVar( "aperture_science_allow_laser_field", "1", FCVAR_NONE, "ALLOWED Laser Field" )
+-- LIB_APERTURE.Convars[ "aperture_science_allow_linker" ] = CreateConVar( "aperture_science_allow_linker", "1", FCVAR_NONE, "ALLOWED Linker" )
+-- LIB_APERTURE.Convars[ "aperture_science_allow_paint" ] = CreateConVar( "aperture_science_allow_paint", "1", FCVAR_NONE, "ALLOWED Gel" )
+-- LIB_APERTURE.Convars[ "aperture_science_allow_tractor_beam" ] = CreateConVar( "aperture_science_allow_tractor_beam", "1", FCVAR_NONE, "ALLOWED Excursion Funnel" )
+-- LIB_APERTURE.Convars[ "aperture_science_allow_wall_projector" ] = CreateConVar( "aperture_science_allow_wall_projector", "1", FCVAR_NONE, "ALLOWED Hard Light Bridge" )
+-- LIB_APERTURE.Convars[ "aperture_science_allow_turret" ] = CreateConVar( "aperture_science_allow_turret", "1", FCVAR_NONE, "ALLOWED Arm Turrets" )
+-- LIB_APERTURE.Convars[ "aperture_science_allow_floor_button" ] = CreateConVar( "aperture_science_allow_floor_button", "1", FCVAR_NONE, "ALLOWED Floor Button" )
 
-function APERTURESCIENCE:IsValid() return true end
+-- function LIB_APERTURE:UpdateParameters()
+	-- -- LIB_APERTURE.ALLOWED.arm_panel = tobool( self.Convars[ "aperture_science_allow_arm_panel" ]:GetInt() )
+	-- -- LIB_APERTURE.ALLOWED.button = tobool( self.Convars[ "aperture_science_allow_button" ]:GetInt() )
+	-- -- LIB_APERTURE.ALLOWED.catapult = tobool( self.Convars[ "aperture_science_allow_catapult" ]:GetInt() )
+	-- -- LIB_APERTURE.ALLOWED.fizzler = tobool( self.Convars[ "aperture_science_allow_fizzler" ]:GetInt() )
+	-- -- LIB_APERTURE.ALLOWED.item_dropper = tobool( self.Convars[ "aperture_science_allow_item_dropper" ]:GetInt() )
+	-- -- LIB_APERTURE.ALLOWED.laser_catcher = tobool( self.Convars[ "aperture_science_allow_laser_catcher" ]:GetInt() )
+	-- -- LIB_APERTURE.ALLOWED.laser = tobool( self.Convars[ "aperture_science_allow_laser" ]:GetInt() )
+	-- -- LIB_APERTURE.ALLOWED.laser_field = tobool( self.Convars[ "aperture_science_allow_laser_field" ]:GetInt() )
+	-- -- LIB_APERTURE.ALLOWED.linker = tobool( self.Convars[ "aperture_science_allow_linker" ]:GetInt() )
+	-- -- LIB_APERTURE.ALLOWED.paint = tobool( self.Convars[ "aperture_science_allow_paint" ]:GetInt() )
+	-- -- LIB_APERTURE.ALLOWED.tractor_beam = tobool( self.Convars[ "aperture_science_allow_tractor_beam" ]:GetInt() )
+	-- -- LIB_APERTURE.ALLOWED.wall_projector = tobool( self.Convars[ "aperture_science_allow_wall_projector" ]:GetInt() )
+	-- -- LIB_APERTURE.ALLOWED.turret = tobool( self.Convars[ "aperture_science_allow_turret" ]:GetInt() )
+	-- -- LIB_APERTURE.ALLOWED.floor_button = tobool( self.Convars[ "aperture_science_allow_floor_button" ]:GetInt() )
+-- end
+-- hook.Add("Think", LIB_APERTURE, LIB_APERTURE.UpdateParameters)
 
-function APERTURESCIENCE:UpdateParameters()
+-- function LIB_APERTURE:DissolveEnt( ent )
 
-	APERTURESCIENCE.ALLOWING.arm_panel = tobool( self.Convars[ "aperture_science_allow_arm_panel" ]:GetInt() )
-	APERTURESCIENCE.ALLOWING.button = tobool( self.Convars[ "aperture_science_allow_button" ]:GetInt() )
-	APERTURESCIENCE.ALLOWING.catapult = tobool( self.Convars[ "aperture_science_allow_catapult" ]:GetInt() )
-	APERTURESCIENCE.ALLOWING.fizzler = tobool( self.Convars[ "aperture_science_allow_fizzler" ]:GetInt() )
-	APERTURESCIENCE.ALLOWING.item_dropper = tobool( self.Convars[ "aperture_science_allow_item_dropper" ]:GetInt() )
-	APERTURESCIENCE.ALLOWING.laser_catcher = tobool( self.Convars[ "aperture_science_allow_laser_catcher" ]:GetInt() )
-	APERTURESCIENCE.ALLOWING.laser = tobool( self.Convars[ "aperture_science_allow_laser" ]:GetInt() )
-	APERTURESCIENCE.ALLOWING.laser_field = tobool( self.Convars[ "aperture_science_allow_laser_field" ]:GetInt() )
-	APERTURESCIENCE.ALLOWING.linker = tobool( self.Convars[ "aperture_science_allow_linker" ]:GetInt() )
-	APERTURESCIENCE.ALLOWING.paint = tobool( self.Convars[ "aperture_science_allow_paint" ]:GetInt() )
-	APERTURESCIENCE.ALLOWING.tractor_beam = tobool( self.Convars[ "aperture_science_allow_tractor_beam" ]:GetInt() )
-	APERTURESCIENCE.ALLOWING.wall_projector = tobool( self.Convars[ "aperture_science_allow_wall_projector" ]:GetInt() )
-	APERTURESCIENCE.ALLOWING.turret = tobool( self.Convars[ "aperture_science_allow_turret" ]:GetInt() )
-	APERTURESCIENCE.ALLOWING.floor_button = tobool( self.Convars[ "aperture_science_allow_floor_button" ]:GetInt() )
-	
-end
-hook.Add( "Think", APERTURESCIENCE, APERTURESCIENCE.UpdateParameters )
+	-- local phys = ent:GetPhysicsObject()
+	-- ent:SetSolid( SOLID_NONE )
+	-- if ( phys:GetVelocity():Length() < 10 ) then
+		-- phys:SetVelocity( Vector( 0, 0, 10 ) + VectorRand() * 2 )
+		-- phys:AddAngleVelocity( VectorRand() * 100 )
+	-- else
+		-- phys:SetVelocity( phys:GetVelocity() / 4 )
+	-- end
+	-- phys:EnableGravity( false )
+	-- ent:EmitSound( "GASL.FizzlerDissolve" )
+	-- table.insert( LIB_APERTURE.DISSOLVE_ENTITIES, table.Count( LIB_APERTURE.DISSOLVE_ENTITIES ) + 1, ent )
 
-function APERTURESCIENCE:ConvertToGridWithoutZ( pos, angle, rad )
+-- end
 
-	local WTL = WorldToLocal( pos, Angle( ), Vector( ), angle ) 
-	WTL = Vector( math.Round( WTL.x / rad ) * rad, math.Round( WTL.y / rad ) * rad, WTL.z )
-	pos = LocalToWorld( WTL, Angle( ), Vector( ), angle )
-	
-	return pos
-	
-end
-
-function APERTURESCIENCE:ConvertToGrid( pos, rad )
-
-	local pos = Vector( math.Round( pos.x / rad ) * rad, math.Round( pos.y / rad ) * rad, math.Round( pos.z / rad ) * rad )
-	return pos
-	
-end
-
-function APERTURESCIENCE:PlaySequence( self, seq, rate )
-
-	if ( !IsValid( self ) ) then return end
-	
-	local sequence = self:LookupSequence( seq )
-	self:ResetSequence( sequence )
-
-	self:SetPlaybackRate( rate )
-	self:SetSequence( sequence )
-	
-	return self:SequenceDuration( sequence )
-	
+function LIB_APERTURE:SnapToGrid(tr, gridsize, height)
+local hitPos = tr.HitPos + tr.HitNormal * height
+local pos = Vector(math.Round(hitPos.x / gridsize) * gridsize, math.Round(hitPos.y / gridsize) * gridsize, math.Round(hitPos.z / gridsize) * gridsize)
+return pos
 end
 
-function APERTURESCIENCE:ConnectableStuff( ent )
-
-	return ( IsValid( ent ) &&
-		( ent:GetClass() == "ent_paint_dropper"
-		|| ent:GetClass() == "ent_catapult"
-		|| ent:GetClass() == "ent_tractor_beam"
-		|| ent:GetClass() == "ent_wall_projector"
-		|| ent:GetClass() == "ent_laser_field"
-		|| ent:GetClass() == "ent_fizzler"
-		|| ent:GetClass() == "ent_portal_laser"
-		|| ent:GetClass() == "ent_laser_catcher"
-		|| ent:GetClass() == "ent_laser_relay"
-		|| ent:GetClass() == "ent_portal_crusher"
-		|| ent:GetClass() == "ent_item_dropper"
-		|| ent:GetClass() == "ent_ball_catcher"
-		|| ent:GetClass() == "ent_ball_launcher"
-		|| ent:GetClass() == "ent_arm_panel"
-		|| ent:GetClass() == "ent_portal_door"
-		|| ent:GetClass() == "ent_portal_frame"
-		|| ent:GetClass() == "ent_portal_button"
-		|| ent:GetClass() == "ent_portal_button_box"
-		|| ent:GetClass() == "ent_portal_button_ball"
-		|| ent:GetClass() == "ent_portal_button_normal"
-		|| ent:GetClass() == "ent_portal_button_old" ) )
+function LIB_APERTURE:GetAllPortalPassages(pos, dir, maxLength, ignore)
+	local prevPos = pos
+	local prevAng = dir:Angle() + Angle(90, 0, 0)
+	local passagesInfo = {}
+	local tpassabes = 0
+	
+	repeat
+		local hitPortal = true
+		local direction = prevAng:Forward()
+		local trace = util.TraceLine({
+			start = prevPos,
+			endpos = prevPos + direction * LIB_MATH_TA.HUGE,
+			ignore = function(ent)
+				if ent != self and ignore != ent and lastHitPortal != ent and not ent:IsPlayer() and not ent:IsNPC() then return true end
+			end
+		})
 		
-end
-
-function APERTURESCIENCE:GASLStuff( ent )
-
-	return ( IsValid( ent ) && 
-		( ent:GetClass() == "env_portal_paint" 
-		|| ent:GetClass() == "ent_paint_puddle"
-		|| ent:GetClass() == "ent_paint_dropper"
-		|| ent:GetClass() == "ent_tractor_beam"
-		|| ent:GetClass() == "ent_wall_projector"
-		|| ent:GetClass() == "ent_laser_field"
-		|| ent:GetClass() == "ent_fizzler"
-		|| ent:GetClass() == "ent_portal_laser"
-		|| ent:GetClass() == "ent_laser_catcher"
-		|| ent:GetClass() == "ent_laser_relay"
-		|| ent:GetClass() == "ent_item_dropper"
-		|| ent:GetClass() == "ent_portal_button"
-		|| ent:GetClass() == "ent_portal_bomb"
-		|| ent:GetClass() == "ent_catapult"
-		|| ent:GetClass() == "ent_portal_door"
-		|| ent:GetClass() == "ent_portal_frame"
-		|| ent:GetClass() == "ent_portal_button_box"
-		|| ent:GetClass() == "ent_portal_button_ball"
-		|| ent:GetClass() == "ent_portal_button_normal"
-		|| ent:GetClass() == "ent_portal_button_old" ) )
+		table.insert(passagesInfo, table.Count(passagesInfo) + 1, {startpos = prevPos, endpos = trace.HitPos, angles = prevAng})
+		
+		-- Portal loop if trace hit portal
+		for k,v in pairs(ents.FindByClass("prop_portal")) do
+			local pos = v:WorldToLocal(trace.HitPos)
+			
+			if pos.x > -30 and pos.x < 10
+				and pos.y > -30 and pos.y < 30
+				and pos.z > -45 and pos.z < 45 then
+				if IsValid(v:GetNWEntity("Potal:Other")) then
+					local otherPortal = v:GetNWEntity("Potal:Other")
+					
+					localPos = v:WorldToLocal(trace.HitPos)
+					localAng = v:WorldToLocalAngles(prevAng)
+					localPos = Vector(0, -localPos.y, localPos.z)
+					localAng = localAng + Angle(0, 180, 0)
+					
+					prevPos = otherPortal:LocalToWorld(localPos)
+					prevAng = otherPortal:LocalToWorldAngles(localAng)
+					hitPortal = false
+					
+					break
+				end
+			end
+		end
+		
+		tpassabes = tpassabes + 1
+		if tpassabes > 100 then print("FUK") break end
+	until hitPortal
 	
+	return passagesInfo
 end
 
-function APERTURESCIENCE:IsValidEntity( ent )
-
-	return ( IsValid( ent ) && !ent.GASL_Ignore && ent:GetClass() != "prop_portal"
-		&& IsValid( ent:GetPhysicsObject() )
-		&& !APERTURESCIENCE:GASLStuff( ent )
-		&& ent:GetClass() != "env_portal_wall" )
-		
-end
-
-function APERTURESCIENCE:IsValidStaticEntity( ent )
-
-	return ( IsValid( ent ) 
-		&& ( !ent.GASL_Ignore && ent:GetClass() != "prop_portal"
-		&& IsValid( ent:GetPhysicsObject() ) && !ent:GetPhysicsObject():IsMotionEnabled()
-		&& !APERTURESCIENCE:GASLStuff( ent ) 
-		|| ent:GetClass() == "env_portal_wall" ) )
-		
-end
-
-function APERTURESCIENCE:DissolveEnt( ent )
-
-	local phys = ent:GetPhysicsObject()
-	ent:SetSolid( SOLID_NONE )
-	if ( phys:GetVelocity():Length() < 10 ) then
-		phys:SetVelocity( Vector( 0, 0, 10 ) + VectorRand() * 2 )
-		phys:AddAngleVelocity( VectorRand() * 100 )
-	else
-		phys:SetVelocity( phys:GetVelocity() / 4 )
-	end
-	phys:EnableGravity( false )
-	ent:EmitSound( "GASL.FizzlerDissolve" )
-	table.insert( APERTURESCIENCE.DISSOLVE_ENTITIES, table.Count( APERTURESCIENCE.DISSOLVE_ENTITIES ) + 1, ent )
-
-end
-
-hook.Add( "Initialize", "GASL_Initialize", function()
-
-	if ( SERVER ) then
+hook.Add( "Initialize", "TA:Initialize", function()
+	if SERVER then
 		util.AddNetworkString( "GASL_NW_Player_Achievements" ) 
 		util.AddNetworkString( "GASL_LinkConnection" ) 
 		util.AddNetworkString( "GASL_Turrets_Activation" ) 
 	end
-
-end )
-
-function APERTURESCIENCE:GiveAchievement( ply, achievementInx )
 	
-	if ( CLIENT ) then return end
-	
-	if ( !IsValid( ply ) ) then return end
-	
-	net.Start( "GASL_NW_Player_Achievements" )
-		net.WriteString( "giveach" )
-		net.WriteEntity( ply )
-		net.WriteInt( achievementInx, 16 )
-	net.Send( ply )
-end
-
-net.Receive( "GASL_NW_Player_Achievements", function( len, pl )
-
-	local task = net.ReadString()
-	
-	pl = net.ReadEntity()
-	if ( !IsValid( pl ) ) then return end
-
-	if ( task == "giveach" ) then
-		local achievementInx = net.ReadInt( 16 )
-		if ( !pl.GASL_Player_Achievements ) then pl.GASL_Player_Achievements = {} end
-		
-		-- achievement allready gotted
-		if ( pl.GASL_Player_Achievements[ achievementInx ] ) then return end
-		pl.GASL_Player_Achievements[ achievementInx ] = 1
-		 
-		if ( !pl.GASL_Player_HUD_Achievements ) then pl.GASL_Player_HUD_Achievements = {} end
-	
-		table.insert( pl.GASL_Player_HUD_Achievements, table.Count( pl.GASL_Player_HUD_Achievements ) + 1, 
-			{ achievementInx = achievementInx, ply = pl, init = false, posY = 0, timeToHide = CurTime() + 10 } )
-			
+	if CLIENT then
 	end
-
 end )
 
 -- if ( CLIENT ) then
@@ -331,184 +219,177 @@ end )
 	-- end )
 -- end
 
-hook.Add( "PostDrawTranslucentRenderables", "GASL:Render", function()
-
-	for k, v in pairs( ents.FindByClass( "ent_tractor_beam" ) ) do
-		v:Drawing()
-	end
-	for k, v in pairs( ents.FindByClass( "ent_portal_floor_turret" ) ) do
-		v:Drawing()
-	end
-	for k, v in pairs( ents.FindByClass( "ent_portal_laser" ) ) do
-		v:Drawing()
-	end
+-- hook.Add( "PostDrawHUD", "GASL:HUDPaint", function()
 	
-end )
-
-hook.Add( "PostDrawHUD", "GASL:HUDPaint", function()
+	-- -- cam.Start3D()
 	
-	-- cam.Start3D()
-	
-		-- render.SetMaterial( Material( "cable/xbeam" ) )
-		-- render.StartBeam( table.Count( APERTURESCIENCE.CONNECTED_PAINTS ) )
-		-- for k, v in pairs( APERTURESCIENCE.CONNECTED_PAINTS ) do
+		-- -- render.SetMaterial( Material( "cable/xbeam" ) )
+		-- -- render.StartBeam( table.Count( LIB_APERTURE.CONNECTED_PAINTS ) )
+		-- -- for k, v in pairs( LIB_APERTURE.CONNECTED_PAINTS ) do
 			
-			-- render.AddBeam( v:GetPos(), v:GetGelRadius(), 1, Color( 255, 255, 255, 255 ) ) 
+			-- -- render.AddBeam( v:GetPos(), v:GetGelRadius(), 1, Color( 255, 255, 255, 255 ) ) 
 			
+		-- -- end
+		-- -- render.EndBeam()
+		
+	-- -- cam.End3D()	
+	
+	-- -- LIB_APERTURE.CONNECTED_PAINTS = { }
+
+	
+	-- local AchivmentHeight = 100
+	-- local AchivmentWidth = 300
+	-- local ShadowX = 10
+	-- local ShadowY = 10
+	-- local ImgSize = 80
+	-- local ImgXOffset = 10
+	-- local TextXOffset = 10
+	-- local TextYOffset = 10
+	
+	-- if ( !LocalPlayer().GASL_Player_HUD_Achievements ) then return end
+	
+	-- local itter = 0
+	
+	-- for k, v in pairs( LocalPlayer().GASL_Player_HUD_Achievements ) do
+		
+		-- if ( v.ply != LocalPlayer() ) then continue end
+		
+		-- if ( !v.init ) then
+			-- LocalPlayer().GASL_Player_HUD_Achievements[ k ].init = true
+			-- LocalPlayer():EmitSound( "garrysmod/save_load1.wav" )
 		-- end
-		-- render.EndBeam()
 		
-	-- cam.End3D()	
+		-- local achievementInfo = LIB_APERTURE.ACHIEVEMENTS[ v.achievementInx ]
+		-- local timeToHide = ( v.timeToHide - CurTime() ) * 100
+		
+		-- if ( v.posY < AchivmentHeight and timeToHide > AchivmentHeight ) then
+			-- LocalPlayer().GASL_Player_HUD_Achievements[ k ].posY = math.min( AchivmentHeight, 1000 - timeToHide )
+		-- else
+			-- LocalPlayer().GASL_Player_HUD_Achievements[ k ].posY = math.min( AchivmentHeight, timeToHide )
+		-- end
+
+		-- local panelX = ScrW() - AchivmentWidth
+		-- local panelY = v.posY + itter * AchivmentHeight - AchivmentHeight
+
+		-- -- shadow
+		-- surface.SetDrawColor( 0, 0, 0, 100 )
+		-- surface.DrawRect( panelX - ShadowX, panelY + ShadowY, AchivmentWidth, AchivmentHeight ) 
+
+		-- -- achievement background
+		-- surface.SetDrawColor( 200, 200, 200, 255 )
+		-- surface.DrawRect( panelX, panelY, AchivmentWidth, AchivmentHeight ) 
+		
+		-- surface.SetMaterial( Material( achievementInfo.img ) ) -- If you use Material, cache it!
+		-- surface.DrawTexturedRect( panelX + ImgXOffset, panelY + AchivmentHeight / 2 - ImgSize / 2, ImgSize, ImgSize )
+		
+		-- surface.SetFont( "GASL_SecFont" )
+		-- surface.SetTextColor( 255, 255, 255, 255 )
+		-- local _, txtHeight = surface.GetTextSize( "" )
+		-- surface.SetTextPos( panelX + ImgXOffset + ImgSize + TextXOffset, panelY + TextYOffset )
+		-- surface.DrawText( achievementInfo.text )
+		-- if ( timeToHide <= 0 ) then LocalPlayer().GASL_Player_HUD_Achievements[ k ] = nil end
+		
+		-- itter = itter + 1
+		
+	-- end
+		
+-- end )
+
+-- hook.Add( "Think", "GASL:Think", function()	
+
+	-- -- Handling dissolved entities
+	-- for k, v in pairs( LIB_APERTURE.DISSOLVE_ENTITIES ) do
 	
-	-- APERTURESCIENCE.CONNECTED_PAINTS = { }
+		-- -- skip if entity doesn't exist
+		-- if ( !v:IsValid() ) then
+			-- LIB_APERTURE.DISSOLVE_ENTITIES[ k ] = nil
+			-- continue
+		-- end
+		
+		-- if ( !v.GASL_Dissolve ) then v.GASL_Dissolve = 0 end
+		-- v.GASL_Dissolve = v.GASL_Dissolve + 1
+		
+		-- -- turning entity into black and then fadeout alpha
+		-- local colorBlack = ( math.max( 0, LIB_APERTURE.DISSOLVE_SPEED - v.GASL_Dissolve * 1.75 ) / LIB_APERTURE.DISSOLVE_SPEED ) * 255
+		-- local alpha = math.max( 0, v.GASL_Dissolve - LIB_APERTURE.DISSOLVE_SPEED / 1.1 ) / ( LIB_APERTURE.DISSOLVE_SPEED - LIB_APERTURE.DISSOLVE_SPEED / 1.1 )
+		-- alpha = 255 - alpha * 255
+		-- v:SetColor( Color( colorBlack, colorBlack, colorBlack, alpha ) )
+		-- if ( alpha < 255 ) then v:SetRenderMode( RENDERMODE_TRANSALPHA ) end
 
+		-- local effectdata = EffectData()
+		-- effectdata:SetEntity( v )
+		-- util.Effect( "fizzler_dissolve", effectdata )
+		
+		-- if ( v.GASL_Dissolve >= LIB_APERTURE.DISSOLVE_SPEED ) then
+			-- LIB_APERTURE.DISSOLVE_ENTITIES[ k ] = nil
+			-- v:Remove()
+		-- end
+	-- end
+
+	-- -- Handling entities in diversity vent
+	-- for k, v in pairs( LIB_APERTURE.DIVVENT_ENTITIES ) do
 	
-	local AchivmentHeight = 100
-	local AchivmentWidth = 300
-	local ShadowX = 10
-	local ShadowY = 10
-	local ImgSize = 80
-	local ImgXOffset = 10
-	local TextXOffset = 10
-	local TextYOffset = 10
-	
-	if ( !LocalPlayer().GASL_Player_HUD_Achievements ) then return end
-	
-	local itter = 0
-	
-	for k, v in pairs( LocalPlayer().GASL_Player_HUD_Achievements ) do
+		-- local vDivventEnt = v.GASL_ENTITY_DivventEnt
 		
-		if ( v.ply != LocalPlayer() ) then continue end
+		-- if ( !IsValid( vDivventEnt )
+			-- || vDivventEnt:GetModel() != "models/props_backstage/vacum_scanner_b.mdl" 
+			-- and ( vDivventEnt:GetPos():Distance( v:GetPos() ) > 1000 ) ) then 
+				-- LIB_APERTURE.DIVVENT_ENTITIES[ k ] = nil
+				-- continue 
+			-- end
 		
-		if ( !v.init ) then
-			LocalPlayer().GASL_Player_HUD_Achievements[ k ].init = true
-			LocalPlayer():EmitSound( "garrysmod/save_load1.wav" )
-		end
+		-- if ( !vDivventEnt:ModelToFlowPos() ) then continue end
+		-- local moveTo = vDivventEnt:LocalToWorld( vDivventEnt:ModelToFlowPos() )
 		
-		local achievementInfo = APERTURESCIENCE.ACHIEVEMENTS[ v.achievementInx ]
-		local timeToHide = ( v.timeToHide - CurTime() ) * 100
-		
-		if ( v.posY < AchivmentHeight && timeToHide > AchivmentHeight ) then
-			LocalPlayer().GASL_Player_HUD_Achievements[ k ].posY = math.min( AchivmentHeight, 1000 - timeToHide )
-		else
-			LocalPlayer().GASL_Player_HUD_Achievements[ k ].posY = math.min( AchivmentHeight, timeToHide )
-		end
-
-		local panelX = ScrW() - AchivmentWidth
-		local panelY = v.posY + itter * AchivmentHeight - AchivmentHeight
-
-		-- shadow
-		surface.SetDrawColor( 0, 0, 0, 100 )
-		surface.DrawRect( panelX - ShadowX, panelY + ShadowY, AchivmentWidth, AchivmentHeight ) 
-
-		-- achievement background
-		surface.SetDrawColor( 200, 200, 200, 255 )
-		surface.DrawRect( panelX, panelY, AchivmentWidth, AchivmentHeight ) 
-		
-		surface.SetMaterial( Material( achievementInfo.img ) ) -- If you use Material, cache it!
-		surface.DrawTexturedRect( panelX + ImgXOffset, panelY + AchivmentHeight / 2 - ImgSize / 2, ImgSize, ImgSize )
-		
-		surface.SetFont( "GASL_SecFont" )
-		surface.SetTextColor( 255, 255, 255, 255 )
-		local _, txtHeight = surface.GetTextSize( "" )
-		surface.SetTextPos( panelX + ImgXOffset + ImgSize + TextXOffset, panelY + TextYOffset )
-		surface.DrawText( achievementInfo.text )
-		if ( timeToHide <= 0 ) then LocalPlayer().GASL_Player_HUD_Achievements[ k ] = nil end
-		
-		itter = itter + 1
-		
-	end
-		
-end )
-
-hook.Add( "Think", "GASL:Think", function()	
-
-	-- Handling dissolved entities
-	for k, v in pairs( APERTURESCIENCE.DISSOLVE_ENTITIES ) do
-	
-		-- skip if entity doesn't exist
-		if ( !v:IsValid() ) then
-			APERTURESCIENCE.DISSOLVE_ENTITIES[ k ] = nil
-			continue
-		end
-		
-		if ( !v.GASL_Dissolve ) then v.GASL_Dissolve = 0 end
-		v.GASL_Dissolve = v.GASL_Dissolve + 1
-		
-		-- turning entity into black and then fadeout alpha
-		local colorBlack = ( math.max( 0, APERTURESCIENCE.DISSOLVE_SPEED - v.GASL_Dissolve * 1.75 ) / APERTURESCIENCE.DISSOLVE_SPEED ) * 255
-		local alpha = math.max( 0, v.GASL_Dissolve - APERTURESCIENCE.DISSOLVE_SPEED / 1.1 ) / ( APERTURESCIENCE.DISSOLVE_SPEED - APERTURESCIENCE.DISSOLVE_SPEED / 1.1 )
-		alpha = 255 - alpha * 255
-		v:SetColor( Color( colorBlack, colorBlack, colorBlack, alpha ) )
-		if ( alpha < 255 ) then v:SetRenderMode( RENDERMODE_TRANSALPHA ) end
-
-		local effectdata = EffectData()
-		effectdata:SetEntity( v )
-		util.Effect( "fizzler_dissolve", effectdata )
-		
-		if ( v.GASL_Dissolve >= APERTURESCIENCE.DISSOLVE_SPEED ) then
-			APERTURESCIENCE.DISSOLVE_ENTITIES[ k ] = nil
-			v:Remove()
-		end
-	end
-
-	-- Handling entities in diversity vent
-	for k, v in pairs( APERTURESCIENCE.DIVVENT_ENTITIES ) do
-	
-		local vDivventEnt = v.GASL_ENTITY_DivventEnt
-		
-		if ( !IsValid( vDivventEnt )
-			|| vDivventEnt:GetModel() != "models/props_backstage/vacum_scanner_b.mdl" 
-			&& ( vDivventEnt:GetPos():Distance( v:GetPos() ) > 1000 ) ) then 
-				APERTURESCIENCE.DIVVENT_ENTITIES[ k ] = nil
-				continue 
-			end
-		
-		if ( !vDivventEnt:ModelToFlowPos() ) then continue end
-		local moveTo = vDivventEnt:LocalToWorld( vDivventEnt:ModelToFlowPos() )
-		
-		if ( v:GetPos():Distance( moveTo ) < 40 ) then
+		-- if ( v:GetPos():Distance( moveTo ) < 40 ) then
 			
-			if ( !vDivventEnt.GASL_DIVVENT_Connections ) then APERTURESCIENCE.DIVVENT_ENTITIES[ k ] = nil continue end
+			-- if ( !vDivventEnt.GASL_DIVVENT_Connections ) then LIB_APERTURE.DIVVENT_ENTITIES[ k ] = nil continue end
 			
-			v.GASL_ENTITY_DivventEnt = vDivventEnt.GASL_DIVVENT_Connections[ 1 ]
-		end
+			-- v.GASL_ENTITY_DivventEnt = vDivventEnt.GASL_DIVVENT_Connections[ 1 ]
+		-- end
 		
-		if ( v:IsPlayer() || v:IsNPC() ) then
-			local dir = ( moveTo - Vector( 0, 0, v:GetModelRadius() / 2 ) - v:GetPos() ):GetNormalized()
-			v:SetVelocity( dir * 1000 + VectorRand() * math.max( 0, 200 - v:GetVelocity():Length() ) * 10 - v:GetVelocity() )
-		elseif ( IsValid( v:GetPhysicsObject() ) ) then
-			local dir = ( moveTo - v:GetPos() ):GetNormalized()
-			local vPhys = v:GetPhysicsObject()
-			vPhys:SetVelocity( vPhys:GetVelocity() / 2 + dir * 400 )
-		end
-	end
-end )
+		-- if ( v:IsPlayer() || v:IsNPC() ) then
+			-- local dir = ( moveTo - Vector( 0, 0, v:GetModelRadius() / 2 ) - v:GetPos() ):GetNormalized()
+			-- v:SetVelocity( dir * 1000 + VectorRand() * math.max( 0, 200 - v:GetVelocity():Length() ) * 10 - v:GetVelocity() )
+		-- elseif ( IsValid( v:GetPhysicsObject() ) ) then
+			-- local dir = ( moveTo - v:GetPos() ):GetNormalized()
+			-- local vPhys = v:GetPhysicsObject()
+			-- vPhys:SetVelocity( vPhys:GetVelocity() / 2 + dir * 400 )
+		-- end
+	-- end
+-- end )
 
-hook.Add( "PhysgunPickup", "GASL:DisablePhysgunPickup", function( ply, ent )
+
+hook.Add("PostDrawTranslucentRenderables", "TA:RenderObjects", function()
+	for k,v in pairs(ents.FindByClass("ent_tractor_beam")) do v:Drawing() end
+	for k,v in pairs(ents.FindByClass("ent_portal_floor_turret")) do v:Drawing() end
+	for k,v in pairs(ents.FindByClass("ent_portal_laser")) do v:Drawing() end
+end)
+
+hook.Add( "PhysgunPickup", "TA:DisablePhysgunPickup", function( ply, ent )
 	if ( ent.GASL_Untouchable ) then return false end
 end )
 
-hook.Add( "KeyPress", "GASL:HandlePlayerJump", function( ply, key )
+-- hook.Add( "KeyPress", "GASL:HandlePlayerJump", function( ply, key )
 
-	if CLIENT then return end
-	if ( key != IN_JUMP || !ply:IsOnGround() ) then return end
+	-- if CLIENT then return end
+	-- if ( key != IN_JUMP || !ply:IsOnGround() ) then return end
 	
-	local trace = { start = ply:GetPos(), endpos = ply:GetPos() - Vector( 0, 0, 100 ), filter = ply }
-	local ent = util.TraceEntity( trace, ply ).Entity
-	local paintType, paintNormal = APERTURESCIENCE:GetPaintInfo(ply:GetPos(), Vector(0, 0, -100))
-	local paintInfo = LIB_APERTURE.PAINT_TYPES[paintType]
+	-- local trace = { start = ply:GetPos(), endpos = ply:GetPos() - Vector( 0, 0, 100 ), filter = ply }
+	-- local ent = util.TraceEntity(trace, ply).Entity
+	-- local paintType, paintNormal = LIB_APERTURE:GetPaintInfo(ply:GetPos(), Vector(0, 0, -100))
+	-- local paintInfo = LIB_APERTURE.PAINT_TYPES[paintType]
 
-	-- Skip if it's not bridge or paint
-	if ent:GetModel() != "models/wall_projector_bridge/wall.mdl" and not paintType then return end
-	if paintType then
-		ent:EmitSound("GASL.GelFootsteps")
-		if paintInfo.OnJump then paintInfo:OnJump(ply, paintNormal) end
-	elseif ent:GetModel() == "models/wall_projector_bridge/wall.mdl" then
-		ent:EmitSound("GASL.WallProjectorFootsteps")
-	end
+	-- -- Skip if it's not bridge or paint
+	-- if IsValid(ent) and ent:GetModel() != "models/wall_projector_bridge/wall.mdl" and not paintType then return end
+	-- if paintType then
+		-- ent:EmitSound("TA:PaintFootsteps")
+		-- if paintInfo.OnJump then paintInfo:OnJump(ply, paintNormal) end
+	-- elseif IsValid(ent) and ent:GetModel() == "models/wall_projector_bridge/wall.mdl" then
+		-- ent:EmitSound("TA:WallProjectorFootsteps")
+	-- end
 	
-end )
+-- end )
 
 -- hook.Add( "Move", "ZeroGravity", function( ply, mv )
 

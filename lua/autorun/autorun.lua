@@ -1,11 +1,9 @@
-AddCSLuaFile( "aperture/main.lua" )
-AddCSLuaFile( "autorun/cl_gaslcontrolpanel.lua" )
-AddCSLuaFile("map_maker/map_maker.lua")
-AddCSLuaFile("map_maker/map_maker_include.lua")
+AddCSLuaFile("aperture/main.lua")
+AddCSLuaFile("aperture/mapmaker.lua")
 
-include( "aperture/main.lua" )
-include("map_maker/map_maker.lua")
-include("map_maker/map_maker_include.lua")
+include("aperture/main.lua")
+include("aperture/mapmaker.lua")
+
 
 if SERVER then
 	AddCSLuaFile()

@@ -1,9 +1,17 @@
 VertexLitGeneric
 {
-$basetexture "models\aperture\white_wall"
+$baseTexture "models\aperture\white_wall"
+$surfaceprop metal
 $bumpmap "models\aperture\white_wall_normal"
-$phong 1
-$phongboost 2
-$phongexponent 10
-$phongfresnelranges "[.1 .5 1]"
+$ssbump 1
+
+$normalmapalphaenvmapmask 1
+$envmapcontrast 1
+$envmapsaturation 1
+$envmaptint .3 .3 .3
+//$detail "detail\white_floor_detail_height-ssbump"
+//$detailscale 80
+//$detailblendfactor 1
+//$detailblendmode 10
+"%keywords" "portal2 chamber"
 }
