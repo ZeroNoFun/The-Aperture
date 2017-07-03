@@ -52,12 +52,28 @@ function PAINT_INFO:OnLanding(ply, normal, speed)
 	-- skip if player stand on the ground
 	-- doesn't skip if player ran on repulsion paint when he was on propulsion paint
 	if not ply:KeyDown(IN_DUCK) then
-		local WTL = WorldToLocal(plyVelocity, Angle(), Vector(), normal:Angle() + Angle(90, 0, 0))
-		WTL = Vector(0, 0, math.max(math.abs(WTL.z), 400))
-		local LTW = LocalToWorld(WTL, Angle(), Vector(), normal:Angle() + Angle(90, 0, 0))
-		LTW.z = math.max(200, LTW.z / 2)
+		local worldVelToLocalPaint = WorldToLocal(plyVelocity, Angle(), Vector(), normal:Angle() + Angle(90, 0, 0))
+		worldVelToLocalPaint = Vector(0, 0, math.max(math.abs(worldVelToLocalPaint.z), 400))
+		local velocity = LocalToWorld(worldVelToLocalPaint, Angle(), Vector(), normal:Angle() + Angle(90, 0, 0))
+		velocity.z = math.max(200, velocity.z / 2)
 		
-		ply:SetVelocity(LTW + Vector(0, 0, LTW.z))
+		ply:SetVelocity(velocity + Vector(0, 0, velocity.z))
+		ply:EmitSound("TA:PlayerBounce")
+	end
+end
+
+function PAINT_INFO:OnLand(ply, normal)
+	local plyVelocity = ply:GetVelocity()
+	
+	-- skip if player stand on the ground
+	-- doesn't skip if player ran on repulsion paint when he was on propulsion paint
+	if not ply:KeyDown(IN_DUCK) then
+		local worldVelToLocalPaint = WorldToLocal(plyVelocity, Angle(), Vector(), normal:Angle() + Angle(90, 0, 0))
+		worldVelToLocalPaint.z = math.max(math.abs(worldVelToLocalPaint.z), 400)
+		local velocity = LocalToWorld(worldVelToLocalPaint, Angle(), Vector(), normal:Angle() + Angle(90, 0, 0))
+		velocity.z = math.max(300, velocity.z / 2)
+		
+		ply:SetVelocity(velocity / 1.2 - ply:GetVelocity())
 		ply:EmitSound("TA:PlayerBounce")
 	end
 end

@@ -6,17 +6,18 @@ ENT.Editable				= true
 ENT.PrintName				= "Aperture base class"
 ENT.AutomaticFrameAdvance 	= true
 ENT.Purpose 				= "Base for aperture SEnts"
-ENT.Spawnable = false
-ENT.AdminOnly = false
+ENT.RenderGroup				= RENDERGROUP_BOTH
+ENT.Spawnable 				= false
+ENT.AdminOnly 				= false
 
-ENT.IsAperture = true
-ENT.IsConnectable = false
+ENT.IsAperture 				= true
+ENT.IsConnectable 			= false
 
 if WireAddon then
-	DEFINE_BASECLASS( "base_wire_entity" )
+	DEFINE_BASECLASS("base_wire_entity")
 	ENT.WireDebugName = "Aperture Base"
 else
-	DEFINE_BASECLASS( "base_gmodentity" )
+	DEFINE_BASECLASS("base_gmodentity")
 end
 
 -- function ENT:Initialize()

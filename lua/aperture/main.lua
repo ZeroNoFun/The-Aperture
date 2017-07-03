@@ -13,6 +13,11 @@ for _, plugin in ipairs(paint_types) do
 	include("sounds/" .. plugin)
 end
 
+local map_props = file.Find("aperture/mapmaker_props/*.lua", "LUA")
+for _, plugin in ipairs(map_props) do
+	include("mapmaker_props/" .. plugin)
+end
+
 -- Loading math
 include("aperture/math.lua")
 
@@ -101,9 +106,10 @@ local pos = Vector(math.Round(hitPos.x / gridsize) * gridsize, math.Round(hitPos
 return pos
 end
 
-function LIB_APERTURE:GetAllPortalPassages(pos, dir, maxLength, ignore)
+function LIB_APERTURE:GetAllPortalPassagesAng(pos, angle, maxLength, ignore, ignoreEntities)
+	local exitPortal = nil
 	local prevPos = pos
-	local prevAng = dir:Angle() + Angle(90, 0, 0)
+	local prevAng = angle
 	local passagesInfo = {}
 	local tpassabes = 0
 	
@@ -113,8 +119,12 @@ function LIB_APERTURE:GetAllPortalPassages(pos, dir, maxLength, ignore)
 		local trace = util.TraceLine({
 			start = prevPos,
 			endpos = prevPos + direction * LIB_MATH_TA.HUGE,
-			ignore = function(ent)
-				if ent != self and ignore != ent and lastHitPortal != ent and not ent:IsPlayer() and not ent:IsNPC() then return true end
+			filter = function(ent)
+				if ent != ignore
+					and ent:GetClass() != "prop_portal"
+					and (not ignoreEntities or ignoreEntities and not IsValid(ent:GetPhysicsObject()))
+					and not ent:IsPlayer() 
+					and not ent:IsNPC() then return true end
 			end
 		})
 		
@@ -138,6 +148,7 @@ function LIB_APERTURE:GetAllPortalPassages(pos, dir, maxLength, ignore)
 					prevPos = otherPortal:LocalToWorld(localPos)
 					prevAng = otherPortal:LocalToWorldAngles(localAng)
 					hitPortal = false
+					exitPortal = otherPortal
 					
 					break
 				end
@@ -151,11 +162,17 @@ function LIB_APERTURE:GetAllPortalPassages(pos, dir, maxLength, ignore)
 	return passagesInfo
 end
 
+function LIB_APERTURE:GetAllPortalPassages(pos, dir, maxLength, ignore, ignoreEntities)
+	local angle = dir:Angle()
+	return LIB_APERTURE:GetAllPortalPassagesAng(pos, angle, maxLength, ignore, ignoreEntities)
+end
+
 hook.Add( "Initialize", "TA:Initialize", function()
 	if SERVER then
-		util.AddNetworkString( "GASL_NW_Player_Achievements" ) 
-		util.AddNetworkString( "GASL_LinkConnection" ) 
-		util.AddNetworkString( "GASL_Turrets_Activation" ) 
+		util.AddNetworkString("TA:NW_PaintCamera") 
+		//util.AddNetworkString( "GASL_NW_Player_Achievements" ) 
+		//util.AddNetworkString( "GASL_LinkConnection" ) 
+		//util.AddNetworkString( "GASL_Turrets_Activation" ) 
 	end
 	
 	if CLIENT then

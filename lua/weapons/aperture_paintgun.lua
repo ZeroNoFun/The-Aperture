@@ -19,7 +19,7 @@ if ( CLIENT ) then
 
 end
 
-SWEP.HoldType			= "shootgun"
+SWEP.HoldType			= "crossbow"
 SWEP.EnableIdle			= false	
 SWEP.BobScale 			= 0
 SWEP.SwayScale 			= 0
@@ -68,10 +68,8 @@ local SwayDelta = Angle()
 
 function SWEP:Initialize()
 
-	print(123)
 	if CLIENT then
 		self.CursorEnabled = false
-		
 		return
 	end
 
@@ -81,6 +79,8 @@ function SWEP:Initialize()
 	self:SetNWInt("TA:firstPaintType", PORTAL_PAINT_BOUNCE)
 	self:SetNWInt("TA:secondPaintType", PORTAL_PAINT_SPEED)
 
+	print(self.HoldType)
+	self:SetHoldType(self.HoldType)
 	self:SetWeaponHoldType(self.HoldType)
 end
 
@@ -308,6 +308,7 @@ function SWEP:MakePaintBlob(paintType)
 	-- Randomize makes random size between maxsize and minsize by selected procent
 	local randSize = math.Rand(LIB_APERTURE.GEL_MINSIZE, (LIB_APERTURE.GEL_MAXSIZE + LIB_APERTURE.GEL_MINSIZE) / 2)
 	local paint = LIB_APERTURE:MakePaintBlob(paintType, ownerShootPos, forward * math.max(100, math.min(200, force - 100)) * 8 + VectorRand() * 100 + ownerSpeed, randSize)
+	paint.IsFromPaintGun = true
 	
 	if not IsValid(paint) then return end
 	if IsValid(self.Owner) and self.Owner:IsPlayer() then paint:SetOwner(self.Owner) end

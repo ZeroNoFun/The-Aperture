@@ -5,7 +5,7 @@ function EFFECT:Init( data )
 	self.Color = data:GetColor()
 	self.Radius = math.max( 0.6, data:GetRadius() / 150 )
 	
-	local color = APERTURESCIENCE:PaintTypeToColor( self.Color )
+	local color = LIB_APERTURE:PaintTypeToColor( self.Color )
 	
 	self.Emitter = ParticleEmitter( self.Start )
 	
@@ -51,9 +51,7 @@ function EFFECT:Init( data )
 		p:SetGravity( Vector( 0, 0, -800 ) )
 		p:SetColor( color.r, color.g, color.b )
 		p:SetCollide( true )
-		
 	end
-	
 	
 	for i = 1, 20 do
 		local vec = VectorRand()

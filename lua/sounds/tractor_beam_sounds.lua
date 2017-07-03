@@ -66,18 +66,3 @@ local tractorBeamEnter =
 	pitch	= 100,
 }
 sound.Add(tractorBeamEnter)
-
-local tractorBeamEnterSS =
-{
-	channel	= CHAN_BODY,
-	name	= "TA:TractorBeamEnterSS",
-	level	= 60,
-	sound	= {
-		"vfx/player_enter_tbeam_ss_lp_01.wav",
-		"vfx/player_enter_tbeam_ss_lp_02.wav",
-		"vfx/player_enter_tbeam_ss_lp_03.wav",
-	},
-	volume	= 1.0,
-	pitch	= 100,
-}
-sound.Add(tractorBeamEnterSS)

@@ -22,7 +22,37 @@ function ENT:Initialize()
 	end
 end
 
-function ENT:PaintGel(pos, normal, radius)
+function ENT:HandleEntities(ent)
+	if ent:GetClass() != self:GetClass() and not ent.IsAperture and IsValid(ent:GetPhysicsObject()) then
+		local paintType = self:GetPaintType()
+		local center = ent:LocalToWorld(ent:GetPhysicsObject():GetMassCenter())
+		local trace = util.TraceLine({
+			start = self:GetPos(),
+			endpos = center,
+			filter = function(fent) if fent:GetClass() != self:GetClass() and fent != ent then return true end end
+		})
+		if trace.Hit then return end
+		
+		if ent:IsPlayer() then
+			local rad = self:GetPaintRadius()
+			local effectRad = math.Rand(rad / 2, rad)
+			if not self.IsFromPaintGun or self:GetOwner() != ent and self.IsFromPaintGun then
+				LIB_APERTURE:PaintPlayerScreen(ent, paintType, effectRad)
+			end
+		else
+			if paintType == PORTAL_PAINT_WATER then
+				LIB_APERTURE:ClearPaintedEntity(ent)
+			else
+				LIB_APERTURE:PaintEntity(ent, paintType)
+			end
+			
+			-- extinguish if paint type is water
+			if paintType == PORTAL_PAINT_WATER and ent:IsOnFire() then ent:Extinguish() end
+		end
+	end
+end
+
+function ENT:PaintSplat(pos, normal, radius, velocity)
 	local paintType = self:GetPaintType()
 	local effectdata = EffectData()
 	effectdata:SetOrigin(pos)
@@ -39,12 +69,16 @@ function ENT:PaintGel(pos, normal, radius)
 	end
 	
 	local color = LIB_APERTURE:PaintTypeToColor(paintType)
-	
+	//local direction = normal == Vector(0, 0, 1) and Vector(velocity.x, velocity.y, 0):GetNormalized() or nil
+	//local viscosity = normal == Vector(0, 0, 1) and 1 - math.abs(velocity:GetNormalized().z) or 1
+
 	local paintDat = {
 		paintType = paintType,
 		radius = radius,
 		hardness = 0.6,
-		color = color
+		color = color,
+		viscosity = viscosity,
+		direction = direction
 	}
 	if paintType == PORTAL_PAINT_WATER then
 		LIB_PAINT.PaintSplat(pos + normal, paintDat, true)
@@ -56,24 +90,7 @@ function ENT:PaintGel(pos, normal, radius)
 	local findResult = ents.FindInSphere(pos, radius)
 	
 	for k,v in pairs(findResult) do
-		if v:GetClass() != self:GetClass() and v.IsAperture and not v:IsPlayer() then
-			local center = v:GetPhysicsObject() and v:LocalToWorld(v:GetPhysicsObject():GetMassCenter()) or v:GetPos()
-			local trace = util.TraceLine({
-				start = self:GetPos(),
-				endpos = center,
-				filter = function(ent) if ent:GetClass() != self:GetClass() and ent != v then return true end end
-			})
-			if trace.Hit then continue end
-			
-			if paintType == PORTAL_PAINT_WATER then
-				LIB_APERTURE:ClearPaintedEntity(v)
-			else
-				LIB_APERTURE:PaintEntity(v, paintType)
-			end
-			
-			-- extinguish if paint type is water
-			if paintType == PORTAL_PAINT_WATER and v:IsOnFire() then v:Extinguish() end
-		end
+		self:HandleEntities(v)
 	end
 end
 
@@ -159,10 +176,11 @@ function ENT:Think()
 		end
 		
 		if not IsValid(traceEnt) or IsValid(traceEnt) and traceEnt:GetClass() != "prop_portal" then
+			local velocity = self:GetVelocity()
 			self:SetPos(trace.HitPos + trace.HitNormal)
+			self:PaintSplat(trace.HitPos, trace.HitNormal, self:GetPaintRadius(), velocity)
 			self:SetNoDraw(true)
 			self:GetPhysicsObject():EnableMotion(false)
-			self:PaintGel(trace.HitPos, trace.HitNormal, self:GetPaintRadius())
 
 			timer.Simple(1, function() if IsValid(self) then self:Remove() end end)
 			self:NextThink(CurTime() + 10)

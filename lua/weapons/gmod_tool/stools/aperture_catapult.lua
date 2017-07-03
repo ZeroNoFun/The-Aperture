@@ -1,6 +1,10 @@
 TOOL.Category = "Aperture Science"
 TOOL.Name = "#tool.aperture_science_catapult.name"
 
+TOOL.CatapultPlaced = false
+TOOL.CatapultPos = nil
+TOOL.CatapultAng = nil
+
 TOOL.ClientConVar[ "startenabled" ] = "0"
 
 if CLIENT then
@@ -46,12 +50,17 @@ function TOOL:LeftClick( trace )
 	if CLIENT then return true end
 	-- if not APERTURESCIENCE.ALLOWING.tractor_beam and not self:GetOwner():IsSuperAdmin() then self:GetOwner():PrintMessage( HUD_PRINTTALK, "This tool is disabled" ) return end
 
-	local ply = self:GetOwner()
-	local startenabled = self:GetClientNumber("startenabled")
-	local Pos = trace.HitPos + trace.HitNormal * 31
-	local Ang = trace.HitNormal:Angle() + Angle(90, 0, 0)
-	
-	local ent = MakeCatapult(ply, Pos, Ang, startenabled)
+	if not self.CatapultPlaced then
+		self.CatapultPos = trace.HitPos + trace.HitNormal * 31
+		self.CatapultAng = trace.HitNormal:Angle() + Angle(90, 0, 0)
+	else
+		local ply = self:GetOwner()
+		local startenabled = self:GetClientNumber("startenabled")
+		local pos = self:CatapultPos
+		local ang = self:CatapultAng
+
+		local ent = MakeCatapult(ply, pos, ang, startenabled)
+	end
 	
 	undo.Create("Catapult")
 		undo.AddEntity( ent )
@@ -60,6 +69,14 @@ function TOOL:LeftClick( trace )
 
 	return true, ent
 	
+end
+
+function TOOL:RightClick( trace )
+
+	if self.CatapultPlaced then
+
+	end
+
 end
 
 function TOOL:UpdateGhostWallProjector(ent, ply)
@@ -74,6 +91,11 @@ function TOOL:UpdateGhostWallProjector(ent, ply)
 	local curPos = ent:GetPos()
 	local pos = trace.HitPos + trace.HitNormal * 31
 	local ang = trace.HitNormal:Angle() + Angle( 90, 0, 0 )
+
+	if self.CatapultPlaced then
+		pos = self.CatapultPos
+		ang = (trace.HitPos - pos):Angle()
+	end
 
 	ent:SetPos(pos)
 	ent:SetAngles(ang)

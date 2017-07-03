@@ -41,7 +41,7 @@ end
 
 -- Handling paint
 function PAINT_INFO:Think(ply, normal)
-	local speed = math.max(400, math.min(1500, ply:GetVelocity():Length() * 101 * FrameTime()))
+	local speed = math.max(400, math.min(1000, ply:GetVelocity():Length() * 101 * FrameTime()))
 	ply:SetWalkSpeed(speed)
 	ply:SetRunSpeed(speed)
 end

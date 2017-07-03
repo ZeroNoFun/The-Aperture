@@ -1,13 +1,13 @@
 AddCSLuaFile()
 	
 -- ================================ PAINT STUFF ============================
-LIB_APERTURE.PAINT_QUALITY		= 1
-LIB_APERTURE.PAINT_TYPES = {}
+LIB_APERTURE.PAINT_QUALITY	= 1
+LIB_APERTURE.PAINT_TYPES 	= {}
 
-PORTAL_PAINT_NONE 		= 0
-PORTAL_PAINT_COUNT		= 0
+PORTAL_PAINT_NONE 			= 0
+PORTAL_PAINT_COUNT			= 0
 
-ORIENTATION_DEFAULT 	= Vector(0, 0, 1)
+ORIENTATION_DEFAULT 				= Vector(0, 0, 1)
 
 LIB_APERTURE.GEL_BOX_SIZE 			= 64
 LIB_APERTURE.GEL_MAXSIZE 			= 150
@@ -16,6 +16,8 @@ LIB_APERTURE.GEL_MAX_LAUNCH_SPEED 	= 1000
 
 LIB_APERTURE.GELLED_ENTITIES 		= { }
 LIB_APERTURE.CONNECTED_PAINTS 		= { }
+
+local PLAYER_PAINT_CAMERA 			= { }
 
 function LIB_APERTURE:IsPlayerOnGround( ply )
 	local orientation = ply:GetNWVector("TA:Orientation")
@@ -58,6 +60,71 @@ end
 if SERVER then
 
 end -- SERVER
+
+-- Painting players screen
+function LIB_APERTURE:PaintPlayerScreen(ply, paintType, radius)
+	if CLIENT then return end
+	net.Start("TA:NW_PaintCamera")
+		net.WriteInt(paintType, 8)
+		net.WriteFloat(radius)
+	net.Send(ply)
+end
+
+net.Receive("TA:NW_PaintCamera", function()
+	local paintType = net.ReadInt(8)
+	local radius = net.ReadFloat()
+	local ply = LocalPlayer()
+	
+	for i = 1, 4 do
+		local pos = Vector(ScrW(), ScrH()) * Vector(math.Rand(0, 1), math.Rand(0, 1))
+		if not PLAYER_PAINT_CAMERA[ply] then PLAYER_PAINT_CAMERA[ply] = {} end
+		
+		-- removing paint from screen if it too much
+		if table.Count(PLAYER_PAINT_CAMERA[ply]) > 30 then
+			table.remove(PLAYER_PAINT_CAMERA[ply], 1)
+		else
+			table.insert(PLAYER_PAINT_CAMERA[ply], table.Count(PLAYER_PAINT_CAMERA[ply]) + 1, {
+				time = 0,
+				paintType = paintType,
+				pos = pos,
+				radius = radius
+			})
+		end
+	end
+end)
+
+-- Drawing painted screen
+hook.Add("HUDPaint", "TA:PaintHUDPaint", function()
+	local ply = LocalPlayer()
+	if not PLAYER_PAINT_CAMERA[ply] then return end
+	local paintCamInfos = PLAYER_PAINT_CAMERA[ply]
+	
+	for k,v in pairs(paintCamInfos) do
+		local pos = v.pos
+		local paintType = v.paintType
+		local color = LIB_APERTURE:PaintTypeToColor(paintType)
+		local rad = math.min(50, v.radius) * 20
+		local time = math.max(0, math.min(1, v.time))
+		
+		color.a = math.min(150, math.max(0, 500 - time * 500))
+		surface.SetDrawColor(color)
+		if paintType == PORTAL_PAINT_WATER then
+			surface.SetMaterial(Material("effects/splash1"))
+		else
+			surface.SetMaterial(Material("effects/splash4"))
+		end
+		surface.DrawTexturedRect(
+			pos.x - rad / 2,
+			pos.y - rad / 2,
+			rad,
+			rad * (1 + time / 10)
+		)
+		
+		v.pos.y = pos.y + time * 2
+		v.time = time + 0.2 * FrameTime()
+		if time >= 1 then PLAYER_PAINT_CAMERA[ply][k] = nil end
+	end
+end)
 
 -- no more client side
 if CLIENT then return end
@@ -258,6 +325,25 @@ local function ResolveWorldPaint(ply)
 			if paintInfo.OnChangingOrientation then paintInfo:OnChangingOrientation(ply, orientation, paintNormal) end
 		end
 	else
+		local mins, maxs = ply:GetPhysicsObject():GetAABB()
+		
+		local hitWall = util.TraceHull({
+			start = ply:GetPos(),
+			endpos = ply:GetPos() + ply:GetVelocity() / 100,
+			filter = ent,
+			mins = mins,
+			maxs = maxs,
+			mask = MASK_SHOT_HULL
+		})
+		
+		if hitWall.Hit then
+			local paintType, paintNormal, paintHitPos = LIB_APERTURE:GetPaintInfo(ply:GetPos() + Vector(0, 0, playerHeight), ply:GetVelocity():GetNormalized() * playerHeight)
+
+			if paintType then
+				local paintInfo = LIB_APERTURE.PAINT_TYPES[paintType]
+				if paintInfo.OnLand then paintInfo:OnLand(ply, paintNormal) end
+			end
+		end
 	end
 end
 
