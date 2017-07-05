@@ -6,6 +6,17 @@
 
 AddCSLuaFile()
 
+local laserBurn =
+{
+	channel	= CHAN_BODY,
+	name	= "TA:LaserBurn",
+	level	= 65,
+	sound	= "ambient/fire/amb_fire_lp_01.wav",
+	volume	= 1.0,
+	pitch	= 100,
+}
+sound.Add(laserBurn)
+
 local laserBodyBurn =
 {
 	channel	= CHAN_BODY,
@@ -47,7 +58,7 @@ sound.Add(laserCatcherOn)
 local laserCatcherOff =
 {
 	channel	= CHAN_BODY,
-	name	= "GASL.LaserCatcherOff",
+	name	= "TA:LaserCatcherOff",
 	level	= 75,
 	sound	= "world/laser_node_power_off.wav",
 	volume	= 1.0,

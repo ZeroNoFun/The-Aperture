@@ -39,3 +39,39 @@ function ENT:PlaySequence(seq, rate)
 	self:SetSequence(sequence)
 	return self:SequenceDuration(sequence)
 end
+
+-- sounds
+function ENT:MakeSoundEntity(soundName, pos, parent, index)
+	self:RemoveSoundEntity(soundName, pos, index)
+	if not index then index = 1 end
+	local ent = ents.Create("env_soundscape")
+	if not IsValid(ent) then return end
+	ent:SetPos(pos)
+	ent:Spawn()
+	if parent then ent:SetParent(parent) end
+	ent:SetNoDraw(true)
+	ent:EmitSound(soundName)
+	
+	if not self.TA_SoundEntities then self.TA_SoundEntities = {} end
+	self.TA_SoundEntities[soundName..tostring(index)] = ent
+end
+
+function ENT:MoveSoundEntity(soundName, pos, index)
+	if not self.TA_SoundEntities then return end
+	if not index then index = 1 end
+	if not self.TA_SoundEntities[soundName..tostring(index)] then return end
+	local ent = self.TA_SoundEntities[soundName..tostring(index)]
+	if not IsValid(ent) then return end
+	ent:SetPos(pos)
+end
+
+function ENT:RemoveSoundEntity(soundName, index)
+	if not self.TA_SoundEntities then return end
+	if not index then index = 1 end
+	if not self.TA_SoundEntities[soundName..tostring(index)] then return end
+	
+	local ent = self.TA_SoundEntities[soundName..tostring(index)]
+	if not IsValid(ent) then return end
+	ent:StopSound(soundName)
+	ent:Remove()
+end

@@ -100,35 +100,35 @@ include("aperture/paint.lua")
 
 -- end
 
-function LIB_APERTURE:SnapToGrid(tr, gridsize, height)
-local hitPos = tr.HitPos + tr.HitNormal * height
-local pos = Vector(math.Round(hitPos.x / gridsize) * gridsize, math.Round(hitPos.y / gridsize) * gridsize, math.Round(hitPos.z / gridsize) * gridsize)
-return pos
-end
-
 function LIB_APERTURE:GetAllPortalPassagesAng(pos, angle, maxLength, ignore, ignoreEntities)
 	local exitPortal = nil
 	local prevPos = pos
 	local prevAng = angle
 	local passagesInfo = {}
 	local tpassabes = 0
-	
+	local trace = {}
+	local utt = 0
 	repeat
+		utt = utt + 1
 		local hitPortal = true
 		local direction = prevAng:Forward()
-		local trace = util.TraceLine({
+		trace = util.TraceLine({
 			start = prevPos,
 			endpos = prevPos + direction * LIB_MATH_TA.HUGE,
 			filter = function(ent)
-				if ent != ignore
+				if ent != ignore 
+					and not ignoreEntities 
 					and ent:GetClass() != "prop_portal"
-					and (not ignoreEntities or ignoreEntities and not IsValid(ent:GetPhysicsObject()))
 					and not ent:IsPlayer() 
 					and not ent:IsNPC() then return true end
 			end
 		})
 		
-		table.insert(passagesInfo, table.Count(passagesInfo) + 1, {startpos = prevPos, endpos = trace.HitPos, angles = prevAng})
+		table.insert(passagesInfo, {
+			startpos = prevPos,
+			endpos = trace.HitPos,
+			angles = prevAng
+		})
 		
 		-- Portal loop if trace hit portal
 		for k,v in pairs(ents.FindByClass("prop_portal")) do
@@ -159,7 +159,7 @@ function LIB_APERTURE:GetAllPortalPassagesAng(pos, angle, maxLength, ignore, ign
 		if tpassabes > 100 then print("FUK") break end
 	until hitPortal
 	
-	return passagesInfo
+	return passagesInfo, trace
 end
 
 function LIB_APERTURE:GetAllPortalPassages(pos, dir, maxLength, ignore, ignoreEntities)
@@ -378,9 +378,10 @@ end )
 
 
 hook.Add("PostDrawTranslucentRenderables", "TA:RenderObjects", function()
+	-- Making render fullbright
 	for k,v in pairs(ents.FindByClass("ent_tractor_beam")) do v:Drawing() end
 	for k,v in pairs(ents.FindByClass("ent_portal_floor_turret")) do v:Drawing() end
-	for k,v in pairs(ents.FindByClass("ent_portal_laser")) do v:Drawing() end
+	for k,v in pairs(ents.FindByClass("ent_portal_laser_emitter")) do v:Drawing() end
 end)
 
 hook.Add( "PhysgunPickup", "TA:DisablePhysgunPickup", function( ply, ent )

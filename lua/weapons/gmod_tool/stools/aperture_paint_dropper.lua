@@ -60,7 +60,6 @@ if SERVER then
 		ent:Spawn()
 		
 		-- initializing numpad inputs
-		print(key_enable)
 		ent.NumDown = numpad.OnDown(ply, key_enable, "PaintDropper_Enable", ent, true)
 		ent.NumUp = numpad.OnUp(ply, key_enable, "PaintDropper_Enable", ent, false)
 
@@ -83,6 +82,9 @@ if SERVER then
 		
 		return ent
 	end
+	
+	duplicator.RegisterEntityClass("ent_paint_dropper", MakePaintDropper, "pos", "ang", "key_enable", "startenabled", "toggle", "paintType", "paintFlowType", "paintLaunchSpeed", "data")
+
 end
 
 function TOOL:LeftClick( trace )

@@ -93,7 +93,7 @@ function TOOL:LeftClick( trace )
 	return true, ent
 end
 
-function TOOL:UpdateGhostWallProjector(ent, ply)
+function TOOL:UpdateGhostTractorBeam(ent, ply)
 	if not IsValid(ent) then return end
 
 	local trace = ply:GetEyeTrace()
@@ -119,7 +119,7 @@ function TOOL:Think()
 		self:MakeGhostEntity( mdl, Vector( 0, 0, 0 ), Angle( 0, 0, 0 ) )
 	end
 
-	self:UpdateGhostWallProjector(self.GhostEntity, self:GetOwner())
+	self:UpdateGhostTractorBeam(self.GhostEntity, self:GetOwner())
 end
 
 local ConVarsDefault = TOOL:BuildConVarList()

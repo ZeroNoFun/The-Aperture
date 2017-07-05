@@ -24,9 +24,7 @@ end
 function ENT:Enable(enable)
 	if self:GetEnable() != enable then
 		if enable then
-		
 		else
-		
 		end
 		
 		self:SetEnable(enable)
@@ -72,12 +70,6 @@ function ENT:Draw()
 	self:DrawModel()
 end
 
-function ENT:Draw()
-	
-	self:DrawModel()
-	
-end
-
 -- No more client side
 if ( CLIENT ) then return end
 
@@ -92,7 +84,6 @@ function ENT:Think()
 	end	
 	
 	return true
-	
 end
 
 function ENT:MakePuddle()
@@ -114,7 +105,7 @@ function ENT:MakePuddle()
 end
 
 function ENT:TriggerInput( iname, value )
-	if !WireAddon then return end
+	if not WireAddon then return end
 
 	if iname == "Enable" then self:Enable(tobool(value)) end
 	if iname == "Gel Radius" then self:SetPaintRadius(value) end

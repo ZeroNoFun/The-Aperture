@@ -28,34 +28,35 @@ end
 
 if SERVER then
 
-function ENT:SetupTrails()
-	
-	local trailWidth = 150
-	local trailWidthEnd = 0
-	
-	if IsValid(self.TA_Trail1) then self.TA_Trail1:Remove() end
-	if IsValid(self.TA_Trail2) then self.TA_Trail2:Remove() end
-	if IsValid(self.TA_Trail3) then self.TA_Trail3:Remove() end
-
-	local enable = self:GetEnable()
-	local reverse = self:GetReverse()
-	timer.Simple(0.15, function()
-		if not IsValid(self) then return end
-
+	function ENT:RemoveTrails()
 		if IsValid(self.TA_Trail1) then self.TA_Trail1:Remove() end
 		if IsValid(self.TA_Trail2) then self.TA_Trail2:Remove() end
 		if IsValid(self.TA_Trail3) then self.TA_Trail3:Remove() end
+	end
+
+	function ENT:SetupTrails()
+		local trailWidth = 150
+		local trailWidthEnd = 0
 		
-		if enable then
-			local color = reverse and self.FUNNEL_REVERSE_COLOR or self.FUNNEL_COLOR
-			local material = reverse and "trails/beam_hotred_add_oriented.vmt" or "trails/beam_hotblue_add_oriented.vmt"
+		self:RemoveTrails()
+
+		local enable = self:GetEnable()
+		local reverse = self:GetReverse()
+		timer.Simple(0.15, function()
+			if not IsValid(self) then return end
+
+			self:RemoveTrails()
 			
-			self.TA_Trail1 = util.SpriteTrail(self, 1, color, false, trailWidth, trailWidthEnd, 1, 1 / (trailWidth + trailWidthEnd) * 0.5, material)
-			self.TA_Trail2 = util.SpriteTrail(self, 3, color, false, trailWidth, trailWidthEnd, 1, 1 / (trailWidth + trailWidthEnd) * 0.5, material) 
-			self.TA_Trail3 = util.SpriteTrail(self, 4, color, false, trailWidth, trailWidthEnd, 1, 1 / (trailWidth + trailWidthEnd) * 0.5, material) 
-		end
-	end)
-end
+			if enable then
+				local color = reverse and self.FUNNEL_REVERSE_COLOR or self.FUNNEL_COLOR
+				local material = reverse and "trails/beam_hotred_add_oriented.vmt" or "trails/beam_hotblue_add_oriented.vmt"
+				
+				self.TA_Trail1 = util.SpriteTrail(self, 1, color, false, trailWidth, trailWidthEnd, 1, 1 / (trailWidth + trailWidthEnd) * 0.5, material)
+				self.TA_Trail2 = util.SpriteTrail(self, 3, color, false, trailWidth, trailWidthEnd, 1, 1 / (trailWidth + trailWidthEnd) * 0.5, material) 
+				self.TA_Trail3 = util.SpriteTrail(self, 4, color, false, trailWidth, trailWidthEnd, 1, 1 / (trailWidth + trailWidthEnd) * 0.5, material) 
+			end
+		end)
+	end
 
 end --SERVER
 
@@ -169,13 +170,17 @@ function ENT:Drawing()
 	local dir = reverse and -1 or 1
 	local material = reverse and Material("effects/particle_ring_pulled_add_oriented_reverse") or Material("effects/particle_ring_pulled_add_oriented")
 
-	render.SuppressEngineLighting(true) 
+	//render.SuppressEngineLighting(true) 
 	render.SetColorModulation(color.r / 255, color.g / 255, color.b / 255)
+	render.OverrideDepthEnable(true, false)
+	render.SetLightingMode(2)
 	if self.FieldEffects then
 		for k,v in pairs(self.FieldEffects) do v:DrawModel() end
 	end
-	render.SuppressEngineLighting(false) 
+	//render.SuppressEngineLighting(false) 
 	render.SetColorModulation(1, 1, 1)
+	render.OverrideDepthEnable(false, false)
+	render.SetLightingMode(0)
 
 	-- Tractor beam particle effect
 	if not timer.Exists("TA:TractorBeamEffect"..self:EntIndex()) then
@@ -263,7 +268,7 @@ if CLIENT then
 						c_Model:SetAngles(angles)
 						c_Model:SetNoDraw(true)
 						c_Model:Spawn()
-						table.insert(self.FieldEffects, table.Count(self.FieldEffects) + 1, c_Model)
+						table.insert(self.FieldEffects, c_Model)
 						
 						local scale = Vector(1, 1, 1 * 1.3)
 						local mat = Matrix()

@@ -31,7 +31,7 @@ function LIB_APERTURE:InvertNormal(normal)
 end
 
 function LIB_APERTURE:GetPaintInfo(startpos, dir, ignoreGelledProps, excludeNormalDifferents, sufraceNormalToCompare)
-	local paintInfo, point = LIB_PAINT.GetPaintInfo(startpos, dir)
+	local paintInfo, point = LIB_PAINT:GetPaintInfo(startpos, dir)
 	if not paintInfo then return nil end
 	
 	return paintInfo.paintType, paintInfo.normal, point
@@ -102,11 +102,11 @@ hook.Add("HUDPaint", "TA:PaintHUDPaint", function()
 	for k,v in pairs(paintCamInfos) do
 		local pos = v.pos
 		local paintType = v.paintType
-		local color = LIB_APERTURE:PaintTypeToColor(paintType)
+		local clr = LIB_APERTURE:PaintTypeToColor(paintType)
 		local rad = math.min(50, v.radius) * 20
 		local time = math.max(0, math.min(1, v.time))
+		local color = Color(clr.r, clr.g, clr.b, math.min(150, math.max(0, 200 - time * 200)))
 		
-		color.a = math.min(150, math.max(0, 500 - time * 500))
 		surface.SetDrawColor(color)
 		if paintType == PORTAL_PAINT_WATER then
 			surface.SetMaterial(Material("effects/splash1"))
@@ -120,7 +120,7 @@ hook.Add("HUDPaint", "TA:PaintHUDPaint", function()
 			rad * (1 + time / 10)
 		)
 		
-		v.pos.y = pos.y + time * 2
+		v.pos.y = pos.y + math.max(0, time * 2 - 0.25)
 		v.time = time + 0.2 * FrameTime()
 		if time >= 1 then PLAYER_PAINT_CAMERA[ply][k] = nil end
 	end

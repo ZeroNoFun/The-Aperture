@@ -1,24 +1,26 @@
-TOOL.Category = "Aperture Science"
-TOOL.Name = "#tool.aperture_science_catapult.name"
-
-TOOL.CatapultPlaced = false
+TOOL.Tab 		= "Aperture"
+TOOL.Category 	= "Puzzle elements"
+TOOL.Name 		= "#tool.aperture_catapult.name"
+TOOL.CatapultPlaced = nil
 TOOL.CatapultPos = nil
 TOOL.CatapultAng = nil
 
-TOOL.ClientConVar[ "startenabled" ] = "0"
+TOOL.ClientConVar["model"] = "models/props/laser_emitter.mdl"
+TOOL.ClientConVar["keyenable"] = "45"
+TOOL.ClientConVar["startenabled"] = "0"
+TOOL.ClientConVar["toggle"] = "0"
 
 if CLIENT then
-	language.Add("tool.aperture_science_catapult.name", "Catapult")
-	language.Add("tool.aperture_science_catapult.desc", "Makes Catapult (Plate of Faith)")
-	language.Add("tool.aperture_science_catapult.0", "Left click to place")
-	language.Add("tool.aperture_science_catapult.enable", "Enable")
-	language.Add("tool.aperture_science_catapult.startenabled", "Start Enabled")
+	language.Add("tool.aperture_catapult.name", "Areial Faith Plate")
+	language.Add("tool.aperture_catapult.desc", "The Areial Faith Plate will catapult player's to choosen location")
+	language.Add("tool.aperture_catapult.0", "Left click to place")
+	language.Add("tool.aperture_catapult.enable", "Enable")
+	language.Add("tool.aperture_catapult.startenabled", "Start Enabled")
 end
 
 if SERVER then
 
-	function MakeCatapult(ply, pos, ang, startenabled, data)
-		if IsValid(pl) and not pl:CheckLimit("tractor_beams") then return false end
+	function MakeCatapult(ply, pos, ang, key_enable, startenabled, toggle, data)
 		local ent = ents.Create("ent_catapult")
 		if not IsValid(ent) then return end
 		
@@ -28,12 +30,11 @@ if SERVER then
 		ent:SetAngles(ang)
 		ent:SetStartEnabled(tobool(startenabled))
 		ent:Spawn()
-		ent.startenabled = startenabled
 		
-		if (tobool(startenabled)) then ent:ToggleEnable(false) end
+		if tobool(startenabled) then ent:ToggleEnable(false) end
 
-		if ( IsValid( ply ) ) then
-			ply:AddCleanup( "catapults", ent )
+		if IsValid(ply) then
+			ply:AddCleanup("#tool.aperture_catapult.name", ent )
 			ply:AddCount( "catapults", ent )
 		end
 		
@@ -44,39 +45,43 @@ if SERVER then
 end
 
 function TOOL:LeftClick( trace )
-
 	-- Ignore if place target is Alive
 	if trace.Entity and trace.Entity:IsPlayer() then return false end
 	if CLIENT then return true end
 	-- if not APERTURESCIENCE.ALLOWING.tractor_beam and not self:GetOwner():IsSuperAdmin() then self:GetOwner():PrintMessage( HUD_PRINTTALK, "This tool is disabled" ) return end
 
-	if not self.CatapultPlaced then
-		self.CatapultPos = trace.HitPos + trace.HitNormal * 31
-		self.CatapultAng = trace.HitNormal:Angle() + Angle(90, 0, 0)
-	else
+	if self.CatapultPlaced then
 		local ply = self:GetOwner()
+		local model = self:GetClientInfo("model")
+		local key_enable = self:GetClientNumber("keyenable")
 		local startenabled = self:GetClientNumber("startenabled")
-		local pos = self:CatapultPos
-		local ang = self:CatapultAng
-
+		local toggle = self:GetClientNumber("toggle")
+		local pos = self.CatapultPos
+		local ang = self.CatapultAng
+		
 		local ent = MakeCatapult(ply, pos, ang, startenabled)
-	end
-	
-	undo.Create("Catapult")
-		undo.AddEntity( ent )
-		undo.SetPlayer( ply )
-	undo.Finish()
 
-	return true, ent
-	
+		self.CatapultPlaced = false
+
+		undo.Create("#tool.aperture_catapult.name")
+			undo.AddEntity(ent)
+			undo.SetPlayer(ply)
+		undo.Finish()
+
+		return true, ent
+	else
+		self.CatapultPos = trace.HitPos + trace.HitNormal * 10
+		self.CatapultAng = trace.HitNormal:Angle() + Angle(90, 0, 0)
+		self.CatapultPlaced = true
+	end
 end
 
 function TOOL:RightClick( trace )
-
 	if self.CatapultPlaced then
-
+		self.CatapultPlaced = false
 	end
 
+	print(self.CatapultPos)
 end
 
 function TOOL:UpdateGhostWallProjector(ent, ply)
@@ -88,19 +93,13 @@ function TOOL:UpdateGhostWallProjector(ent, ply)
 		return
 	end
 	
-	local curPos = ent:GetPos()
-	local pos = trace.HitPos + trace.HitNormal * 31
+	local pos = Vector(0, 0, 0)
+	if self.CatapultPlaced then pos = self.CatapultPos else pos = trace.HitPos + trace.HitNormal * 10 end
 	local ang = trace.HitNormal:Angle() + Angle( 90, 0, 0 )
-
-	if self.CatapultPlaced then
-		pos = self.CatapultPos
-		ang = (trace.HitPos - pos):Angle()
-	end
 
 	ent:SetPos(pos)
 	ent:SetAngles(ang)
 	ent:SetNoDraw(false)
-
 end
 
 function TOOL:Think()
@@ -117,6 +116,10 @@ end
 local ConVarsDefault = TOOL:BuildConVarList()
 
 function TOOL.BuildCPanel(CPanel)
-	CPanel:AddControl("Header", {Description = "#tool.aperture_science_catapult.desc"})
-	CPanel:AddControl("CheckBox", {Label = "#tool.aperture_science_tractor_beam.startenabled", Command = "aperture_science_tractor_beam_startenabled"})
+	CPanel:AddControl("Header", {Description = "#tool.aperture_catapult.desc"})
+	CPanel:AddControl("PropSelect", {Label = "#tool.aperture_catapult.model", ConVar = "aperture_catapult_model", Models = list.Get("PortalCatapultModels"), Height = 0})
+	CPanel:AddControl("Numpad", {Label = "#tool.aperture_catapult.enable", Command = "aperture_catapult_keyenable"})
+	CPanel:AddControl("CheckBox", {Label = "#tool.aperture_catapult.startenabled", Command = "aperture_catapult_startenabled"})
 end
+
+list.Set("PortalCatapultModels", "models/aperture/faith_plate_128.mdl", {})

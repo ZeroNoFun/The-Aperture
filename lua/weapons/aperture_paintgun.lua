@@ -202,17 +202,17 @@ function SWEP:DrawHUD()
 			end
 			
 			local AddingSize = 0
-			local DrawColor = Color( 150, 150, 150 )
+			local DrawColor = Color(150, 150, 150)
 			local DrawHalo = false
 			
-			if ( i == firstPaintType ) then
-				DrawColor = Color( 0, 200, 255 )
+			if i == firstPaintType then
+				DrawColor = Color(0, 200, 255)
 				DrawHalo = true
 			elseif i == secondPaintType then 
-				DrawColor = Color( 255, 200, 0 )
+				DrawColor = Color(255, 200, 0)
 				DrawHalo = true
 			elseif selectionDeg == Deg and animation == 1 then 
-				DrawColor = Color( 255, 255, 255 )
+				DrawColor = Color(255, 255, 255)
 				DrawHalo = true 
 			end
 		

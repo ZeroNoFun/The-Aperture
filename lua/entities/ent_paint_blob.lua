@@ -69,8 +69,8 @@ function ENT:PaintSplat(pos, normal, radius, velocity)
 	end
 	
 	local color = LIB_APERTURE:PaintTypeToColor(paintType)
-	//local direction = normal == Vector(0, 0, 1) and Vector(velocity.x, velocity.y, 0):GetNormalized() or nil
-	//local viscosity = normal == Vector(0, 0, 1) and 1 - math.abs(velocity:GetNormalized().z) or 1
+	-- local direction = normal == Vector(0, 0, 1) and Vector(velocity.x, velocity.y, 0):GetNormalized() or nil
+	-- local viscosity = normal == Vector(0, 0, 1) and 1 - math.abs(velocity:GetNormalized().z) or 1
 
 	local paintDat = {
 		paintType = paintType,
@@ -81,9 +81,9 @@ function ENT:PaintSplat(pos, normal, radius, velocity)
 		direction = direction
 	}
 	if paintType == PORTAL_PAINT_WATER then
-		LIB_PAINT.PaintSplat(pos + normal, paintDat, true)
+		LIB_PAINT:PaintSplat(pos + normal, paintDat, true)
 	else
-		LIB_PAINT.PaintSplat(pos + normal, paintDat, false)
+		LIB_PAINT:PaintSplat(pos + normal, paintDat, false)
 	end
 	
 	-- handling entities around splat
