@@ -20,7 +20,8 @@ end
 function ENT:ModelToStartCoord()
 	local modelToStartCoord = {
 		["models/props/laser_catcher_center.mdl"] = Vector(20, 0, 0),
-		["models/props/laser_catcher.mdl"] = Vector(20, 0, -14)
+		["models/props/laser_catcher.mdl"] = Vector(20, 0, -14),
+		["models/aperture/laser_receptacle.mdl"] = Vector(0, 0, 20)
 	}
 	return modelToStartCoord[self:GetModel()]
 end

@@ -1,4 +1,4 @@
-UnlitTwoTexture
+UnlitGeneric
 {
 $nocull 1
 $nodecal 1
@@ -11,7 +11,7 @@ $nofog 1
 $Texture2 "effects/laserplane_atmosphere"
 $color "[1 1 1]"
 "!srgb?$color2" "[.68 .68 .68]"
-$t2offset 0
+$t2offset 1
 $t2scale 0.4
 $t2rot 27.5
 Proxies

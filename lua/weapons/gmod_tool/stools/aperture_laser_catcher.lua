@@ -18,15 +18,14 @@ end
 function TOOL:ModelToOffsets(model)
 	local modelToOffsets = {
 		["models/props/laser_catcher.mdl"] = {z = -12, ang = Angle()},
-		["models/props/laser_catcher_center.mdl"] = {z = -12, ang = Angle()},
-		["models/props/laser_receptacle.mdl"] = {z = 3.5, ang = Angle(90, 0, 0)},
+		["models/props/laser_catcher_center.mdl"] = {z = -11.5, ang = Angle()},
+		["models/aperture/laser_receptacle.mdl"] = {z = 3.5, ang = Angle(90, 0, 0)},
 	}
 	return modelToOffsets[model]
 end
 
 local function MakePortalLaserCatcher(ply, pos, ang, model, key_group, data)
-	local entclass = model == "models/props/laser_receptacle.mdl" and "ent_portal_laser_relay" or "ent_portal_laser_catcher"
-	local ent = ents.Create(entclass)
+	local ent = ents.Create("ent_portal_laser_catcher")
 	if not IsValid(ent) then return end
 	
 	duplicator.DoGeneric(ent, data)
@@ -50,7 +49,7 @@ local function MakePortalLaserCatcher(ply, pos, ang, model, key_group, data)
 	table.Merge(ent:GetTable(), ttable)
 
 	if IsValid(ply) then
-		ply:AddCleanup("#tool.aperture_button.name", ent)
+		ply:AddCleanup("#tool.aperture_laser_catcher.name", ent)
 	end
 	
 	return ent
@@ -73,7 +72,7 @@ function TOOL:LeftClick( trace )
 	local ang = trace.HitNormal:Angle() + offsets.ang
 	local ent = MakePortalLaserCatcher(ply, pos, ang, model, key_group)
 		
-	undo.Create("#tool.aperture_laser_catcher.name")
+	undo.Create("Thermal Discouragement Beam Catcher")
 		undo.AddEntity(ent)
 		undo.SetPlayer(ply)
 	undo.Finish()
@@ -126,4 +125,4 @@ end
 
 list.Set("LaserCatcherModels", "models/props/laser_catcher.mdl", {})
 list.Set("LaserCatcherModels", "models/props/laser_catcher_center.mdl", {})
-list.Set("LaserCatcherModels", "models/props/laser_receptacle.mdl", {})
+list.Set("LaserCatcherModels", "models/aperture/laser_receptacle.mdl", {})

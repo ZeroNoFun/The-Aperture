@@ -11,9 +11,8 @@ ENT.Spawnable 				= false
 ENT.AdminOnly 				= false
 
 ENT.IsAperture 				= true
-ENT.IsConnectable 			= false
 
-if WireAddon then
+if WireAddon and ENT.IsConnectable then
 	DEFINE_BASECLASS("base_wire_entity")
 	ENT.WireDebugName = "Aperture Base"
 else

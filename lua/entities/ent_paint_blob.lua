@@ -118,7 +118,6 @@ function ENT:Think()
 	
 	-- removing puddle when it is under water
 	if self:WaterLevel() == 3 then
-	
 		local traceWater = util.TraceLine({
 			start = self:GetPos() + Vector(0, 0, 50),
 			endpos = self:GetPos(),
@@ -155,7 +154,7 @@ function ENT:Think()
 			start = self.TA_PrevPos,
 			endpos = self:GetPos(),
 			filter = function(ent)
-				if ent.IsAperture and ent != self:GetOwner() then return true end
+				if not ent.IsAperture and ent != self:GetOwner() then return true end
 			end
 		})
 		

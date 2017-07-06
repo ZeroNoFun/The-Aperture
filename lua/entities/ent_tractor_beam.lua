@@ -134,9 +134,9 @@ function ENT:Initialize()
 		self:SetSolid(SOLID_VPHYSICS)
 		self:GetPhysicsObject():EnableMotion(false)
 		
-		self.TA_FunnelUpdate = {}
-		self.TA_EntitiesInFunnel = {}
-		self.TA_FunnelEnteredEntities = {}
+		self.FunnelUpdate = {}
+		self.EntitiesInFunnel = {}
+		self.FunnelEnteredEntities = {}
 		
 		if self:GetStartEnabled() then self:Enable(true) end
 		if self:GetStartReversed() then self:Reverse(true) end
@@ -149,10 +149,6 @@ function ENT:Initialize()
 	if CLIENT then
 		self.BaseRotation = 0
 		self.FieldEffects = {}
-		
-		if not self:GetStartEnabled() then
-			--APERTURESCIENCE:PlaySequence( self, "tractor_beam_idle", 1.0 )
-		end
 	end
 end
 
@@ -215,11 +211,6 @@ function ENT:Drawing()
 end
 
 if CLIENT then
-
-	function ENT:OnRemove()
-		for k, v in pairs(self.FieldEffects) do v:Remove() end
-	end
-
 	function ENT:Think()			
 
 		--self.BaseClass.Think( self )
@@ -228,16 +219,6 @@ if CLIENT then
 		local dir = reverse and -1 or 1
 		local angle = reverse and -90 or 90
 		local offset = reverse and FUNNEL_EFFECT_MODEL_SIZE or 0
-
-		-- local tractorBeamTrace = util.TraceLine( {
-			-- start = self:GetPos(),
-			-- endpos = self:LocalToWorld( Vector( 0, 0, 1000000 ) ),
-			-- filter = function( ent )
-				-- if ( ent == self or ent:GetClass() == "prop_portal" or ent:IsPlayer() or ent:IsNPC() ) then
-					-- return false end
-			-- end
-		-- } )
-		-- local totalDistance = self:GetPos():Distance( tractorBeamTrace.HitPos )
 		
 		local passagesPoints = LIB_APERTURE:GetAllPortalPassagesAng(self:GetPos(), self:LocalToWorldAngles(Angle(-90, 0, 0)), nil, self, true)
 		
@@ -293,6 +274,10 @@ if CLIENT then
 		end
 	end
 	
+	function ENT:OnRemove()
+		for k, v in pairs(self.FieldEffects) do v:Remove() end
+	end
+	
 	return true -- No more client side
 end
 
@@ -328,7 +313,7 @@ function ENT:HandleEntity(ent, beamStart, beamAng, beamDirection)
 	local dir = reverse and -1 or 1
 
 	-- Removing entity from table if it still in funnel
-	if self.TA_EntitiesInFunnel[ent:EntIndex()] then self.TA_EntitiesInFunnel[ent:EntIndex()] = nil end
+	if self.EntitiesInFunnel[ent:EntIndex()] then self.EntitiesInFunnel[ent:EntIndex()] = nil end
 	
 	local centerPos = IsValid(ent:GetPhysicsObject()) and ent:LocalToWorld(ent:GetPhysicsObject():GetMassCenter()) or ent:GetPos()
 	local paintBarrerRollValue = CurTime() * 4 + ent:EntIndex() * 10
@@ -341,8 +326,8 @@ function ENT:HandleEntity(ent, beamStart, beamAng, beamDirection)
 	local offset = -localCenterPos * 2
 	
 	-- Handling entering into Funnel
-	if not self.TA_FunnelEnteredEntities[ent:EntIndex()] then
-		self.TA_FunnelEnteredEntities[ent:EntIndex()] = true
+	if not self.FunnelEnteredEntities[ent:EntIndex()] then
+		self.FunnelEnteredEntities[ent:EntIndex()] = true
 		
 		self:OnEnterFunnel(ent)
 	end
@@ -385,14 +370,14 @@ end
 
 function ENT:CheckForLeave()
 
-	if not self.TA_EntitiesInFunnel then return end
+	if not self.EntitiesInFunnel then return end
 	
 	-- Handling funnel exiting
-	for k,v in pairs(self.TA_EntitiesInFunnel) do
+	for k,v in pairs(self.EntitiesInFunnel) do
 		self:OnLeaveFunnel(v)
 		
 		if IsValid(v) then
-			self.TA_FunnelEnteredEntities[v:EntIndex()] = false
+			self.FunnelEnteredEntities[v:EntIndex()] = false
 		end
 	end
 end
@@ -408,14 +393,6 @@ function ENT:Think()
 	
 	-- Skip this tick if exursion funnel is disabled and removing effect if possible
 	if not self:GetEnable() then
-		-- if self.TA_FunnelUpdate.lastPos != Vector() or self.TA_FunnelUpdate.lastAngle != Angle() then
-			-- self.TA_FunnelUpdate.lastPos = Vector()
-			-- self.TA_FunnelUpdate.lastAngle = Angle()
-				
-			-- -- Removing effects
-			-- self:SetupTrails( )
-		-- end
-
 		return
 	end
 	
@@ -443,18 +420,11 @@ function ENT:Think()
 	end
 	
 	self:CheckForLeave()
-	self.TA_EntitiesInFunnel = handleEntities		
+	self.EntitiesInFunnel = handleEntities		
 	
 	local color = self:GetReverse() and self.FUNNEL_REVERSE_COLOR or self.FUNNEL_COLOR
 	local angle = self:GetReverse() and -1 or 1
 	local adding = self:GetReverse() and 320 or 0
-	
-	-- Handling changes position or angles
-	if self.TA_FunnelUpdate.lastPos != self:GetPos() or self.TA_FunnelUpdate.lastAngle != self:GetAngles() then
-		self.TA_FunnelUpdate.lastPos = self:GetPos()
-		self.TA_FunnelUpdate.lastAngle = self:GetAngles()
-		self:SetupTrails()
-	end
 
 	return true
 end

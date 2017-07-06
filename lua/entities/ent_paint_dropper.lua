@@ -48,7 +48,7 @@ function ENT:Initialize()
 	self.BaseClass.Initialize(self)
 	
 	if SERVER then
-		self:SetModel("models/props_junk/wood_crate001a.mdl")
+		self:SetModel("models/aperture/paint_dropper.mdl")
 		self:PhysicsInit(SOLID_VPHYSICS)
 		self:SetMoveType(MOVETYPE_VPHYSICS)
 		self:SetSolid(SOLID_VPHYSICS)

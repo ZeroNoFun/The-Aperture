@@ -25,8 +25,7 @@ if CLIENT then
 	language.Add("tool.aperture_paint_dropper.toggle", "Toggle")
 end
 
-local function FlowTypeToInfo( flowType )
-
+local function FlowTypeToInfo(flowType)
 	local flowTypeToInfo = {
 		[1] = {amount = 96, radius = 50},
 		[2] = {amount = 97, radius = 75},
@@ -34,7 +33,6 @@ local function FlowTypeToInfo( flowType )
 		[4] = {amount = 10, radius = 200},
 		[5] = {amount = 80, radius = 1}
 	}
-	
 	return flowTypeToInfo[ flowType ]
 end
 
@@ -57,6 +55,7 @@ if SERVER then
 		ent:SetPaintRadius(flowInfo.radius)
 		ent:SetPaintAmount(flowInfo.amount)
 		ent:SetPaintLaunchSpeed(paintLaunchSpeed)
+		ent:SetColor(LIB_APERTURE:PaintTypeToColor(paintType))
 		ent:Spawn()
 		
 		-- initializing numpad inputs
@@ -84,7 +83,6 @@ if SERVER then
 	end
 	
 	duplicator.RegisterEntityClass("ent_paint_dropper", MakePaintDropper, "pos", "ang", "key_enable", "startenabled", "toggle", "paintType", "paintFlowType", "paintLaunchSpeed", "data")
-
 end
 
 function TOOL:LeftClick( trace )
@@ -142,7 +140,7 @@ function TOOL:RightClick( trace )
 end
 
 function TOOL:Think()
-	local mdl = "models/aperture/tractor_beam.mdl"
+	local mdl = "models/aperture/paint_dropper.mdl"
 	if not util.IsValidModel(mdl) then self:ReleaseGhostEntity() return end
 
 	if not IsValid(self.GhostEntity) or self.GhostEntity:GetModel() != mdl then
@@ -150,8 +148,11 @@ function TOOL:Think()
 	end
 	
 	if IsValid(self.GhostEntity) then
+		local alpha = self.GhostEntity:GetColor().a
 		local paintType = self:GetClientNumber("paint_type")
-		self.GhostEntity:SetSkin(paintType)
+		local paintColor = LIB_APERTURE:PaintTypeToColor(paintType)
+		local color = Color(paintColor.r, paintColor.g, paintColor.b, alpha)
+		self.GhostEntity:SetColor(color)
 	end
 
 	self:UpdateGhostWallProjector(self.GhostEntity, self:GetOwner())
@@ -161,7 +162,6 @@ end
 local ConVarsDefault = TOOL:BuildConVarList()
 
 function TOOL.BuildCPanel( CPanel )
-
 	CPanel:AddControl("Header", {Description = "#tool.aperture_paint_dropper.desc"})
 
 	local combobox = CPanel:ComboBox( "#tool.aperture_paint_dropper.paintType", "aperture_paint_dropper_paint_type")

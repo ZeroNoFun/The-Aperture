@@ -7,7 +7,8 @@ ENT.PrintName 		= "Thermal Discouragement Beam Emitter"
 ENT.IsAperture 		= true
 ENT.IsConnectable 	= true
 
-ENT.LASER_BBOX 		= 10
+ENT.LASER_BBOX 		= 1
+ENT.MAX_REFLECTIONS = 256
 
 if WireAddon then
 	ENT.WireDebugName = ENT.PrintName
@@ -19,10 +20,17 @@ function ENT:SetupDataTables()
 	self:NetworkVar("Bool", 2, "StartEnabled")
 end
 
+function ENT:ModelToStartCoord()
+	local modelToStartCoord = {
+		["models/props/laser_emitter_center.mdl"] = Vector(30, 0, 0),
+		["models/props/laser_emitter.mdl"] = Vector(30, 0, -14)
+	}
+	return modelToStartCoord[self:GetModel()]
+end
+
 function ENT:Enable(enable)
 	if self:GetEnable() != enable then
 		if enable then
-			self:EmitSound("TA:LaserStart")
 			self:MakeSoundEntity("TA:LaserBurn", self:LocalToWorld(Vector(25, 0, 0)))
 			self:MakeSoundEntity("TA:LaserStart", self:LocalToWorld(Vector(25, 0, 0)), self)
 		else
@@ -66,32 +74,22 @@ function ENT:Initialize()
 		
 	end
 	
-	self.TA_FilterEntities = { }
+	self.TA_FilterEntities 	= { }
+	self.TA_PassagesCount 	= 0
 end
 
 
 if CLIENT then
-	
-	-- function ENT:DrawMuzzleEffect(startpos, dir)
-		-- local LaserSpriteCount = 8
-		-- local LaserSpriteRadius = 70 * math.Rand( 0.9, 1.1 )
-		-- local LaserSpriteDist = 50
-		
-		-- for i = 1,LaserSpriteCount - 2 do
-			-- local radius = LaserSpriteRadius * ( 1 - ( i / LaserSpriteCount ) )
-			-- render.SetMaterial( Material( "particle/laser_beam_glow" ) )
-			-- render.DrawSprite( startpos + dir * i * ( LaserSpriteDist / LaserSpriteCount ), radius, radius, Color( 255, 255, 255 ) )
-		-- end
-	-- end
-
-end
-
-function ENT:ModelToStartCoord()
-	local modelToStartCoord = {
-		["models/props/laser_emitter_center.mdl"] = Vector( 30, 0, 0 ),
-		["models/props/laser_emitter.mdl"] = Vector( 30, 0, -14 )
-	}
-	return modelToStartCoord[self:GetModel()]
+	local laserSpriteCount = 32
+	local laserSpriteRadius = 40
+	-- Beam shoot effect
+	function ENT:DrawMuzzleEffect(startpos, dir)
+		for i = 1,laserSpriteCount do
+			local radius = laserSpriteRadius * (1 - i / laserSpriteCount) * math.Rand(0.9, 1.1)
+			render.SetMaterial(Material("particle/laser_beam_glow"))
+			render.DrawSprite(startpos + dir * i * (1 + (i - 1) / 80), radius, radius, Color(255, 255, 255))
+		end
+	end
 end
 
 function ENT:DamageEntity(ent, startpos, endpos)
@@ -122,15 +120,20 @@ end
 function ENT:HandleEntities(ent, startpos, endpos)
 	if ent:IsPlayer() or ent:IsNPC() then
 		self:DamageEntity(ent, startpos, endpos)
+	elseif ent:GetModel() == "models/aperture/laser_receptacle.mdl" then
+		ent.LastHittedByLaser = CurTime()
 	end
 end
 
 function ENT:DoLaser(startpos, ang, ignore)
 
-	local drawEndEffect = true
-	local points, trace = LIB_APERTURE:GetAllPortalPassagesAng(startpos, ang, nil, ignore)
-	local itter = 0
+	self.TA_PassagesCount = self.TA_PassagesCount + 1
+	if self.TA_PassagesCount >= self.MAX_REFLECTIONS then return end
 	
+	local drawEndEffect = true
+	local filter = {ignore, "models/aperture/laser_receptacle.mdl"}
+	local points, trace = LIB_APERTURE:GetAllPortalPassagesAng(startpos, ang, nil, filter)
+
 	if IsValid(trace.Entity) then
 		local ent = trace.Entity
 		-- if hit laser catcher
@@ -156,7 +159,6 @@ function ENT:DoLaser(startpos, ang, ignore)
 				endpos = v.endpos,
 				ignoreworld = true,
 				filter = function(ent)
-				
 					if ent != self and ent:GetClass() != "prop_portal" then
 						self:HandleEntities(ent, v.startpos, v.endpos)
 					end
@@ -165,13 +167,6 @@ function ENT:DoLaser(startpos, ang, ignore)
 				maxs = Vector(1, 1, 1) * self.LASER_BBOX,
 				mask = MASK_SHOT_HULL
 			})
-		
-			-- local tr = util.TraceLine({
-				-- start = v.startpos,
-				-- endpos = v.endpos,
-				-- filter = function(ent)
-				-- end
-			-- })
 		end
 	end
 	
@@ -194,7 +189,7 @@ function ENT:DoLaser(startpos, ang, ignore)
 	if trace.Entity then
 		local ent = trace.Entity
 		-- if reflection cube
-		if ent:GetModel() == "models/props/reflection_cube.mdl" and not self.TA_FilterEntities[ent] then
+		if ent:GetModel() == "models/props/reflection_cube.mdl" and not ent.isClone and not self.TA_FilterEntities[ent] then
 			self.TA_FilterEntities[ent] = true
 			return self:DoLaser(ent:LocalToWorld(Vector(20, 0, 0)), ent:GetAngles(), ent)
 		end
@@ -209,15 +204,19 @@ function ENT:Draw()
 	self:DrawModel()
 end
 
+function ENT:ClearData()
+	self.TA_FilterEntities = {}
+	self.TA_PassagesCount = 0
+end
 
 function ENT:Drawing()
 	-- skip if disabled
 	if not self:GetEnable() then return end
-	local startPos = self:LocalToWorld(self:ModelToStartCoord())
+	local startpos = self:LocalToWorld(self:ModelToStartCoord())
 	-- clearing data
-	self.TA_FilterEntities = {}
-	
-	local endtrace = self:DoLaser(startPos, self:GetAngles(), self)
+	self:DrawMuzzleEffect(startpos + self:GetForward() * 5, self:GetForward())
+	self:ClearData()
+	local endtrace = self:DoLaser(startpos, self:GetAngles(), self)
 end
 
 -- no more client side
@@ -229,8 +228,10 @@ function ENT:Think()
 	-- skip if disabled
 	if not self:GetEnable() then return end
 
+	self:ClearData()
 	local startPos = self:LocalToWorld(self:ModelToStartCoord())
 	local endtrace, effect = self:DoLaser(startPos, self:GetAngles(), self)
+	if not endtrace then return true end
 	
 	self:MoveSoundEntity("TA:LaserBurn", endtrace.HitPos + endtrace.HitNormal)
 		

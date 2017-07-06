@@ -6,6 +6,7 @@
 AddCSLuaFile( )
 
 LIB_APERTURE = {}
+LIB_APERTURE.MAX_PASSAGES = 256
 
 -- Loading sounds
 local paint_types = file.Find("sounds/*.lua", "LUA")
@@ -100,16 +101,26 @@ include("aperture/paint.lua")
 
 -- end
 
+local function MathEntityAndTable(ent, entTable)
+	if not istable(entTable) then return false end
+	for k,v in pairs(entTable) do
+		if isentity(v) then
+			if ent == v then return true end
+			if ent:GetClass() == v:GetClass() then return true end
+		end
+		if ent:GetModel() == v then return true end
+	end
+	return false
+end
+
 function LIB_APERTURE:GetAllPortalPassagesAng(pos, angle, maxLength, ignore, ignoreEntities)
-	local exitPortal = nil
+	local exitportal
 	local prevPos = pos
 	local prevAng = angle
 	local passagesInfo = {}
-	local tpassabes = 0
+	local passages = 0
 	local trace = {}
-	local utt = 0
 	repeat
-		utt = utt + 1
 		local hitPortal = true
 		local direction = prevAng:Forward()
 		trace = util.TraceLine({
@@ -120,43 +131,47 @@ function LIB_APERTURE:GetAllPortalPassagesAng(pos, angle, maxLength, ignore, ign
 					and not ignoreEntities 
 					and ent:GetClass() != "prop_portal"
 					and not ent:IsPlayer() 
-					and not ent:IsNPC() then return true end
+					and not ent:IsNPC() then
+						if not MathEntityAndTable(ent, ignore) then return true end
+					end
 			end
 		})
-		
 		table.insert(passagesInfo, {
 			startpos = prevPos,
 			endpos = trace.HitPos,
-			angles = prevAng
+			angles = prevAng,
+			exitportal = exitportal,
 		})
 		
 		-- Portal loop if trace hit portal
 		for k,v in pairs(ents.FindByClass("prop_portal")) do
-			local pos = v:WorldToLocal(trace.HitPos)
-			
-			if pos.x > -30 and pos.x < 10
-				and pos.y > -30 and pos.y < 30
-				and pos.z > -45 and pos.z < 45 then
-				if IsValid(v:GetNWEntity("Potal:Other")) then
-					local otherPortal = v:GetNWEntity("Potal:Other")
-					
-					localPos = v:WorldToLocal(trace.HitPos)
-					localAng = v:WorldToLocalAngles(prevAng)
-					localPos = Vector(0, -localPos.y, localPos.z)
-					localAng = localAng + Angle(0, 180, 0)
-					
-					prevPos = otherPortal:LocalToWorld(localPos)
-					prevAng = otherPortal:LocalToWorldAngles(localAng)
-					hitPortal = false
-					exitPortal = otherPortal
-					
-					break
+			if v != exitPortal then
+				local pos = v:WorldToLocal(trace.HitPos)
+				
+				if pos.x > -30 and pos.x < 10
+					and pos.y > -30 and pos.y < 30
+					and pos.z > -45 and pos.z < 45 then
+					if IsValid(v:GetNWEntity("Potal:Other")) then
+						local otherPortal = v:GetNWEntity("Potal:Other")
+						
+						localPos = v:WorldToLocal(trace.HitPos)
+						localAng = v:WorldToLocalAngles(prevAng)
+						localPos = Vector(0, -localPos.y, localPos.z)
+						localAng = localAng + Angle(0, 180, 0)
+						
+						prevPos = otherPortal:LocalToWorld(localPos)
+						prevAng = otherPortal:LocalToWorldAngles(localAng)
+						hitPortal = false
+						passagesInfo[#passagesInfo].enterportal = v
+						exitportal = otherPortal
+						break
+					end
 				end
 			end
 		end
 		
-		tpassabes = tpassabes + 1
-		if tpassabes > 100 then print("FUK") break end
+		passages = passages + 1
+		if passages >= LIB_APERTURE.MAX_PASSAGES then print(123) break end
 	until hitPortal
 	
 	return passagesInfo, trace
@@ -382,6 +397,7 @@ hook.Add("PostDrawTranslucentRenderables", "TA:RenderObjects", function()
 	for k,v in pairs(ents.FindByClass("ent_tractor_beam")) do v:Drawing() end
 	for k,v in pairs(ents.FindByClass("ent_portal_floor_turret")) do v:Drawing() end
 	for k,v in pairs(ents.FindByClass("ent_portal_laser_emitter")) do v:Drawing() end
+	for k,v in pairs(ents.FindByClass("ent_wall_projector")) do v:Drawing() end
 end)
 
 hook.Add( "PhysgunPickup", "TA:DisablePhysgunPickup", function( ply, ent )
