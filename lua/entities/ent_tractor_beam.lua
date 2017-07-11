@@ -11,12 +11,9 @@ if WireAddon then
 	ENT.WireDebugName = ENT.PrintName
 end
 
-ENT.FUNNEL_MOVE_SPEED 		= 173
-ENT.FUNNEL_COLOR 			= Color(0, 150, 255)
-ENT.FUNNEL_REVERSE_COLOR 	= Color(255, 150, 0)
-ENT.FUNNEL_WITDH 			= 60
-
-local FUNNEL_EFFECT_MODEL_SIZE = 320 * 1.3
+local FUNNEL_WITDH 				= 60
+local FUNNEL_EFFECT_MODEL_SIZE 	= 320 * 1.3
+local FUNNEL_SMOOTHING_IN		= 100
 
 function ENT:SetupDataTables()
 	self:NetworkVar("Bool", 0, "Enable")
@@ -48,7 +45,7 @@ if SERVER then
 			self:RemoveTrails()
 			
 			if enable then
-				local color = reverse and self.FUNNEL_REVERSE_COLOR or self.FUNNEL_COLOR
+				local color = reverse and LIB_APERTURE.FUNNEL_REVERSE_COLOR or LIB_APERTURE.FUNNEL_COLOR
 				local material = reverse and "trails/beam_hotred_add_oriented.vmt" or "trails/beam_hotblue_add_oriented.vmt"
 				
 				self.TA_Trail1 = util.SpriteTrail(self, 1, color, false, trailWidth, trailWidthEnd, 1, 1 / (trailWidth + trailWidthEnd) * 0.5, material)
@@ -162,7 +159,7 @@ function ENT:Drawing()
 	if not self:GetEnable() then return end
 
 	local reverse = self:GetReverse()
-	local color = reverse and self.FUNNEL_REVERSE_COLOR or self.FUNNEL_COLOR
+	local color = reverse and LIB_APERTURE.FUNNEL_REVERSE_COLOR or LIB_APERTURE.FUNNEL_COLOR
 	local dir = reverse and -1 or 1
 	local material = reverse and Material("effects/particle_ring_pulled_add_oriented_reverse") or Material("effects/particle_ring_pulled_add_oriented")
 
@@ -191,11 +188,13 @@ function ENT:Drawing()
 	end
 	
 	local quadRadius = 140
+	render.OverrideDepthEnable(true, false)
+	render.SetLightingMode(2)
 	render.SetMaterial(material)
 	for k,v in pairs(self.PassagesDat) do
 		local direction = (v.endpos - v.startpos):GetNormalized()
 		
-		-- Beam begin effect
+			-- Beam begin effect
 		if k > 1 then
 			render.DrawQuadEasy(v.startpos + direction, direction, quadRadius, quadRadius, color, CurTime() * 10 * -dir)
 			render.DrawQuadEasy(v.startpos + direction, direction, quadRadius, quadRadius, color, CurTime() * 10 * -dir + 120)
@@ -207,6 +206,8 @@ function ENT:Drawing()
 		render.DrawQuadEasy(v.endpos - direction, -direction, quadRadius, quadRadius, color, CurTime() * 10 * -dir + 120)
 		render.DrawQuadEasy(v.endpos - direction, -direction, quadRadius, quadRadius, color, CurTime() * 10 * -dir * 2)
 	end
+	render.OverrideDepthEnable(false, false)
+	render.SetLightingMode(0)
 
 end
 
@@ -215,19 +216,25 @@ if CLIENT then
 
 		--self.BaseClass.Think( self )
 		local reverse = self:GetReverse()
-		local color = reverse and self.FUNNEL_REVERSE_COLOR or self.FUNNEL_COLOR
+		local color = reverse and LIB_APERTURE.FUNNEL_REVERSE_COLOR or LIB_APERTURE.FUNNEL_COLOR
 		local dir = reverse and -1 or 1
 		local angle = reverse and -90 or 90
 		local offset = reverse and FUNNEL_EFFECT_MODEL_SIZE or 0
 		
+		local penetrateVal = 0
 		local passagesPoints = LIB_APERTURE:GetAllPortalPassagesAng(self:GetPos(), self:LocalToWorldAngles(Angle(-90, 0, 0)), nil, self, true)
 		
-		local requireToSpawn = table.Count(passagesPoints)
+		local requireToSpawn = #passagesPoints
 		for k,v in pairs(passagesPoints) do
-			requireToSpawn = requireToSpawn + math.floor(v.startpos:Distance(v.endpos) / FUNNEL_EFFECT_MODEL_SIZE)
+			local distance = v.startpos:Distance(v.endpos)
+			local offsetV = penetrateVal == 0 and 0 or FUNNEL_EFFECT_MODEL_SIZE - penetrateVal
+			requireToSpawn = requireToSpawn + math.floor((distance + offsetV) / FUNNEL_EFFECT_MODEL_SIZE)
+			penetrateVal = math.ceil(distance / FUNNEL_EFFECT_MODEL_SIZE) * FUNNEL_EFFECT_MODEL_SIZE - distance + penetrateVal
+			if penetrateVal > FUNNEL_EFFECT_MODEL_SIZE then penetrateVal = penetrateVal - FUNNEL_EFFECT_MODEL_SIZE end
+			if penetrateVal < 0 then penetrateVal = penetrateVal + FUNNEL_EFFECT_MODEL_SIZE end
 		end
-
-		if table.Count(self.FieldEffects) != requireToSpawn or !self:GetEnable() then
+		
+		if #self.FieldEffects != requireToSpawn or not self:GetEnable() then
 			for k, v in pairs(self.FieldEffects) do v:Remove() end
 			self.FieldEffects = { }
 		end
@@ -235,17 +242,20 @@ if CLIENT then
 		if self:GetEnable() then
 			self.PassagesDat = passagesPoints
 			
+			penetrateVal = 0
 			local itterator = 0
 			for k,v in pairs(passagesPoints) do
 				local direction = (v.endpos - v.startpos):GetNormalized()
 				local _, angles = LocalToWorld(Vector(), Angle(angle, 0, 0), Vector(), v.angles)
-				
-				for i = 0,v.startpos:Distance(v.endpos), FUNNEL_EFFECT_MODEL_SIZE do
+				local distance = v.startpos:Distance(v.endpos)
+				local offsetV = penetrateVal == 0 and 0 or FUNNEL_EFFECT_MODEL_SIZE - penetrateVal
+
+				for i = 0,(distance + offsetV), FUNNEL_EFFECT_MODEL_SIZE do
 					itterator = itterator + 1
-					
+					local pos = v.startpos + (i - offsetV + offset) * direction
 					if table.Count(self.FieldEffects) != requireToSpawn then
 						local c_Model = ClientsideModel("models/aperture/effects/tractor_beam_field_effect.mdl")
-						c_Model:SetPos(v.startpos + (i + offset) * direction)
+						c_Model:SetPos(pos)
 						c_Model:SetAngles(angles)
 						c_Model:SetNoDraw(true)
 						c_Model:Spawn()
@@ -257,10 +267,15 @@ if CLIENT then
 						c_Model:EnableMatrix("RenderMultiply", mat)
 					else
 						local c_Model = self.FieldEffects[itterator]
-						c_Model:SetPos(v.startpos + (i + offset) * direction)
+						c_Model:SetPos(pos)
 						c_Model:SetAngles(angles)
 					end
 				end
+				
+				penetrateVal = math.ceil(distance / FUNNEL_EFFECT_MODEL_SIZE) * FUNNEL_EFFECT_MODEL_SIZE - distance + penetrateVal
+				if penetrateVal > FUNNEL_EFFECT_MODEL_SIZE then penetrateVal = penetrateVal - FUNNEL_EFFECT_MODEL_SIZE end
+				if penetrateVal < 0 then penetrateVal = penetrateVal + FUNNEL_EFFECT_MODEL_SIZE end
+
 			end
 			
 			self.BaseRotation = self.BaseRotation + FrameTime() * dir * 150
@@ -271,6 +286,10 @@ if CLIENT then
 			self:ManipulateBoneAngles(17, Angle(self.BaseRotation, 0, 0))
 			self:ManipulateBoneAngles(9, Angle(self.BaseRotation, 0, 0)) 
 			self:ManipulateBoneAngles(8, Angle(self.BaseRotation * 2, 0, 0)) -- center
+		end
+
+		if LocalPlayer():GetNWBool("Aperture_Funnel_Entered") then
+			LocalPlayer():SetVelocity(-physenv.GetGravity())
 		end
 	end
 	
@@ -287,6 +306,7 @@ function ENT:OnEnterFunnel(ent)
 
 	if ent:IsPlayer() then
 		ent:EmitSound("TA:TractorBeamEnter")
+		ent:SetNWBool("Aperture_Funnel_Entered", true)
 		
 	elseif IsValid(ent:GetPhysicsObject()) then
 		local physObj = ent:GetPhysicsObject()
@@ -300,13 +320,14 @@ function ENT:OnLeaveFunnel(ent)
 	
 	if ent:IsPlayer() then
 		ent:StopSound("TA:TractorBeamEnter")
+		ent:SetNWBool("Aperture_Funnel_Entered", false)
 	elseif IsValid(ent:GetPhysicsObject()) then
 		local physObj = ent:GetPhysicsObject()
 		physObj:EnableGravity(true)
 	end
 end
 
-function ENT:HandleEntity(ent, beamStart, beamAng, beamDirection)
+function ENT:HandleEntity(ent, beamStart, beamEnd, beamAng, beamDirection, isLast)
 	if not IsValid(ent) then return end
 	
 	local reverse = self:GetReverse()
@@ -317,7 +338,12 @@ function ENT:HandleEntity(ent, beamStart, beamAng, beamDirection)
 	
 	local centerPos = IsValid(ent:GetPhysicsObject()) and ent:LocalToWorld(ent:GetPhysicsObject():GetMassCenter()) or ent:GetPos()
 	local paintBarrerRollValue = CurTime() * 4 + ent:EntIndex() * 10
-	local tractorBeamMovingSpeed = self.FUNNEL_MOVE_SPEED * dir
+	local tractorBeamMovingSpeed = LIB_APERTURE.FUNNEL_MOVE_SPEED * dir
+	if isLast then
+		local distCenterToEnd = self:GetReverse() and centerPos:Distance(beamStart) or centerPos:Distance(beamEnd)
+		local entRadius = ent:BoundingRadius()
+		tractorBeamMovingSpeed = math.min(1, (distCenterToEnd - entRadius / 2) / FUNNEL_SMOOTHING_IN) * tractorBeamMovingSpeed
+	end
 	
 	local localCenterPos = WorldToLocal(centerPos, Angle(), beamStart, beamAng)
 	localCenterPos = Vector(0, localCenterPos.y, localCenterPos.z)
@@ -357,6 +383,7 @@ function ENT:HandleEntity(ent, beamStart, beamAng, beamDirection)
 			offset = ply_moving
 		end
 
+		ent:SetVelocity(-physenv.GetGravity())
 		ent:SetVelocity(beamDirection * tractorBeamMovingSpeed + offset - ent:GetVelocity())
 		
 	elseif ent:IsNPC() then
@@ -386,7 +413,7 @@ function ENT:Think()
 
 	self:NextThink(CurTime())
 	local reverse = self:GetReverse()
-	local color = reverse and self.FUNNEL_REVERSE_COLOR or self.FUNNEL_COLOR
+	local color = reverse and LIB_APERTURE.FUNNEL_REVERSE_COLOR or LIB_APERTURE.FUNNEL_COLOR
 	local angle = reverse and -90 or 90
 	
 	self.BaseClass.Think(self)
@@ -408,13 +435,21 @@ function ENT:Think()
 				if ent != self and ent:GetClass() != "prop_portal" then
 					if not ent:IsPlayer() and not ent:IsNPC() and IsValid(ent:GetPhysicsObject()) and not ent:GetPhysicsObject():IsMotionEnabled() then
 					else
-						self:HandleEntity(ent, v.startpos, v.angles, (v.endpos - v.startpos):GetNormalized())
+						local isLast = false
+						if ent:GetClass() != "ent_paint_blob" then
+							if self:GetReverse() then
+								if k == 1 then isLast = true end
+							else
+								if k == #passagesPoints then isLast = true end
+							end
+						end
+						self:HandleEntity(ent, v.startpos, v.endpos, v.angles, (v.endpos - v.startpos):GetNormalized(), isLast)
 						table.insert(handleEntities, ent:EntIndex(), ent)
 					end
 				end
 			end,
-			mins = -Vector(1, 1, 1) * self.FUNNEL_WITDH,
-			maxs = Vector(1, 1, 1) * self.FUNNEL_WITDH,
+			mins = -Vector(1, 1, 1) * FUNNEL_WITDH,
+			maxs = Vector(1, 1, 1) * FUNNEL_WITDH,
 			mask = MASK_SHOT_HULL
 		})
 	end
@@ -422,7 +457,7 @@ function ENT:Think()
 	self:CheckForLeave()
 	self.EntitiesInFunnel = handleEntities		
 	
-	local color = self:GetReverse() and self.FUNNEL_REVERSE_COLOR or self.FUNNEL_COLOR
+	local color = self:GetReverse() and LIB_APERTURE.FUNNEL_REVERSE_COLOR or LIB_APERTURE.FUNNEL_COLOR
 	local angle = self:GetReverse() and -1 or 1
 	local adding = self:GetReverse() and 320 or 0
 

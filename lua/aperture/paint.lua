@@ -39,6 +39,7 @@ end
 
 -- Assigning new paint type
 function LIB_APERTURE:CreateNewPaintType(index, info)
+	if LIB_APERTURE.PAINT_TYPES[index] then return end
 	PORTAL_PAINT_COUNT = PORTAL_PAINT_COUNT + 1
 	LIB_APERTURE.PAINT_TYPES[index] = info
 end
@@ -55,6 +56,10 @@ end
 
 function LIB_APERTURE:PaintTypeToName(index)
 	return LIB_APERTURE.PAINT_TYPES[index].NAME
+end
+
+function LIB_APERTURE:PaintTypeToInfo(index)
+	return LIB_APERTURE.PAINT_TYPES[index]
 end
 
 if SERVER then
@@ -74,16 +79,16 @@ net.Receive("TA:NW_PaintCamera", function()
 	local paintType = net.ReadInt(8)
 	local radius = net.ReadFloat()
 	local ply = LocalPlayer()
+	if not PLAYER_PAINT_CAMERA[ply] then PLAYER_PAINT_CAMERA[ply] = {} end
 	
 	for i = 1, 4 do
 		local pos = Vector(ScrW(), ScrH()) * Vector(math.Rand(0, 1), math.Rand(0, 1))
-		if not PLAYER_PAINT_CAMERA[ply] then PLAYER_PAINT_CAMERA[ply] = {} end
 		
 		-- removing paint from screen if it too much
-		if table.Count(PLAYER_PAINT_CAMERA[ply]) > 30 then
+		if #PLAYER_PAINT_CAMERA[ply] > 30 then
 			table.remove(PLAYER_PAINT_CAMERA[ply], 1)
 		else
-			table.insert(PLAYER_PAINT_CAMERA[ply], table.Count(PLAYER_PAINT_CAMERA[ply]) + 1, {
+			table.insert(PLAYER_PAINT_CAMERA[ply], {
 				time = 0,
 				paintType = paintType,
 				pos = pos,
@@ -106,10 +111,10 @@ hook.Add("HUDPaint", "TA:PaintHUDPaint", function()
 		local rad = math.min(50, v.radius) * 20
 		local time = math.max(0, math.min(1, v.time))
 		local color = Color(clr.r, clr.g, clr.b, math.min(150, math.max(0, 200 - time * 200)))
-		
+		local paintInfo = LIB_APERTURE:PaintTypeToInfo(paintType)
 		surface.SetDrawColor(color)
-		if paintType == PORTAL_PAINT_WATER then
-			surface.SetMaterial(Material("effects/splash1"))
+		if paintInfo.SCREEN_PAINT_MATERIAL then
+			surface.SetMaterial(paintInfo.SCREEN_PAINT_MATERIAL)
 		else
 			surface.SetMaterial(Material("effects/splash4"))
 		end
@@ -408,9 +413,12 @@ hook.Add("Think", "TA:HandlingPaint", function()
 	end
 end)
 
-hook.Add("PlayerFootstep", "TA:Paint_Footsteps", function(ply, pos, foot, sound, volume)
-	if not ply.TA_LastPaintType then return ply, pos, foot, sound, volume end
-	ply:EmitSound("TA:PaintFootsteps")
+hook.Add("PlayerFootstep", "TA:Paint_Footsteps", function(ply, pos, foot, lsound, volume)
+	if not ply.TA_LastPaintType then return ply, pos, foot, lsound, volume end
+	local orientation 	= ply:GetNWVector("TA:Orientation")
+	local playerHeight 	= ply:GetModelRadius()
+	
+	sound.Play("TA:PaintFootsteps", ply:GetPos() + orientation * playerHeight)
 	return true
 end)
 

@@ -243,7 +243,7 @@ function SWEP:DrawHUD()
 				)
 			end
 
-			surface.SetDrawColor(Color( 255, 255, 255))
+			surface.SetDrawColor(Color(255, 255, 255))
 			surface.SetMaterial(Material( "vgui/paint_type_back"))
 			surface.DrawTexturedRect(XPos - AddingSize / 2, YPos - AddingSize / 2, imgSize + AddingSize, imgSize + AddingSize)
 			

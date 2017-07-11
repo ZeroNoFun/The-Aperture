@@ -8,6 +8,8 @@ TOOL.ClientConVar["keyenable"] = "46"
 TOOL.ClientConVar["keyreverse"] = "43"
 TOOL.ClientConVar["toggle"] = "0"
 
+local FIELD_RADIUS = 50
+
 if CLIENT then
 	language.Add("tool.aperture_tractor_beam.name", "Exursion Funnel")
 	language.Add("tool.aperture_tractor_beam.desc", "The Exursion Funnel will transport players and entities to some direction or back from it")
@@ -121,6 +123,32 @@ function TOOL:Think()
 
 	self:UpdateGhostTractorBeam(self.GhostEntity, self:GetOwner())
 end
+
+-- function TOOL:DrawHUD()
+	-- local trace = LocalPlayer():GetEyeTrace()
+	-- local pos = trace.HitPos + trace.HitNormal * 35
+	-- local normal = trace.HitNormal
+	-- local offsetX = Vector(0, 1, 0)
+	-- offsetX:Rotate(trace.HitNormal:Angle())
+	-- local offsetY = Vector(0, 0, 1)
+	-- offsetY:Rotate(trace.HitNormal:Angle())
+	
+	-- local traceEnd = util.QuickTrace(pos, normal * LIB_MATH_TA.HUGE)
+	-- cam.Start3D()
+	-- render.SetMaterial(Material("effects/projected_wall_rail"))
+	-- for i=0,2 do
+		-- local angOffset = i * (math.pi * 2 / 3)
+		-- local oldPos = Vector()
+		-- for i2=0,pos:Distance(traceEnd.HitPos) / 25, 2 do
+			-- local offset = offsetX * math.cos(i2 / 3 + angOffset) * FIELD_RADIUS + offsetY * math.sin(i2 / 3 + angOffset) * FIELD_RADIUS + normal * i2 * 25
+			-- if i2 > 0 then
+				-- render.DrawBeam(pos + offset, oldPos, 10, 1, (pos + offset):Distance(oldPos) / 50, Color(255, 255, 255))
+			-- end
+			-- oldPos = pos + offset
+		-- end
+	-- end
+	-- cam.End3D()
+-- end
 
 local ConVarsDefault = TOOL:BuildConVarList()
 

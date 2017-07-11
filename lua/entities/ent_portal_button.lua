@@ -10,6 +10,15 @@ ENT.IsConnectable 	= true
 if WireAddon then
 	ENT.WireDebugName = ENT.PrintName
 end
+if SERVER then
+	function ENT:ModelToInfo()
+		local modelToInfo = {
+			["models/props/switch001.mdl"] = {sounddown = "TA:ButtonClick", soundup = "TA:ButtonUp", animdown = "down", animup = "up"},
+			["models/props_underground/underground_testchamber_button.mdl"] = {sounddown = "TA:UndergroundButtonClick", soundup = "TA:UndergroundButtonUp", animdown = "press", animup = "release"}
+		}
+		return modelToInfo[self:GetModel()]
+	end
+end
 
 function ENT:SetupDataTables()
 	self:NetworkVar("Int", 0, "Key")
@@ -60,15 +69,7 @@ function ENT:Draw()
 end
 
 -- no more client side
-if ( CLIENT ) then return end
-
-function ENT:ModelToInfo()
-	local modelToInfo = {
-		["models/props/switch001.mdl"] = {sounddown = "TA:ButtonClick", soundup = "TA:ButtonUp", animdown = "down", animup = "up"},
-		["models/props_underground/underground_testchamber_button.mdl"] = {sounddown = "TA:UndergroundButtonClick", soundup = "TA:UndergroundButtonUp", animdown = "press", animup = "release"}
-	}
-	return modelToInfo[ self:GetModel() ]
-end
+if CLIENT then return end
 
 function ENT:Use(activator, caller, usetype, val)
 
@@ -90,7 +91,7 @@ end
 
 function ENT:Setup()
 	if not WireAddon then return end
-	Wire_TriggerOutput( self, "Activated", 0 )
+	Wire_TriggerOutput(self, "Activated", 0)
 end
 
 function ENT:OnRemove()

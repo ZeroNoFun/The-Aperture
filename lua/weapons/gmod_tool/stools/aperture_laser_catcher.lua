@@ -2,9 +2,9 @@ TOOL.Tab 		= "Aperture"
 TOOL.Category 	= "Puzzle elements"
 TOOL.Name 		= "#tool.aperture_laser_catcher.name"
 
-TOOL.ClientConVar["model"] = "models/props/laser_emitter.mdl"
-TOOL.ClientConVar["keygroup"] = "45"
-TOOL.ClientConVar["timer"] = "1"
+TOOL.ClientConVar["model"] 		= "models/props/laser_emitter.mdl"
+TOOL.ClientConVar["keygroup"] 	= "45"
+TOOL.ClientConVar["timer"] 		= "1"
 
 if CLIENT then
 	language.Add("tool.aperture_laser_catcher.name", "Thermal Discouragement Beam Catcher")
@@ -55,7 +55,7 @@ local function MakePortalLaserCatcher(ply, pos, ang, model, key_group, data)
 	return ent
 end
 
-function TOOL:LeftClick( trace )
+function TOOL:LeftClick(trace)
 	-- Ignore if place target is Alive
 	//if ( trace.Entity and ( trace.Entity:IsPlayer() || trace.Entity:IsNPC() || APERTURESCIENCE:GASLStuff( trace.Entity ) ) ) then return false end
 
@@ -66,7 +66,6 @@ function TOOL:LeftClick( trace )
 	local ply = self:GetOwner()
 	local model = self:GetClientInfo("model")
 	local key_group = self:GetClientNumber("keygroup")
-	local toggle = self:GetClientNumber("toggle")
 	local offsets = self:ModelToOffsets(model)
 	local pos = trace.HitPos + trace.HitNormal * offsets.z
 	local ang = trace.HitNormal:Angle() + offsets.ang
@@ -119,10 +118,10 @@ local ConVarsDefault = TOOL:BuildConVarList()
 
 function TOOL.BuildCPanel(CPanel)
 	CPanel:AddControl("Header", {Description = "#tool.aperture_laser_catcher.desc"})
-	CPanel:AddControl("PropSelect", {ConVar = "aperture_laser_catcher_model", Models = list.Get("LaserCatcherModels"), Height = 1}) 
+	CPanel:AddControl("PropSelect", {ConVar = "aperture_laser_catcher_model", Models = list.Get("PortalLaserCatcherModels"), Height = 1}) 
 	CPanel:AddControl("Numpad", {Label = "#tool.aperture_laser_catcher.enable", Command = "aperture_laser_catcher_keygroup"})
 end
 
-list.Set("LaserCatcherModels", "models/props/laser_catcher.mdl", {})
-list.Set("LaserCatcherModels", "models/props/laser_catcher_center.mdl", {})
-list.Set("LaserCatcherModels", "models/aperture/laser_receptacle.mdl", {})
+list.Set("PortalLaserCatcherModels", "models/props/laser_catcher.mdl", {})
+list.Set("PortalLaserCatcherModels", "models/props/laser_catcher_center.mdl", {})
+list.Set("PortalLaserCatcherModels", "models/aperture/laser_receptacle.mdl", {})

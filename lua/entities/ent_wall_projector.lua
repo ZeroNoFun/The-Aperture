@@ -90,7 +90,6 @@ function ENT:Think()
 		for k, v in pairs(self.ProjectedWalls) do v:Remove() end
 		self.ProjectedWalls = { }
 	end
-	
 	if self:GetEnable() then
 		self.PassagesDat = passagesPoints
 		
@@ -129,7 +128,7 @@ function ENT:Think()
 				local effectdata = EffectData()
 				effectdata:SetOrigin(v.endpos)
 				effectdata:SetAngles(v.angles)
-				effectdata:SetRadius(40)
+				effectdata:SetRadius(30)
 				effectdata:SetEntity(v.enterportal)
 				util.Effect("wall_projector_impact_effect", effectdata)
 				if IsValid(v.exitportal) then

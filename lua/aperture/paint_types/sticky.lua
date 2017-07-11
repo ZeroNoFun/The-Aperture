@@ -3,8 +3,9 @@ AddCSLuaFile()
 if not LIB_APERTURE then return end
 
 --============= Adhesion Gel ==============
-
-PORTAL_PAINT_STICKY = PORTAL_PAINT_COUNT + 1
+if not PORTAL_PAINT_STICKY then
+	PORTAL_PAINT_STICKY = PORTAL_PAINT_COUNT + 1
+end
 
 local PAINT_INFO = {}
 
@@ -227,6 +228,13 @@ function PAINT_INFO:Think(ply, normal, orientationMove)
 			filter = ply,
 			collisiongroup = COLLISION_GROUP_DEBRIS,
 		})
+		
+		-- footsteps
+		if not timer.Exists("TA:PlayerFootsteps"..ply:EntIndex()) and orientationMove:Length() > 0 then
+			sound.Play("TA:PaintFootsteps", ply:GetPos() + orientation * playerHeight)
+			local time = ply:KeyDown(IN_SPEED) and 0.25 or 0.35
+			timer.Create("TA:PlayerFootsteps"..ply:EntIndex(), time, 1, function() end)
+		end
 		
 		if not traceForwardFloor.Hit and not traceForwardFloorDown.Hit
 			and traceForwardFloorBack.Hit and traceForwardFloorBack.Fraction > 0 and LIB_MATH_TA:DegreeseBetween(ORIENTATION_DEFAULT, traceForwardFloorBack.HitNormal) < 25

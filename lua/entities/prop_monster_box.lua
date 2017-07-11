@@ -17,10 +17,6 @@ function ENT:SpawnFunction(ply, trace, className)
 	ent:SetAngles(Angle(0, ply:EyeAngles().y, 0))
 	ent:Spawn()
 	
-	for k, v in pairs(ent:GetBodyGroups()) do
-		if math.random(0, 1) == 1 then ent:SetBodygroup(v.id, 1) end
-	end
-
 	return ent
 end
 
@@ -37,6 +33,10 @@ function ENT:Initialize()
 	self:SetMoveType(MOVETYPE_VPHYSICS)
 	self:SetSolid(SOLID_VPHYSICS)
 	self.Cubemode = false
+	
+	for k, v in pairs(self:GetBodyGroups()) do
+		if math.random(0, 1) == 1 then self:SetBodygroup(v.id, 1) end
+	end
 end
 
 function ENT:Think()
@@ -102,14 +102,14 @@ function ENT:Think()
 		timer.Create("TA:Monsterbox_Straight"..self:EntIndex(), self:PlaySequence("straight0"..animType, 1.0), 1, function() end)
 
 		if animType == 1 then
-			timer.Simple(0.25, function() self:Jump(100, 100) end)
-			timer.Simple(1.5, function() self:Jump(100, 100) end )
+			timer.Simple(0.25, function() if IsValid(self) then self:Jump(100, 100) end end)
+			timer.Simple(1.5, function() if IsValid(self) then self:Jump(100, 100) end end )
 		elseif animType == 2 then
-			timer.Simple(0, function() self:Jump(100, 100) end)
-			timer.Simple(0.5, function() self:Jump(80, 100) end)
-			timer.Simple(1.2, function() self:Jump(80, 85) end)
+			timer.Simple(0, function() if IsValid(self) then self:Jump(100, 100) end end)
+			timer.Simple(0.5, function() if IsValid(self) then self:Jump(80, 100) end end)
+			timer.Simple(1.2, function() if IsValid(self) then self:Jump(80, 85) end end)
 		elseif animType == 3 then
-			timer.Simple(0.25, function() self:Jump(150, 100) end)
+			timer.Simple(0.25, function() if IsValid(self) then self:Jump(150, 100) end end)
 		end
 	end
 

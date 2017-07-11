@@ -182,7 +182,7 @@ function ENT:DoLaser(startpos, ang, ignore)
 			LIB_MATH_TA:NormalFlipZeros(normal)
 			
 			local reflectionDir = normal:Dot(-direction) * normal * 2 + direction 
-			return self:DoLaser(trace.HitPos, reflectionDir:Angle(), traceEnt)
+			return self:DoLaser(trace.HitPos, reflectionDir:Angle())
 		end
 	end
 
@@ -190,6 +190,9 @@ function ENT:DoLaser(startpos, ang, ignore)
 		local ent = trace.Entity
 		-- if reflection cube
 		if ent:GetModel() == "models/props/reflection_cube.mdl" and not ent.isClone and not self.TA_FilterEntities[ent] then
+			if CLIENT then
+				self:DrawMuzzleEffect(ent:GetPos(), ent:GetForward())
+			end
 			self.TA_FilterEntities[ent] = true
 			return self:DoLaser(ent:LocalToWorld(Vector(20, 0, 0)), ent:GetAngles(), ent)
 		end

@@ -2,6 +2,7 @@ TOOL.Tab 		= "Aperture"
 TOOL.Category 	= "Puzzle elements"
 TOOL.Name 		= "#tool.aperture_paint_dropper.name"
 
+TOOL.ClientConVar["model"] = "models/aperture/paint_dropper.mdl"
 TOOL.ClientConVar["keyenable"] = "45"
 TOOL.ClientConVar["startenabled"] = "0"
 TOOL.ClientConVar["toggle"] = "0"
@@ -33,12 +34,12 @@ local function FlowTypeToInfo(flowType)
 		[4] = {amount = 10, radius = 200},
 		[5] = {amount = 80, radius = 1}
 	}
-	return flowTypeToInfo[ flowType ]
+	return flowTypeToInfo[flowType]
 end
 
 if SERVER then
 
-	function MakePaintDropper(ply, pos, ang, key_enable, startenabled, toggle, paintType, paintFlowType, paintLaunchSpeed, data)
+	function MakePaintDropper(ply, pos, ang, model, key_enable, startenabled, toggle, paintType, paintFlowType, paintLaunchSpeed, data)
 		local flowInfo = FlowTypeToInfo(paintFlowType)
 		local ent = ents.Create("ent_paint_dropper")
 		if not IsValid(ent) then return end
@@ -48,6 +49,7 @@ if SERVER then
 		ent:SetPos(pos)
 		ent:SetAngles(ang)
 		ent:SetMoveType(MOVETYPE_NONE)
+		ent:SetModel(model)
 		ent.Owner = ply
 		ent:SetStartEnabled(tobool(startenabled))
 		ent:SetToggle(tobool(toggle))
@@ -55,7 +57,14 @@ if SERVER then
 		ent:SetPaintRadius(flowInfo.radius)
 		ent:SetPaintAmount(flowInfo.amount)
 		ent:SetPaintLaunchSpeed(paintLaunchSpeed)
-		ent:SetColor(LIB_APERTURE:PaintTypeToColor(paintType))
+		
+		local paintInfo = LIB_APERTURE:PaintTypeToInfo(paintType)
+		if paintInfo.DROPPER_MATERIAL then
+			ent:SetMaterial(paintInfo.DROPPER_MATERIAL)
+		else
+			ent:SetColor(LIB_APERTURE:PaintTypeToColor(paintType))
+		end
+
 		ent:Spawn()
 		
 		-- initializing numpad inputs
@@ -65,6 +74,7 @@ if SERVER then
 		-- saving data
 		local ttable = {
 			key_enable = key_enable,
+			model = model,
 			ply = ply,
 			startenabled = startenabled,
 			toggle = toggle,
@@ -82,7 +92,7 @@ if SERVER then
 		return ent
 	end
 	
-	duplicator.RegisterEntityClass("ent_paint_dropper", MakePaintDropper, "pos", "ang", "key_enable", "startenabled", "toggle", "paintType", "paintFlowType", "paintLaunchSpeed", "data")
+	duplicator.RegisterEntityClass("ent_paint_dropper", MakePaintDropper, "pos", "ang", "model", "key_enable", "startenabled", "toggle", "paintType", "paintFlowType", "paintLaunchSpeed", "data")
 end
 
 function TOOL:LeftClick( trace )
@@ -95,7 +105,7 @@ function TOOL:LeftClick( trace )
 	-- if not APERTURESCIENCE.ALLOWING.paint and not self:GetOwner():IsSuperAdmin() then self:GetOwner():PrintMessageHUD_PRINTTALK, "This tool is disabled" return end
 
 	local ply = self:GetOwner()
-	
+	local model = self:GetClientInfo("model")
 	local key_enable = self:GetClientNumber("keyenable")
 	local startenabled = self:GetClientNumber("startenabled")
 	local toggle = self:GetClientNumber("toggle")
@@ -104,9 +114,9 @@ function TOOL:LeftClick( trace )
 	local paintLaunchSpeed = self:GetClientNumber("paint_launch_speed")
 	
 	local pos = trace.HitPos
-	local ang = trace.HitNormal:Angle() - Angle( 90, 0, 0 )
+	local ang = trace.HitNormal:Angle() - Angle(90, 0, 0)
 	
-	local ent = MakePaintDropper(ply, pos, ang, key_enable, startenabled, toggle, paintType, paintFlowType, paintLaunchSpeed)
+	local ent = MakePaintDropper(ply, pos, ang, model, key_enable, startenabled, toggle, paintType, paintFlowType, paintLaunchSpeed)
 		
 	undo.Create("#tool.aperture_paint_dropper.name")
 		undo.AddEntity(ent)
@@ -117,7 +127,7 @@ function TOOL:LeftClick( trace )
 	
 end
 
-function TOOL:UpdateGhostWallProjector(ent, ply)
+function TOOL:UpdateGhostPaintDropper(ent, ply)
 	if not IsValid(ent) then return end
 
 	local trace = ply:GetEyeTrace()
@@ -127,8 +137,8 @@ function TOOL:UpdateGhostWallProjector(ent, ply)
 	end
 	
 	local curPos = ent:GetPos()
-	local pos = trace.HitPos + trace.HitNormal * 5
-	local ang = trace.HitNormal:Angle() - Angle( 90, 0, 0 )
+	local pos = trace.HitPos
+	local ang = trace.HitNormal:Angle() - Angle(90, 0, 0)
 
 	ent:SetPos(pos)
 	ent:SetAngles(ang)
@@ -140,22 +150,28 @@ function TOOL:RightClick( trace )
 end
 
 function TOOL:Think()
-	local mdl = "models/aperture/paint_dropper.mdl"
+	local mdl = self:GetClientInfo("model")
 	if not util.IsValidModel(mdl) then self:ReleaseGhostEntity() return end
 
 	if not IsValid(self.GhostEntity) or self.GhostEntity:GetModel() != mdl then
-		self:MakeGhostEntity( mdl, Vector( 0, 0, 0 ), Angle( 0, 0, 0 ) )
+		self:MakeGhostEntity(mdl, Vector(), Angle())
 	end
 	
 	if IsValid(self.GhostEntity) then
 		local alpha = self.GhostEntity:GetColor().a
 		local paintType = self:GetClientNumber("paint_type")
-		local paintColor = LIB_APERTURE:PaintTypeToColor(paintType)
-		local color = Color(paintColor.r, paintColor.g, paintColor.b, alpha)
-		self.GhostEntity:SetColor(color)
+		local paintInfo = LIB_APERTURE:PaintTypeToInfo(paintType)
+		if paintInfo.DROPPER_MATERIAL then
+			self.GhostEntity:SetColor(Color(255, 255, 255, alpha))
+			self.GhostEntity:SetMaterial(paintInfo.DROPPER_MATERIAL)
+		else
+			local paintColor = LIB_APERTURE:PaintTypeToColor(paintType)
+			local color = Color(paintColor.r, paintColor.g, paintColor.b, alpha)
+			self.GhostEntity:SetColor(color)
+		end
 	end
 
-	self:UpdateGhostWallProjector(self.GhostEntity, self:GetOwner())
+	self:UpdateGhostPaintDropper(self.GhostEntity, self:GetOwner())
 end
 
 
@@ -178,7 +194,11 @@ function TOOL.BuildCPanel( CPanel )
 	combobox:AddChoice("Drip", 5)
 	
 	CPanel:NumSlider("#tool.aperture_paint_dropper.paintLaunchSpeed", "aperture_paint_dropper_paint_launch_speed", 0, PAINT_MAX_LAUNCH_SPEED)
+	CPanel:AddControl("PropSelect", {ConVar = "aperture_paint_dropper_model", Models = list.Get("PortalPaintDropperModels"), Height = 1}) 
 	CPanel:AddControl("CheckBox", {Label = "#tool.aperture_paint_dropper.startenabled", Command = "aperture_paint_dropper_startenabled", Help = true})
 	CPanel:AddControl("Numpad", {Label = "#tool.aperture_paint_dropper.enable", Command = "aperture_paint_dropper_keyenable"})
 	CPanel:AddControl("CheckBox", {Label = "#tool.aperture_paint_dropper.toggle", Command = "aperture_paint_dropper_toggle"})
 end
+
+list.Set("PortalPaintDropperModels", "models/aperture/paint_dropper.mdl", {})
+list.Set("PortalPaintDropperModels", "models/aperture/underground_paintdropper.mdl", {})

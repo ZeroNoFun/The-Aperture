@@ -16,14 +16,14 @@ function ENT:Initialize()
 		self:PhysicsInit(SOLID_VPHYSICS)
 		self:SetMoveType(MOVETYPE_VPHYSICS)
 		self:SetSolid(SOLID_VPHYSICS)
-		self:SetNotSolid(true)
 		self:SetCollisionGroup( COLLISION_GROUP_IN_VEHICLE )
 		self.TA_PrevPos = self:GetPos()
+		self:GetPhysicsObject():EnableCollisions(false)
 	end
 end
 
 function ENT:HandleEntities(ent)
-	if ent:GetClass() != self:GetClass() and not ent.IsAperture and IsValid(ent:GetPhysicsObject()) then
+	if ent:GetClass() != self:GetClass() and ent:GetClass() != "prop_portal" and not ent.IsAperture and IsValid(ent:GetPhysicsObject()) then
 		local paintType = self:GetPaintType()
 		local center = ent:LocalToWorld(ent:GetPhysicsObject():GetMassCenter())
 		local trace = util.TraceLine({
@@ -142,39 +142,25 @@ function ENT:Think()
 	local trace = util.TraceLine({
 		start = self.TA_PrevPos,
 		endpos = self:GetPos(),
-		ignoreworld = true,
 		filter = function(ent)
-			if ent:GetClass() == "prop_portal" then return true end
+			if not ent.IsAperture and ent != self:GetOwner() then return true end
 		end
 	})
-	local traceEnt = trace.Entity
 	
-	if not IsValid(traceEnt) or IsValid(traceEnt) and traceEnt:GetClass() != "prop_portal" and not IsValid(traceEnt:GetNWBool( "Potal:Other")) then
-		trace = util.TraceLine({
-			start = self.TA_PrevPos,
-			endpos = self:GetPos(),
-			filter = function(ent)
-				if not ent.IsAperture and ent != self:GetOwner() then return true end
-			end
-		})
-		
-		traceEnt = trace.Entity
-		if trace.HitSky then 
-			self:Remove()
-			return
-		end
+	if trace.HitSky then 
+		self:Remove()
+		return
 	end
 
 	self.TA_PrevPos = self:GetPos()
 	if trace.Hit then
-		if IsValid(traceEnt) and traceEnt:GetClass() == "prop_portal" then 
-			self:NextThink(CurTime() + 0.5)
-			self:SetPos(traceEnt:GetNWEntity("Potal:Other"):GetPos())
-			self.TA_PrevPos = traceEnt:GetNWEntity("Potal:Other"):GetPos() + traceEnt:GetNWEntity("Potal:Other"):GetForward() * 50
-			self:GetPhysicsObject():SetVelocity(traceEnt:GetNWEntity("Potal:Other"):GetForward() * 1000)
-		end
-		
-		if not IsValid(traceEnt) or IsValid(traceEnt) and traceEnt:GetClass() != "prop_portal" then
+		local traceEnt = trace.Entity
+		if IsValid(traceEnt) and traceEnt:GetClass() == "prop_portal" and IsValid(traceEnt:GetNWEntity("Potal:Other")) then
+			local other = traceEnt:GetNWEntity("Potal:Other")
+			self.TA_PrevPos = other:GetPos()
+			self:NextThink(CurTime() + 1)
+			return true
+		else
 			local velocity = self:GetVelocity()
 			self:SetPos(trace.HitPos + trace.HitNormal)
 			self:PaintSplat(trace.HitPos, trace.HitNormal, self:GetPaintRadius(), velocity)

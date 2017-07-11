@@ -48,17 +48,15 @@ function ENT:Initialize()
 	self.BaseClass.Initialize(self)
 	
 	if SERVER then
-		self:SetModel("models/aperture/paint_dropper.mdl")
 		self:PhysicsInit(SOLID_VPHYSICS)
 		self:SetMoveType(MOVETYPE_VPHYSICS)
 		self:SetSolid(SOLID_VPHYSICS)
 		self:GetPhysicsObject():EnableMotion(false)
 		
 		if self:GetStartEnabled() then self:Enable(true) end
-		//self:SetReverse(true)
-
+		
 		if not WireAddon then return end
-		self.Inputs = Wire_CreateInputs( self, { "Enable", "Gel Radius", "Gel Amount", "Gel Launch Speed" } )
+		self.Inputs = Wire_CreateInputs(self, {"Enable", "Gel Radius", "Gel Amount", "Gel Launch Speed"})
 	end
 
 	if CLIENT then
@@ -71,7 +69,7 @@ function ENT:Draw()
 end
 
 -- No more client side
-if ( CLIENT ) then return end
+if CLIENT then return end
 
 function ENT:Think()
 	
@@ -79,7 +77,7 @@ function ENT:Think()
 
 	self:NextThink(CurTime() + 1)
 	if self:GetEnable() then
-		self:NextThink(CurTime() + math.max( 1, 100 - self:GetPaintAmount()) / 50)
+		self:NextThink(CurTime() + math.max(1, 100 - self:GetPaintAmount()) / 50)
 		self:MakePuddle()
 	end	
 	
@@ -96,7 +94,8 @@ function ENT:MakePuddle()
 	local rad = math.max(LIB_APERTURE.GEL_MINSIZE, math.min(LIB_APERTURE.GEL_MAXSIZE, radius + randSize))
 	local randomSpread = VectorRand():GetNormalized() * (LIB_APERTURE.GEL_MAXSIZE - rad) * (launchSpeed / LIB_APERTURE.GEL_MAX_LAUNCH_SPEED)
 	local velocity = -self:GetUp() * launchSpeed + randomSpread
-	local pos = self:LocalToWorld(Vector(0, 0, -50) + VectorRand() * (40 - (rad / LIB_APERTURE.GEL_MAXSIZE) * 40) / 4)
+	local maxRad = (40 - (rad / LIB_APERTURE.GEL_MAXSIZE) * 40) / 4
+	local pos = self:LocalToWorld(Vector(0, 0, -(maxRad + 5)) + VectorRand() * maxRad)
 	
 	local paint_blob = LIB_APERTURE:MakePaintBlob(self:GetPaintType(), pos, velocity, rad)
 	if IsValid(self.Owner) and self.Owner:IsPlayer() then paint_blob:SetOwner(self.Owner) end

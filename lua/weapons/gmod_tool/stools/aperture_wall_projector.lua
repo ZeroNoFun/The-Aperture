@@ -5,12 +5,9 @@ TOOL.Name 		= "#tool.aperture_wall_projector.name"
 TOOL.ClientConVar["keyenable"] = "45"
 TOOL.ClientConVar["startenabled"] = "0"
 TOOL.ClientConVar["toggle"] = "0"
-TOOL.ClientConVar["paint_type"] = "1"
-TOOL.ClientConVar["paint_radius"] = "50"
-TOOL.ClientConVar["paint_flow_type"] = "10"
-TOOL.ClientConVar["paint_launch_speed"] = "0"
 
 local PAINT_MAX_LAUNCH_SPEED = 1000
+local BRIDGE_WIDTH	= 36
 
 if CLIENT then
 	language.Add("tool.aperture_wall_projector.name", "Hard Light Bridge")
@@ -127,6 +124,21 @@ function TOOL:Think()
 	self:UpdateGhostWallProjector(self.GhostEntity, self:GetOwner())
 end
 
+-- function TOOL:DrawHUD()
+	-- local trace = LocalPlayer():GetEyeTrace()
+	-- local pos = trace.HitPos
+	-- local normal = trace.HitNormal
+	-- local offset = Vector(0, BRIDGE_WIDTH, 0)
+	-- offset:Rotate(trace.HitNormal:Angle())
+	
+	-- local trace1 = util.QuickTrace(pos + offset, normal * LIB_MATH_TA.HUGE)
+	-- local trace2 = util.QuickTrace(pos - offset, normal * LIB_MATH_TA.HUGE)
+	-- cam.Start3D()
+	-- render.SetMaterial(Material("effects/projected_wall_rail"))
+	-- render.DrawBeam(pos + offset, trace1.HitPos, 10, 1, (pos + offset):Distance(trace1.HitPos) / 50, Color(255, 255, 255))
+	-- render.DrawBeam(pos - offset, trace2.HitPos, 10, 1, (pos - offset):Distance(trace2.HitPos) / 50, Color(255, 255, 255))
+	-- cam.End3D()
+-- end
 
 local ConVarsDefault = TOOL:BuildConVarList()
 

@@ -14,10 +14,10 @@ for _, plugin in ipairs(paint_types) do
 	include("sounds/" .. plugin)
 end
 
-local map_props = file.Find("aperture/mapmaker_props/*.lua", "LUA")
-for _, plugin in ipairs(map_props) do
-	include("mapmaker_props/" .. plugin)
-end
+-- local map_props = file.Find("aperture/mapmaker_props/*.lua", "LUA")
+-- for _, plugin in ipairs(map_props) do
+	-- include("mapmaker_props/" .. plugin)
+-- end
 
 -- Loading math
 include("aperture/math.lua")
@@ -28,20 +28,34 @@ include("aperture/achievement.lua")
 -- Loading paint
 include("aperture/paint.lua")
 
+-- Loading buttons
+include("aperture/buttons.lua")
+
 -- Main 
 -- LIB_APERTURE.DRAW_HALOS = false
 -- LIB_APERTURE.GRID_SIZE 	= 64
 
--- -- Funnel
--- LIB_APERTURE.FUNNEL_MOVE_SPEED = 173
--- LIB_APERTURE.FUNNEL_COLOR = Color(0, 150, 255)
--- LIB_APERTURE.FUNNEL_REVERSE_COLOR = Color(255, 150, 0)
+-- Funnel
+LIB_APERTURE.FUNNEL_COLOR 			= Color(0, 150, 255)
+LIB_APERTURE.FUNNEL_REVERSE_COLOR 	= Color(255, 150, 0)
+LIB_APERTURE.FUNNEL_MOVE_SPEED 		= 173
 
--- -- Fizzle
--- LIB_APERTURE.DISSOLVE_SPEED = 150
--- LIB_APERTURE.DISSOLVE_ENTITIES = { }
+-- Fizzler
+LIB_APERTURE.DISSOLVE_SPEED 	= 150
+LIB_APERTURE.DISSOLVE_ENTITIES 	= { }
 
--- -- Diversity Vent
+-- Item Dropper
+LIB_APERTURE.ITEM_DROPPER_ITEMS = {
+	[1] = "Weighted Storage Cube",
+	[2] = "Old Weighted Storage Cube",
+	[3] = "Weighted Companion Cube",
+	[4] = "Edgeless Safety Cube",
+	[5] = "Discouragement Redirection Cube",
+	[6] = "Frankenturret",
+	[7] = "Bomb",
+}
+
+-- Diversity Vent
 -- LIB_APERTURE.DIVVENT_ENTITIES = { }
 
 -- LIB_APERTURE.HUD_ACHIEVEMENTS = { }
@@ -85,28 +99,31 @@ include("aperture/paint.lua")
 -- end
 -- hook.Add("Think", LIB_APERTURE, LIB_APERTURE.UpdateParameters)
 
--- function LIB_APERTURE:DissolveEnt( ent )
+function LIB_APERTURE:DissolveEnt(ent)
+	if ent.IsDissolving then return end
+	local phys = ent:GetPhysicsObject()
+	ent:SetSolid(SOLID_NONE)
+	ent.IsDissolving = true
+	
+	if phys:GetVelocity():Length() < 10 then
+		phys:SetVelocity(Vector(0, 0, 10) + VectorRand() * 2)
+		phys:AddAngleVelocity(VectorRand() * 100)
+	else
+		phys:SetVelocity(phys:GetVelocity() / 4)
+	end
+	phys:EnableGravity(false)
+	ent:EmitSound("TA:FizzlerDissolve")
+	table.insert(LIB_APERTURE.DISSOLVE_ENTITIES, ent)
+end
 
-	-- local phys = ent:GetPhysicsObject()
-	-- ent:SetSolid( SOLID_NONE )
-	-- if ( phys:GetVelocity():Length() < 10 ) then
-		-- phys:SetVelocity( Vector( 0, 0, 10 ) + VectorRand() * 2 )
-		-- phys:AddAngleVelocity( VectorRand() * 100 )
-	-- else
-		-- phys:SetVelocity( phys:GetVelocity() / 4 )
-	-- end
-	-- phys:EnableGravity( false )
-	-- ent:EmitSound( "GASL.FizzlerDissolve" )
-	-- table.insert( LIB_APERTURE.DISSOLVE_ENTITIES, table.Count( LIB_APERTURE.DISSOLVE_ENTITIES ) + 1, ent )
+---- Portal Gun addon integration ----
 
--- end
-
+-- Mathing Entity and Table of models or entities
 local function MathEntityAndTable(ent, entTable)
 	if not istable(entTable) then return false end
 	for k,v in pairs(entTable) do
 		if isentity(v) then
 			if ent == v then return true end
-			if ent:GetClass() == v:GetClass() then return true end
 		end
 		if ent:GetModel() == v then return true end
 	end
@@ -127,13 +144,11 @@ function LIB_APERTURE:GetAllPortalPassagesAng(pos, angle, maxLength, ignore, ign
 			start = prevPos,
 			endpos = prevPos + direction * LIB_MATH_TA.HUGE,
 			filter = function(ent)
-				if ent != ignore 
+				if ent != ignore and not MathEntityAndTable(ent, ignore)
 					and not ignoreEntities 
 					and ent:GetClass() != "prop_portal"
 					and not ent:IsPlayer() 
-					and not ent:IsNPC() then
-						if not MathEntityAndTable(ent, ignore) then return true end
-					end
+					and not ent:IsNPC() then return true end
 			end
 		})
 		table.insert(passagesInfo, {
@@ -327,38 +342,40 @@ end )
 		
 -- end )
 
--- hook.Add( "Think", "GASL:Think", function()	
-
-	-- -- Handling dissolved entities
-	-- for k, v in pairs( LIB_APERTURE.DISSOLVE_ENTITIES ) do
+local function HandleDissolvedEntities(ent, index)
+	-- skip if entity doesn't exist
+	if not IsValid(ent) then
+		LIB_APERTURE.DISSOLVE_ENTITIES[index] = nil
+		return
+	end
 	
-		-- -- skip if entity doesn't exist
-		-- if ( !v:IsValid() ) then
-			-- LIB_APERTURE.DISSOLVE_ENTITIES[ k ] = nil
-			-- continue
-		-- end
-		
-		-- if ( !v.GASL_Dissolve ) then v.GASL_Dissolve = 0 end
-		-- v.GASL_Dissolve = v.GASL_Dissolve + 1
-		
-		-- -- turning entity into black and then fadeout alpha
-		-- local colorBlack = ( math.max( 0, LIB_APERTURE.DISSOLVE_SPEED - v.GASL_Dissolve * 1.75 ) / LIB_APERTURE.DISSOLVE_SPEED ) * 255
-		-- local alpha = math.max( 0, v.GASL_Dissolve - LIB_APERTURE.DISSOLVE_SPEED / 1.1 ) / ( LIB_APERTURE.DISSOLVE_SPEED - LIB_APERTURE.DISSOLVE_SPEED / 1.1 )
-		-- alpha = 255 - alpha * 255
-		-- v:SetColor( Color( colorBlack, colorBlack, colorBlack, alpha ) )
-		-- if ( alpha < 255 ) then v:SetRenderMode( RENDERMODE_TRANSALPHA ) end
+	if not ent.TA_Dissovle then ent.TA_Dissovle = 0 end
+	ent.TA_Dissovle = ent.TA_Dissovle + 1
+	
+	-- Turning entity into black and then fadeout alpha
+	local colorBlack = (math.max(0, LIB_APERTURE.DISSOLVE_SPEED - ent.TA_Dissovle * 1.75) / LIB_APERTURE.DISSOLVE_SPEED) * 255
+	local alpha = math.max(0, ent.TA_Dissovle - LIB_APERTURE.DISSOLVE_SPEED / 1.1) / (LIB_APERTURE.DISSOLVE_SPEED - LIB_APERTURE.DISSOLVE_SPEED / 1.1)
+	alpha = 255 - alpha * 255
+	ent:SetColor(Color(colorBlack, colorBlack, colorBlack, alpha))
+	if alpha < 255 then ent:SetRenderMode(RENDERMODE_TRANSALPHA) end
 
-		-- local effectdata = EffectData()
-		-- effectdata:SetEntity( v )
-		-- util.Effect( "fizzler_dissolve", effectdata )
-		
-		-- if ( v.GASL_Dissolve >= LIB_APERTURE.DISSOLVE_SPEED ) then
-			-- LIB_APERTURE.DISSOLVE_ENTITIES[ k ] = nil
-			-- v:Remove()
-		-- end
-	-- end
+	local effectdata = EffectData()
+	effectdata:SetEntity(ent)
+	util.Effect("fizzler_dissolve", effectdata)
+	
+	if ent.TA_Dissovle >= LIB_APERTURE.DISSOLVE_SPEED then
+		LIB_APERTURE.DISSOLVE_ENTITIES[index] = nil
+		ent:Remove()
+	end
+end
 
-	-- -- Handling entities in diversity vent
+hook.Add("Think", "TA:Think", function()	
+	-- Handling dissolved entities
+	for k,v in pairs(LIB_APERTURE.DISSOLVE_ENTITIES) do
+		HandleDissolvedEntities(v, k)
+	end
+
+	-- Handling entities in diversity vent
 	-- for k, v in pairs( LIB_APERTURE.DIVVENT_ENTITIES ) do
 	
 		-- local vDivventEnt = v.GASL_ENTITY_DivventEnt
@@ -389,7 +406,7 @@ end )
 			-- vPhys:SetVelocity( vPhys:GetVelocity() / 2 + dir * 400 )
 		-- end
 	-- end
--- end )
+end )
 
 
 hook.Add("PostDrawTranslucentRenderables", "TA:RenderObjects", function()
@@ -398,10 +415,12 @@ hook.Add("PostDrawTranslucentRenderables", "TA:RenderObjects", function()
 	for k,v in pairs(ents.FindByClass("ent_portal_floor_turret")) do v:Drawing() end
 	for k,v in pairs(ents.FindByClass("ent_portal_laser_emitter")) do v:Drawing() end
 	for k,v in pairs(ents.FindByClass("ent_wall_projector")) do v:Drawing() end
+	for k,v in pairs(ents.FindByClass("ent_portal_fizzler")) do v:Drawing() end
+	for k,v in pairs(ents.FindByClass("ent_laser_field")) do v:Drawing() end
 end)
 
-hook.Add( "PhysgunPickup", "TA:DisablePhysgunPickup", function( ply, ent )
-	if ( ent.GASL_Untouchable ) then return false end
+hook.Add("PhysgunPickup", "TA:DisablePhysgunPickup", function(ply, ent)
+	if ent.TA_Untouchable then return false end
 end )
 
 -- hook.Add( "KeyPress", "GASL:HandlePlayerJump", function( ply, key )

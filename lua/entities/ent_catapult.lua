@@ -1,273 +1,291 @@
 AddCSLuaFile( )
-
 DEFINE_BASECLASS("base_aperture_ent")
 
--- function ENT:SpawnFunction( ply, trace, ClassName )
+local WireAddon = WireAddon or WIRE_CLIENT_INSTALLED
 
--- 	if ( !trace.Hit ) then return end
-	
--- 	if ( !APERTURESCIENCE.ALLOWING.catapult && !ply:IsSuperAdmin() ) then ply:PrintMessage( HUD_PRINTTALK, "This entity is blocked" ) return end
+ENT.PrintName 		= "Aerial Faith Plate"
+ENT.IsAperture 		= true
+ENT.IsConnectable 	= true
 
--- 	local ent = ents.Create( ClassName )
--- 	ent:SetPos( trace.HitPos + trace.HitNormal * 10 )
--- 	ent:SetModel( "models/aperture/faith_plate_128.mdl" )
--- 	ent:SetAngles( trace.HitNormal:Angle() + Angle( 90, 0, 0 ) )
--- 	ent:Spawn()
--- 	ent:SetSkin( 1 )
--- 	ent:Activate()
+local CATAPULT_WIDTH = 50
+local CATAPULT_LENGTH = 50
 
--- 	return ent
-
--- end
+if WireAddon then
+	ENT.WireDebugName = ENT.PrintName
+end
 
 function ENT:SetupDataTables()
+	self:NetworkVar("Vector", 0, "LandPoint")
+	self:NetworkVar("Float", 1, "LaunchHeight")
+	self:NetworkVar("Bool", 2, "Enable")
+	self:NetworkVar("Bool", 3, "StartEnabled")
+	self:NetworkVar("Float", 4, "TimeOfFlight")
+	self:NetworkVar("Vector", 5, "LaunchVector")
+	self:NetworkVar("Bool", 6, "Toggle")
+end
 
-	self:NetworkVar( "Vector", 0, "LandPoint" )
-	self:NetworkVar( "Float", 1, "LaunchHeight" )
-	self:NetworkVar( "Bool", 2, "Enable" )
-	self:NetworkVar( "Bool", 3, "StartEnabled" )
-	self:NetworkVar( "Float", 4, "TimeOfFlight" )
-	self:NetworkVar( "Vector", 5, "LaunchVector" )
+if SERVER then
 
+	function FixMinMax(min, max)
+		local smin = Vector(min)
+		local smax = Vector(max)
+		
+		if min.x > max.x then min.x = smax.x  max.x = smin.x end
+		if min.y > max.y then min.y = smax.y  max.y = smin.y end
+		if min.z > max.z then min.z = smax.z  max.z = smin.z end
+	end
+
+	function ENT:CreateTrigger()
+		local ent = ents.Create("trigger_aperture_fizzler")
+		if not IsValid(ent) then ent:Remove() end
+		local vec1 = self:LocalToWorld(Vector(CATAPULT_WIDTH, CATAPULT_LENGTH, 5))
+		local vec2 = self:LocalToWorld(-Vector(CATAPULT_WIDTH, CATAPULT_LENGTH, 5))
+		FixMinMax(vec1, vec2)
+		ent:SetPos(self:GetPos())
+		ent:SetParent(self)
+		ent:SetBounds(vec1, vec2)
+		ent:Spawn()
+		self.CatapultTrigger = ent
+	end
+
+end
+
+function ENT:Enable(enable)
+	if self:GetEnable() != enable then
+		if enable then
+			self:SetSkin(0)
+		else
+			self:SetSkin(1)
+		end
+		
+		self:SetEnable(enable)
+	end
+end
+
+function ENT:EnableEX(enable)
+	if self:GetToggle() then
+		if enable then
+			self:Enable(not self:GetEnable())
+		end
+		return true
+	end
+	
+	if self:GetStartEnabled() then enable = !enable end
+	self:Enable(enable)
 end
 
 function ENT:Initialize()
 
 	self.BaseClass.Initialize(self)
-
+	
 	if SERVER then
-		self:SetModel("models/aperture/faith_plate_128.mdl")
 		self:PhysicsInit(SOLID_VPHYSICS)
 		self:SetMoveType(MOVETYPE_VPHYSICS)
 		self:SetSolid(SOLID_VPHYSICS)
 		self:GetPhysicsObject():EnableMotion(false)
-				
-		-- self:AddInput("Enable", function(value) self:ToggleEnable(value) end)
-		-- self:AddInput("Reverse", function(value) self:ToggleReverse(value) end)
 		
-		self:SetStartEnabled(true)
+		self:SetSkin(1)
+		if self:GetStartEnabled() then self:Enable(true) end
 		
+		self:CreateTrigger()
+
 		if not WireAddon then return end
 		self.Inputs = Wire_CreateInputs(self, {"Enable"})
 	end
 
 	if CLIENT then
-		self.BaseRotation = 0
-		self.FieldEffects = {}
 		
-		if not self:GetStartEnabled() then
-			--APERTURESCIENCE:PlaySequence( self, "tractor_beam_idle", 1.0 )
-		end
 	end
-
-end
-
-function ENT:Draw()
-
-	self:DrawModel()
-	
 end
 
 function ENT:Think()
-
 	self:NextThink( CurTime() + 0.1 )
 	
-	if ( CLIENT ) then return end
-
-	if ( self:GetLandPoint() == Vector() ) then return end
-	
-	local FlyingSpeedMult = 4
-	local BoxSize = 50
-
-	local trace = util.TraceHull( {
-		start = self:GetPos(),
-		endpos = self:GetPos() + self:GetUp() * BoxSize,
-		filter = function( ent ) if ( APERTURESCIENCE:IsValidEntity( ent ) ) then return true end end,
-		ignoreworld = true,
-		mins = Vector( -BoxSize, -BoxSize, -BoxSize ),
-		maxs = Vector( BoxSize, BoxSize, BoxSize ),
-		mask = MASK_SHOT_HULL
-	} )
-	
-	-- launch init
-	if ( self.GASL_Cooldown == 0 && self:GetEnable()
-		&& trace.Hit && IsValid( trace.Entity ) ) then
-
-		local ent = trace.Entity
-		
-		APERTURESCIENCE:PlaySequence( self, "straightup", 1.0 )
-		self:EmitSound( "door/heavy_metal_stop1.wav" )
-		EmitSound( "door/heavy_metal_stop1.wav", self:LocalToWorld( Vector( 0, 0, 100 ) ), self:EntIndex(), CHAN_AUTO, 1, 75, 0, 100 )
-		
-		self:LaunchEntity( ent )
-		self.GASL_Cooldown = 10
-
-		if ( ent:GetClass() == "ent_portal_floor_turret"
-			|| ent:GetClass() == "ent_portal_defective_turret"
-			|| ent:GetClass() == "ent_portal_turret_different" ) then
-				APERTURESCIENCE:GiveAchievement( ent.Owner, 3 )
-			end
-	end
-	
-	-- Reseting cooldown
-	if ( self.GASL_Cooldown > 0 ) then self.GASL_Cooldown = self.GASL_Cooldown - 1
-	elseif ( self.GASL_Cooldown < 0 ) then  self.GASL_Cooldown = 0 end		
+	if CLIENT then return end
+	local triggerEnt = self.CatapultTrigger
+	local vec1 = Vector(CATAPULT_WIDTH, CATAPULT_LENGTH, 30)
+	local vec2 = -Vector(CATAPULT_WIDTH, CATAPULT_LENGTH, 0)
+	vec1:Rotate(self:GetAngles())
+	vec2:Rotate(self:GetAngles())
+	FixMinMax(vec1, vec2)
+	triggerEnt:SetPos(self:GetPos())
+	triggerEnt:SetBounds(vec1, vec2)
 
 	return true
+end
+
+function ENT:HandleEntity(ent)
+	if not self:GetEnable() then return end
+	if self:GetLandPoint() == Vector() then return end
+	if self.LaunchCooldown then return end
+	if ent == self then return end
+	if ent.IsAperture then return end
+	if not IsValid(ent:GetPhysicsObject()) then return end
+	if ent:GetCollisionGroup() != COLLISION_GROUP_NONE and ent:GetCollisionGroup() != COLLISION_GROUP_PLAYER then return end
 	
+	-- launch init
+	self:LaunchEntity(ent)
+
+	-- achievement of flying turret
+	if ent:GetClass() == "ent_portal_floor_turret" or ent:GetClass() == "ent_portal_defective_turret" or ent:GetClass() == "ent_portal_turret_different" then
+		-- APERTURESCIENCE:GiveAchievement( ent.Owner, 3 )
+	end
+		
+	self.LaunchCooldown = true
+	timer.Simple(1, function() self.LaunchCooldown = false end)
 end
 
 -- no more client side
-if ( CLIENT ) then return end
+if CLIENT then return end
 
-function ENT:CalculateTrajectoryForceAng( )
+function ENT:CalculateTrajectory()
 
-	local pos = self:GetPos()
 	local destination = self:GetLandPoint()
-	local locXY = Vector( destination.x, destination.y, 0 ):Distance( Vector( pos.x, pos.y, 0 ) )
-    local locZ = destination.z - pos.z
-	local Gravity = -physenv.GetGravity().z
-	
-	local force = math.pow( self:GetLaunchHeight() * 100 + 55000, 1 / 1.7 ) --start force
+	local pos = self:GetPos()
+	local direction = Angle()
+	local height = self:GetLaunchHeight()
+	local distXY = Vector(destination.x, destination.y):Distance(Vector(pos.x, pos.y))
+    local difZ = destination.z - pos.z
+	local gravity = -physenv.GetGravity().z
+	local force = 100
 	local dist = 0
 	local angle = 0
 	local time = 0
-	local velX = 0
-	local velY = 0
-	local maxY = 0
-	local brk = 0
 	
+	local brk = 0
 	local isReversed = false
 	
-	while math.abs( dist - locXY ) > 1 do
+	repeat
 		brk = brk + 1
-		if ( brk > 1000000 ) then MsgC( Color( 255, 0, 0 ), "Can't calculate trajectory" ) break end
-		angle = angle + ( locXY - dist ) / 5000
+		if brk > 1000000 then return end
+		local angOffset = (distXY - dist)
+		angle = angle + angOffset / 5000
 		
-		velX = math.cos( ( 90 - angle ) * math.pi / 180 ) * force
-		velY = math.sin( ( 90 - angle ) * math.pi / 180 ) * force
-		time = velY / Gravity -- time to lift up
-		maxY = ( velY * velY ) / ( 2 * Gravity )
-		
-		time = time + math.sqrt( ( ( maxY - locZ ) * 2 ) / Gravity )
-		dist = velX * time
+		local velX = math.cos((90 - angle) * math.pi / 180) * force
+		local velZ = math.sin((90 - angle) * math.pi / 180) * force
+		local maxZ = (velZ * velZ) / (2 * gravity)
+
+		if height and height > 0 and math.abs(maxZ - height) > 20 then
+			force = force + (height - maxZ)
+		end
+
+		if maxZ > difZ then
+			time = velZ / gravity -- time to lift up
+			time = time + math.sqrt((maxZ - difZ) * 2 / gravity)
+			dist = velX * time
+		end
 		
 		-- if doesn't found add force
-		if ( angle > 360 || dist ~= dist ) then
-			angle = angle - 360
-			if ( dist ~= dist ) then force = force + 1 else force = force + 10 end
-			
-			dist = 0
-		end		
-		
-	end
-	
-	if ( time == nil ) then
-		isReversed = true
-		
-		while math.abs( dist - locXY ) > 1 do
-			brk = brk + 1
-			if ( brk > 1000000 ) then MsgC( Color( 255, 0, 0 ), "Can't calculate trajectory" ) break end
-		
-			angle = angle + ( locXY - dist ) / 5000
-			
-			velX = math.cos( angle * math.pi / 180 ) * force
-			velY = math.sin( angle * math.pi / 180 ) * force
-			time = velY / Gravity -- time to lift up
-			maxY = ( velY * velY ) / ( 2 * Gravity )
-			
-			time = time + math.sqrt( ( ( maxY - locZ ) * 2 ) / Gravity )
-			dist = velX * time
-			
-			-- if doesn't found add force
-			if ( angle > 360 || dist ~= dist ) then
+		if not (dist == dist) or dist == 0 or math.abs(angle) > 360 then
+			if angle > 360 then
 				angle = angle - 360
-				force = force + 100
-				dist = 0
-			end		
-			
+			elseif angle < -360 then
+				angle = angle + 360
+			end
+			force = force + math.max(10, math.abs(angOffset / 100))
 		end
+	until math.abs(dist - distXY) < 1 and dist != 0 and time > 0
+	
+	-- if time < 0 then
+		-- isReversed = true
+		-- force = 100
+		-- dist = 0
+		-- angle = 0
+		-- time = 0
+		-- brk = 0
 		
-	end
-	
-	//print( "VelX: ", math.Round( velX ),"  VelY: ", math.Round( velY ), "  MaxY: ", math.Round( maxY ), "  Time: ", math.Round( time * 100 ) / 100, " Force: ", force )
-	
-	self.GASL_LaunchAngle = angle
-	self.GASL_LaunchForce = force
-	self.GASL_FlyTime = time
+		-- repeat
+			-- brk = brk + 1
+			-- if brk > 1000000 then
+				-- print("cannot calculate trajectory")
+				-- break
+			-- end
+			
+			-- local angOffset = (distXY - dist)
+			-- angle = angle + angOffset / 5000
+			
+			-- local velX = math.cos(angle * math.pi / 180) * force
+			-- local velZ = math.sin(angle * math.pi / 180) * force
+			-- local maxZ = (velZ * velZ) / (2 * gravity)
 
-	local destination = self:GetLandPoint()
-	local direction = Angle()
+			-- if height and height > 0 and math.abs(maxZ - height) > 20 then
+				-- force = force + (height - maxZ)
+			-- end
+
+			-- if maxZ > difZ then
+				-- time = velZ / gravity -- time to lift up
+				-- time = time + math.sqrt((maxZ - difZ) * 2 / gravity)
+				-- dist = velX * time
+			-- end
+			
+			-- -- if doesn't found add force
+			-- if not (dist == dist) or dist == 0 or math.abs(angle) > 360 then
+				-- if angle > 360 then
+					-- angle = angle - 360
+				-- elseif angle < -360 then
+					-- angle = angle + 360
+				-- end
+				-- force = force + math.max(10, math.abs(angOffset / 100))
+			-- end
+		-- until math.abs(dist - distXY) < 1 and dist != 0 and time > 0
+	-- end
 	
-	if ( isReversed ) then
-		direction = Angle( -angle, ( destination - self:GetPos() ):Angle().y, 0 )
+	if isReversed then
+		direction = Angle(-angle, (destination - self:GetPos()):Angle().y, 0 )
 	else
-		direction = Angle( -90 + angle, ( destination - self:GetPos() ):Angle().y, 0 )
+		direction = Angle(-90 + angle, (destination - self:GetPos()):Angle().y, 0 )
 	end
-	
+
 	local velocity = direction:Forward() * force
 		
-	self:SetTimeOfFlight( time )
-	self:SetLaunchVector( velocity )
+	self:SetTimeOfFlight(time)
+	self:SetLaunchVector(velocity)
 
-	return angle, force, time
-	
+	return force, time
 end
 
-function ENT:SetLandingPoint( point )
-
-	self:SetLandPoint( point )
-	self:CalculateTrajectoryForceAng()
-	
+function ENT:SetLandingPoint(point)
+	self:SetLandPoint(point)
+	self:CalculateTrajectory()
 end
 
-function ENT:LaunchEntity( entity )
+function ENT:LaunchEntity(entity)
+	if not IsValid(entity) then return end
 
-	local angle = self.GASL_LaunchAngle
-	local force = self.GASL_LaunchForce
-	local time = self.GASL_FlyTime
+	local force = self.LaunchForce
+	local time = self:GetTimeOfFlight()
 	
-	local velocity = self:GetLaunchVector()
+	local velOffset = (self:GetPos() - entity:GetPos()) / time
+	local velocity = self:GetLaunchVector() + velOffset
+
+	self:PlaySequence("straightup", 1.0)
+	sound.Play("TA:CatapultLaunch", self:LocalToWorld(Vector(0, 0, 100)), 75, 100, 1)
 	
-	velocity = velocity + ( self:GetPos() - entity:GetPos() ) / time
-	
-	if ( entity:IsPlayer() ) then entity:SetVelocity( velocity - entity:GetVelocity() )
-	elseif ( IsValid( entity:GetPhysicsObject() ) ) then
-		
+	if entity:IsPlayer() then entity:SetVelocity(velocity - entity:GetVelocity())
+	elseif IsValid(entity:GetPhysicsObject()) then
+		-- Making entity really heavy
 		local entityPhys = entity:GetPhysicsObject()
-
-		-- for some reason portal props have different air density
-		if ( entity:GetModel() == "models/portal_custom/metal_box_custom.mdl"
-			|| entity:GetModel() == "models/portal_custom/underground_weighted_cube.mdl" ) then velocity = velocity * 1.16 end
-		if ( entity:GetModel() == "models/portal_custom/metal_ball_custom.mdl" ) then velocity = velocity * 1.5 end
-		
-		if ( !timer.Exists( "GASL_Catapult_Fall"..entity:EntIndex() ) ) then		
-			entity.GASL_ENT_LastMass = entityPhys:GetMass()
-			entityPhys:SetMass( 50000 )
+		if not timer.Exists("TA:EntityMass"..entity:EntIndex()) then		
+			entity.TA_LastMass = entityPhys:GetMass()
+			entityPhys:SetMass(50000)
 		end
+		entity:GetPhysicsObject():SetVelocity(velocity)
 		
-		entity:GetPhysicsObject():SetVelocity( velocity )
-		
-		timer.Create( "GASL_Catapult_Fall"..entity:EntIndex(), self:GetTimeOfFlight(), 1, function()
-			if ( IsValid( entity ) && entity.GASL_ENT_LastMass ) then entityPhys:SetMass( entity.GASL_ENT_LastMass ) end
-		end )
-	
+		-- Reseting entity mass
+		timer.Create("TA:EntityMass"..entity:EntIndex(), self:GetTimeOfFlight(), 1, function()
+			if IsValid(entity) and entity.TA_LastMass then entityPhys:SetMass(entity.TA_LastMass) end
+		end)
 	end
 end
 
--- Wiremod
-function ENT:TriggerInput( iname, value )
-	if ( !WireAddon ) then return end
+function ENT:TriggerInput(iname, value)
+	if not WireAddon then return end
 
-	if ( iname == "Enable" ) then self:ToggleEnable( tobool( value ) ) end
-	
+	if iname == "Enable" then self:Enable(tobool(value)) end
 end
 
-function ENT:ToggleEnable( bDown )
-
-	if ( self:GetStartEnabled() ) then bDown = !bDown end
-	self:SetEnable( bDown )
-	
-	if ( self:GetEnable() ) then self:SetSkin( 0 ) else self:SetSkin( 1 ) end
-	
-end
+numpad.Register("PortalCatapult_Enable", function(pl, ent, keydown)
+	if not IsValid(ent) then return false end
+	ent:EnableEX(keydown)
+	return true
+end)
