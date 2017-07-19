@@ -64,10 +64,6 @@ function ENT:Initialize()
 	end
 end
 
-function ENT:Draw()
-	self:DrawModel()
-end
-
 -- No more client side
 if CLIENT then return end
 

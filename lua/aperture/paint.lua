@@ -1,5 +1,5 @@
 AddCSLuaFile()
-	
+
 -- ================================ PAINT STUFF ============================
 LIB_APERTURE.PAINT_QUALITY	= 1
 LIB_APERTURE.PAINT_TYPES 	= {}
@@ -31,7 +31,17 @@ function LIB_APERTURE:InvertNormal(normal)
 end
 
 function LIB_APERTURE:GetPaintInfo(startpos, dir, ignoreGelledProps, excludeNormalDifferents, sufraceNormalToCompare)
+	if not LIB_PAINT then return end
 	local paintInfo, point = LIB_PAINT:GetPaintInfo(startpos, dir)
+	local trace = util.TraceLine({
+		start = startpos,
+		endpos = point,
+		ignoreworld = true,
+		filter = function(ent)
+			if ent:GetClass() == "prop_portal" then return true end
+		end
+	})
+	if IsValid(trace.Entity) and trace.Entity:GetClass() == "prop_portal" then return end 
 	if not paintInfo then return nil end
 	
 	return paintInfo.paintType, paintInfo.normal, point
@@ -39,8 +49,7 @@ end
 
 -- Assigning new paint type
 function LIB_APERTURE:CreateNewPaintType(index, info)
-	if LIB_APERTURE.PAINT_TYPES[index] then return end
-	PORTAL_PAINT_COUNT = PORTAL_PAINT_COUNT + 1
+	if not LIB_APERTURE.PAINT_TYPES[index] then PORTAL_PAINT_COUNT = PORTAL_PAINT_COUNT + 1 end
 	LIB_APERTURE.PAINT_TYPES[index] = info
 end
 
@@ -62,6 +71,33 @@ function LIB_APERTURE:PaintTypeToInfo(index)
 	return LIB_APERTURE.PAINT_TYPES[index]
 end
 
+if CLIENT then
+	for k,v in pairs(LIB_APERTURE.PAINT_TYPES) do
+		local color = v.COLOR
+		local bumpMat = CreateMaterial("aperture_paintgun_paint_"..k, "VertexLitGeneric", {
+			["$basetexture"] = "aperture/paint/prop_paint",
+			["$bumpmap"] = "aperture/paint/blob_surface_normal",
+			["$ssbump"] = "1",
+			["$alphatestreference"] = "0.06",
+			["$envmapmask"] = "aperture/paint/blob_surface_normal",
+			["$envmapsaturation"] = "[.02 .02 .02]",
+			["$phong"] = "1",
+			["$phongexponent"] = "16",
+			["$phongboost"] = "1",
+			["$phongfresnelranges"] = "[0.5 0.5 0.5]",
+			["$phongalbedotint"] = "1",
+			["$color2"] = "{"..color.r.." "..color.g.." "..color.b.."}",
+			["Proxies"] = {
+				["TextureScroll"] = {
+					["textureScrollVar"] = "$basetexturetransform",
+					["textureScrollRate"] = "0.04",
+					["texturescrollangle"] = "-100"
+				}
+			}
+		})
+	end
+end
+	
 if SERVER then
 
 end -- SERVER
@@ -303,8 +339,8 @@ local function ResolveWorldPaint(ply)
 		
 		if lastPaintType != paintType and paintType and lastPaintType then
 			local prevPaintInfo = LIB_APERTURE.PAINT_TYPES[lastPaintType]
-			if paintInfo.OnChangeTo then paintInfo:OnChangeTo(ply, lastPaintType, paintNormal) end
 			if prevPaintInfo.OnChangeFrom then prevPaintInfo:OnChangeFrom(ply, paintType, paintNormal) end
+			if paintInfo.OnChangeTo then paintInfo:OnChangeTo(ply, lastPaintType, paintNormal) end
 			ply.TA_LastPaintType = paintType
 		end
 		
@@ -372,33 +408,33 @@ local function ResolvePaintedEntities(ent)
 		, filter = ent 
 	}, ent)
 
-	if ent.GASL_GelledType == PORTAL_PAINT_BOUNCE then
-		if trace.Hit then
-			ent:EmitSound("GASL.GelBounceProp")
-			-- makes negative z for local hitnormal
-			local WTL = WorldToLocal(vPhys:GetVelocity(), Angle(), Vector(), trace.HitNormal:Angle() + Angle(90, 0, 0))
-			WTL.z = math.max( -WTL.z, 400 )
-			WTL = WTL + VectorRand() * 100
-			local LTW = LocalToWorld(WTL, Angle(), Vector(), trace.HitNormal:Angle() + Angle(90, 0, 0))
+	-- if ent.GASL_GelledType == PORTAL_PAINT_BOUNCE then
+		-- if trace.Hit then
+			-- ent:EmitSound("GASL.GelBounceProp")
+			-- -- makes negative z for local hitnormal
+			-- local WTL = WorldToLocal(vPhys:GetVelocity(), Angle(), Vector(), trace.HitNormal:Angle() + Angle(90, 0, 0))
+			-- WTL.z = math.max( -WTL.z, 400 )
+			-- WTL = WTL + VectorRand() * 100
+			-- local LTW = LocalToWorld(WTL, Angle(), Vector(), trace.HitNormal:Angle() + Angle(90, 0, 0))
 			
-			vPhys:SetVelocity(LTW)
-			ent:GetPhysicsObject():AddAngleVelocity(VectorRand() * 400)
-		end
-	end
+			-- vPhys:SetVelocity(LTW)
+			-- ent:GetPhysicsObject():AddAngleVelocity(VectorRand() * 400)
+		-- end
+	-- end
 	
-	if ent.GASL_GelledType == PORTAL_PAINT_STICKY then
-		if trace.Hit and (not IsValid(trace.Entity) or IsValid(trace.Entity) and not IsValid(constraint.Find(ent, trace.Entity, "Weld", 0, 0))) then
-			timer.Simple(dir:Length() / 1000, function()
-				if IsValid(ent) and IsValid(ent:GetPhysicsObject()) then
-					if trace.HitWorld then
-						ent:GetPhysicsObject():EnableMotion( false )
-					elseif IsValid(trace.Entity) then
-						constraint.Weld(ent, trace.Entity, 0, trace.PhysicsBone, 5000, collision == 0, false)
-					end
-				end
-			end )
-		end
-	end
+	-- if ent.GASL_GelledType == PORTAL_PAINT_STICKY then
+		-- if trace.Hit and (not IsValid(trace.Entity) or IsValid(trace.Entity) and not IsValid(constraint.Find(ent, trace.Entity, "Weld", 0, 0))) then
+			-- timer.Simple(dir:Length() / 1000, function()
+				-- if IsValid(ent) and IsValid(ent:GetPhysicsObject()) then
+					-- if trace.HitWorld then
+						-- ent:GetPhysicsObject():EnableMotion( false )
+					-- elseif IsValid(trace.Entity) then
+						-- constraint.Weld(ent, trace.Entity, 0, trace.PhysicsBone, 5000, collision == 0, false)
+					-- end
+				-- end
+			-- end )
+		-- end
+	-- end
 end
 
 hook.Add("Think", "TA:HandlingPaint", function()	

@@ -3,9 +3,9 @@ AddCSLuaFile()
 if not LIB_APERTURE then return end
 
 --============= Repulsion Gel ==============
-
-PORTAL_PAINT_BOUNCE = PORTAL_PAINT_COUNT + 1
-
+if not PORTAL_PAINT_BOUNCE then
+	PORTAL_PAINT_BOUNCE = PORTAL_PAINT_COUNT + 1
+end
 local PAINT_INFO = {}
 
 PAINT_INFO.COLOR 	= Color(50, 135, 355)
@@ -34,11 +34,9 @@ end
 
 -- When player step from other type to this
 function PAINT_INFO:OnChangeTo(ply, oldType, normal)
+	if oldType == PORTAL_PAINT_STICKY then Bounce(ply, normal) return end
 	if LIB_MATH_TA:DegreeseBetween(normal, ORIENTATION_DEFAULT) > 35 then return end
-	
-	if oldType == PORTAL_PAINT_SPEED then
-		Bounce(ply, normal)
-	end
+	if oldType == PORTAL_PAINT_SPEED and ply:GetVelocity():Length() > 1000 then Bounce(ply, normal) end
 end
 
 -- When player step from this type to other

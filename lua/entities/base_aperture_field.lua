@@ -178,6 +178,7 @@ function ENT:Think()
 					ent:SetPos(self:LocalToWorld(Vector(0, i + FIELD_MODEL_SIZE / 2, 0)))
 					ent:SetAngles(self:LocalToWorldAngles(Angle(0, 90, 0)))
 					ent:SetColor(self.FieldColor)
+					
 					if self.FieldMaterial then ent:SetSubMaterial(0, self.FieldMaterial) end
 					
 					table.insert(self.FieldsEntities, ent)

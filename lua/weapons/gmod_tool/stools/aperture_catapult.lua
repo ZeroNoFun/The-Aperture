@@ -18,7 +18,9 @@ if CLIENT then
 	language.Add("tool.aperture_catapult.desc", "The Areial Faith Plate will catapult player's to choosen location")
 	language.Add("tool.aperture_catapult.0", "Left click to place")
 	language.Add("tool.aperture_catapult.enable", "Enable")
-	language.Add("tool.aperture_catapult.startenabled", "Start Enabled")
+	language.Add("tool.aperture_catapult.startenabled", "Enabled")
+	language.Add("tool.aperture_catapult.startenabled.help", "Areial Faith Plate will be activated when it placed")
+	language.Add("tool.aperture_catapult.toggle", "Toggle")
 end
 
 local function GetLineDistToSphere(startPos, dir, spherePos)
@@ -262,8 +264,9 @@ local ConVarsDefault = TOOL:BuildConVarList()
 function TOOL.BuildCPanel(CPanel)
 	CPanel:AddControl("Header", {Description = "#tool.aperture_catapult.desc"})
 	CPanel:AddControl("PropSelect", {Label = "#tool.aperture_catapult.model", ConVar = "aperture_catapult_model", Models = list.Get("PortalCatapultModels"), Height = 0})
+	CPanel:AddControl("CheckBox", {Label = "#tool.aperture_catapult.startenabled", Command = "aperture_catapult_startenabled", Help = 1})
 	CPanel:AddControl("Numpad", {Label = "#tool.aperture_catapult.enable", Command = "aperture_catapult_keyenable"})
-	CPanel:AddControl("CheckBox", {Label = "#tool.aperture_catapult.startenabled", Command = "aperture_catapult_startenabled"})
+	CPanel:AddControl("CheckBox", {Label = "#tool.aperture_paint_dropper.toggle", Command = "aperture_paint_dropper_toggle"})
 end
 
 list.Set("PortalCatapultModels", "models/aperture/faith_plate_128.mdl", {})

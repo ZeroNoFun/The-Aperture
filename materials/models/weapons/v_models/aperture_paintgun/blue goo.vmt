@@ -1,7 +1,7 @@
 VertexLitGeneric
 {
-$basetexture "models\weapons\v_models\aperture_paintgun\goo_blue"
-$bumpmap "models\weapons\v_models\aperture_paintgun\goo_nrm"
+$basetexture "aperture/paint/prop_paint"
+$bumpmap "aperture/paint/blob_surface_normal"
 
 
 
@@ -10,7 +10,7 @@ $alphatestreference		"0.06"
 
 
 
-	"$envmapmask" "models\weapons\v_models\aperture_paintgun\goo_nrm"
+	"$envmapmask" "aperture/paint/blob_surface_normal"
 	"$envmapsaturation" "[.02 .02 .02]"
 
 
@@ -37,7 +37,7 @@ $alphatestreference		"0.06"
 		{
 			"textureScrollVar"	"$basetexturetransform"
 			"textureScrollRate"	"0.04"
-			"texturescrollangle" "90"
+			"texturescrollangle" "-100"
 		}
 	}
 }

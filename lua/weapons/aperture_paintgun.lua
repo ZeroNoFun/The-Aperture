@@ -78,8 +78,7 @@ function SWEP:Initialize()
 	
 	self:SetNWInt("TA:firstPaintType", PORTAL_PAINT_BOUNCE)
 	self:SetNWInt("TA:secondPaintType", PORTAL_PAINT_SPEED)
-
-	print(self.HoldType)
+	
 	self:SetHoldType(self.HoldType)
 	self:SetWeaponHoldType(self.HoldType)
 end
@@ -88,10 +87,13 @@ function SWEP:ViewModelDrawn(viewModel)
 	self.Owner:SetNWEntity("TA:ViewModel", viewModel)
 	local firstPaintType = self:GetNWInt("TA:firstPaintType")
 	local secondPaintType = self:GetNWInt("TA:secondPaintType")
+	
+	viewModel:SetSubMaterial(3, "!aperture_paintgun_paint_"..firstPaintType)
+	viewModel:SetSubMaterial(2, "!aperture_paintgun_paint_"..secondPaintType)
+	
 end
 
 function SWEP:Holster(wep)
-	
 	if not IsFirstTimePredicted() then return end
 	if SERVER then
 		net.Start("TA_NW_PaintGun_Holster")
@@ -101,10 +103,10 @@ function SWEP:Holster(wep)
 
 	if CLIENT then
 		local viewModel = self.Owner:GetNWEntity("TA:ViewModel")
-
 		if IsValid(viewModel) then
-			viewModel:SetSubMaterial(3, Material(""))
-			viewModel:SetSubMaterial(2, Material(""))
+			self.Owner:GetViewModel()
+			viewModel:SetSubMaterial()
+			viewModel:SetSubMaterial()
 		end
 	end
 	
@@ -172,20 +174,19 @@ function SWEP:DrawHUD()
 	end
 	
 	if animation != 0 then
-		
 		for i = 1,paintCount  do
-			local Deg = roundDegTo * (i - 1)
-			local Radian = Deg * math.pi / 180
+			local deg = roundDegTo * (i - 1)
+			local radian = deg * math.pi / 180
 			local rotAnim = math.pi * (1 - animation)
 			
-			local WheelRad = imgSize * (1 + paintCount * (paintCount / 50))
-			local Cos = math.cos(Radian + rotAnim)
-			local Sin = math.sin(Radian + rotAnim)
+			local wheelRad = imgSize * (1 + paintCount * (paintCount / 50))
+			local cos = math.cos(radian + rotAnim)
+			local sin = math.sin(radian + rotAnim)
 
-			local XPos = ScrW() / 2 + (Cos * WheelRad - imgSize / 2) * animation
-			local YPos = ScrH() / 2 + (Sin * WheelRad - imgSize / 2) * animation
+			local XPos = ScrW() / 2 + (cos * wheelRad - imgSize / 2) * animation
+			local YPos = ScrH() / 2 + (sin * wheelRad - imgSize / 2) * animation
 			
-			if selectionDeg == Deg and LocalPlayer():KeyDown(IN_RELOAD) then
+			if selectionDeg == deg and LocalPlayer():KeyDown(IN_RELOAD) then
 				if firstPaintType != i and secondPaintType != i then
 					if input.IsMouseDown(MOUSE_LEFT) then
 						net.Start("TA_NW_PaintGun_SwitchPaint")
@@ -201,7 +202,7 @@ function SWEP:DrawHUD()
 				end
 			end
 			
-			local AddingSize = 0
+			local addingSize = 0
 			local DrawColor = Color(150, 150, 150)
 			local DrawHalo = false
 			
@@ -211,7 +212,7 @@ function SWEP:DrawHUD()
 			elseif i == secondPaintType then 
 				DrawColor = Color(255, 200, 0)
 				DrawHalo = true
-			elseif selectionDeg == Deg and animation == 1 then 
+			elseif selectionDeg == deg and animation == 1 then 
 				DrawColor = Color(255, 255, 255)
 				DrawHalo = true 
 			end
@@ -219,44 +220,43 @@ function SWEP:DrawHUD()
 			surface.SetDrawColor( DrawColor )
 
 			if animation == 1 then
-				if selectionDeg == Deg then AddingSize = 20 end
+				if selectionDeg == deg then addingSize = 20 end
 				
 				local PaintName = LIB_APERTURE:PaintTypeToName(i) 
 				surface.SetFont("Default")
 				surface.SetTextColor(DrawColor)
 
-				local TextW, TextH = surface.GetTextSize(PaintName)
-				local TextRadius = (TextW + TextH) / 2
-				local TextOffsetX = Cos * (imgSize + TextRadius / 2) + imgSize / 2 - TextW / 2
-				local TextoffsetY = Sin * (imgSize + TextRadius / 2) + imgSize / 2 - TextH / 2
-				surface.SetTextPos(XPos + TextOffsetX, YPos + TextoffsetY)
+				local textW, textH = surface.GetTextSize(PaintName)
+				local textRadius = (textW + textH) / 2
+				local textOffsetX = cos * (imgSize + textRadius / 2) + imgSize / 2 - textW / 2
+				local textoffsetY = sin * (imgSize + textRadius / 2) + imgSize / 2 - textH / 2
+				surface.SetTextPos(XPos + textOffsetX, YPos + textoffsetY)
 				surface.DrawText(PaintName)
 			end
 
 			if DrawHalo then
-				surface.SetMaterial(Material( "vgui/paint_type_select_circle"))
+				surface.SetMaterial(Material("vgui/paint_type_select_circle"))
 				surface.DrawTexturedRect( 
-					XPos - selectCircleAddictionSize - AddingSize / 2
-					, YPos - selectCircleAddictionSize - AddingSize / 2
-					, imgSize + selectCircleAddictionSize * 2 + AddingSize
-					, imgSize + selectCircleAddictionSize * 2 + AddingSize
+					XPos - selectCircleAddictionSize - addingSize / 2
+					, YPos - selectCircleAddictionSize - addingSize / 2
+					, imgSize + selectCircleAddictionSize * 2 + addingSize
+					, imgSize + selectCircleAddictionSize * 2 + addingSize
 				)
 			end
 
 			surface.SetDrawColor(Color(255, 255, 255))
 			surface.SetMaterial(Material( "vgui/paint_type_back"))
-			surface.DrawTexturedRect(XPos - AddingSize / 2, YPos - AddingSize / 2, imgSize + AddingSize, imgSize + AddingSize)
+			surface.DrawTexturedRect(XPos - addingSize / 2, YPos - addingSize / 2, imgSize + addingSize, imgSize + addingSize)
 			
 			surface.SetDrawColor(LIB_APERTURE:PaintTypeToColor(i))
 			surface.SetMaterial(Material("vgui/paint_icon"))
-			surface.DrawTexturedRect(XPos - AddingSize / 2, YPos - AddingSize / 2, imgSize + AddingSize, imgSize + AddingSize)
-			
+			surface.DrawTexturedRect(XPos - addingSize / 2, YPos - addingSize / 2, imgSize + addingSize, imgSize + addingSize)
 		end
 		
 		self.HUDSmoothCursor =  math.ApproachAngle(self.HUDSmoothCursor, selectionDeg, FrameTime() * 500)
 		
 		surface.SetDrawColor(Color(255, 255, 255))
-		surface.SetMaterial(Material( "vgui/hud/paint_type_select_arrow"))
+		surface.SetMaterial(Material("vgui/hud/paint_type_select_arrow"))
 		surface.DrawTexturedRectRotated(ScrW() / 2, ScrH() / 2, pointerSize, pointerSize, -self.HUDSmoothCursor - 90)
 	end
 end
@@ -272,7 +272,6 @@ if SERVER then
 end
 
 function SWEP:OnRemove()
-
 	if CLIENT then
 		if self.CursorEnabled then
 			self.CursorEnabled = false
@@ -281,8 +280,8 @@ function SWEP:OnRemove()
 		
 		local ViewModel = self.Owner:GetNWEntity( "TA:ViewModel" )
 		if IsValid(ViewModel) then
-			ViewModel:SetSubMaterial(3, Material(""))
-			ViewModel:SetSubMaterial(2, Material(""))
+			ViewModel:SetSubMaterial()
+			ViewModel:SetSubMaterial()
 		end
 	end
 	
@@ -290,7 +289,6 @@ function SWEP:OnRemove()
 end
 
 function SWEP:MakePaintBlob(paintType)
-
 	if timer.Exists("TA_Player_ShootingPaint"..self.Owner:EntIndex()) then return end
 	timer.Create("TA_Player_ShootingPaint"..self.Owner:EntIndex(), 0.01, 1, function() end)
 	
@@ -312,5 +310,4 @@ function SWEP:MakePaintBlob(paintType)
 	
 	if not IsValid(paint) then return end
 	if IsValid(self.Owner) and self.Owner:IsPlayer() then paint:SetOwner(self.Owner) end
-	
 end

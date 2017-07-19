@@ -6,29 +6,32 @@
 AddCSLuaFile( )
 
 LIB_APERTURE = {}
-LIB_APERTURE.MAX_PASSAGES = 256
 
 -- Loading sounds
 local paint_types = file.Find("sounds/*.lua", "LUA")
-for _, plugin in ipairs(paint_types) do
+for _,plugin in ipairs(paint_types) do
 	include("sounds/" .. plugin)
 end
 
--- local map_props = file.Find("aperture/mapmaker_props/*.lua", "LUA")
--- for _, plugin in ipairs(map_props) do
-	-- include("mapmaker_props/" .. plugin)
--- end
+-- Loading entities data
+local entities_data = file.Find("aperture/entities_data/*.lua", "LUA")
+for _,plugin in ipairs(entities_data) do
+	include("aperture/entities_data/"..plugin)
+end
 
--- Loading math
+-- Loading math lib
 include("aperture/math.lua")
 
--- Loading achievement
+-- Loading portal integration lib
+include("aperture/portal_integration.lua")
+
+-- Loading achievement lib
 include("aperture/achievement.lua")
 
--- Loading paint
+-- Loading paint lib
 include("aperture/paint.lua")
 
--- Loading buttons
+-- Loading floor buttons lib
 include("aperture/buttons.lua")
 
 -- Main 
@@ -44,20 +47,10 @@ LIB_APERTURE.FUNNEL_MOVE_SPEED 		= 173
 LIB_APERTURE.DISSOLVE_SPEED 	= 150
 LIB_APERTURE.DISSOLVE_ENTITIES 	= { }
 
--- Item Dropper
-LIB_APERTURE.ITEM_DROPPER_ITEMS = {
-	[1] = "Weighted Storage Cube",
-	[2] = "Old Weighted Storage Cube",
-	[3] = "Weighted Companion Cube",
-	[4] = "Edgeless Safety Cube",
-	[5] = "Discouragement Redirection Cube",
-	[6] = "Frankenturret",
-	[7] = "Bomb",
-}
-
 -- Diversity Vent
--- LIB_APERTURE.DIVVENT_ENTITIES = { }
+LIB_APERTURE.DIVVENT_ENTITIES = { }
 
+LIB_APERTURE.FALL_BOOTS_LEG_SIZE = 10
 -- LIB_APERTURE.HUD_ACHIEVEMENTS = { }
 
 -- Allowing
@@ -99,6 +92,35 @@ LIB_APERTURE.ITEM_DROPPER_ITEMS = {
 -- end
 -- hook.Add("Think", LIB_APERTURE, LIB_APERTURE.UpdateParameters)
 
+function LIB_APERTURE:JumperBootsResizeLegs(ply, size)
+	local ent = ply:GetNWEntity("TA:ItemJumperBootsEntity")
+	local prCalf = ply:LookupBone("ValveBiped.Bip01_R_Calf")
+	local plCalf = ply:LookupBone("ValveBiped.Bip01_L_Calf")
+	local prFoot = ply:LookupBone("ValveBiped.Bip01_R_Foot")
+	local plFoot = ply:LookupBone("ValveBiped.Bip01_L_Foot")
+	local prToe0 = ply:LookupBone("ValveBiped.Bip01_R_Toe0")
+	local plToe0 = ply:LookupBone("ValveBiped.Bip01_L_Toe0")
+	ply:ManipulateBoneScale(prCalf, Vector(1, 1, 1) / size)
+	ply:ManipulateBoneScale(plCalf, Vector(1, 1, 1) / size)
+	ply:ManipulateBoneScale(prFoot, Vector(1, 1, 1) / size)
+	ply:ManipulateBoneScale(plFoot, Vector(1, 1, 1) / size)
+	ply:ManipulateBoneScale(prToe0, Vector(1, 1, 1) / size)
+	ply:ManipulateBoneScale(plToe0, Vector(1, 1, 1) / size)
+
+	if not IsValid(ent) then return end
+	local rCalf = ent:LookupBone("ValveBiped.Bip01_R_Calf")
+	local lCalf = ent:LookupBone("ValveBiped.Bip01_L_Calf")
+	local rFoot = ent:LookupBone("ValveBiped.Bip01_R_Foot")
+	local lFoot = ent:LookupBone("ValveBiped.Bip01_L_Foot")
+	local rToe0 = ent:LookupBone("ValveBiped.Bip01_R_Toe0")
+	local lToe0 = ent:LookupBone("ValveBiped.Bip01_L_Toe0")
+	ent:ManipulateBoneScale(rCalf, Vector(1, 1, 1) * size)
+	ent:ManipulateBoneScale(lCalf, Vector(1, 1, 1) * size)
+	ent:ManipulateBoneScale(rFoot, Vector(1, 1, 1) * size)
+	ent:ManipulateBoneScale(lFoot, Vector(1, 1, 1) * size)
+	ent:ManipulateBoneScale(rToe0, Vector(1, 1, 1) * size)
+	ent:ManipulateBoneScale(lToe0, Vector(1, 1, 1) * size)
+end
 function LIB_APERTURE:DissolveEnt(ent)
 	if ent.IsDissolving then return end
 	local phys = ent:GetPhysicsObject()
@@ -116,90 +138,10 @@ function LIB_APERTURE:DissolveEnt(ent)
 	table.insert(LIB_APERTURE.DISSOLVE_ENTITIES, ent)
 end
 
----- Portal Gun addon integration ----
-
--- Mathing Entity and Table of models or entities
-local function MathEntityAndTable(ent, entTable)
-	if not istable(entTable) then return false end
-	for k,v in pairs(entTable) do
-		if isentity(v) then
-			if ent == v then return true end
-		end
-		if ent:GetModel() == v then return true end
-	end
-	return false
-end
-
-function LIB_APERTURE:GetAllPortalPassagesAng(pos, angle, maxLength, ignore, ignoreEntities)
-	local exitportal
-	local prevPos = pos
-	local prevAng = angle
-	local passagesInfo = {}
-	local passages = 0
-	local trace = {}
-	repeat
-		local hitPortal = true
-		local direction = prevAng:Forward()
-		trace = util.TraceLine({
-			start = prevPos,
-			endpos = prevPos + direction * LIB_MATH_TA.HUGE,
-			filter = function(ent)
-				if ent != ignore and not MathEntityAndTable(ent, ignore)
-					and not ignoreEntities 
-					and ent:GetClass() != "prop_portal"
-					and not ent:IsPlayer() 
-					and not ent:IsNPC() then return true end
-			end
-		})
-		table.insert(passagesInfo, {
-			startpos = prevPos,
-			endpos = trace.HitPos,
-			angles = prevAng,
-			exitportal = exitportal,
-		})
-		
-		-- Portal loop if trace hit portal
-		for k,v in pairs(ents.FindByClass("prop_portal")) do
-			if v != exitPortal then
-				local pos = v:WorldToLocal(trace.HitPos)
-				
-				if pos.x > -30 and pos.x < 10
-					and pos.y > -30 and pos.y < 30
-					and pos.z > -45 and pos.z < 45 then
-					if IsValid(v:GetNWEntity("Potal:Other")) then
-						local otherPortal = v:GetNWEntity("Potal:Other")
-						
-						localPos = v:WorldToLocal(trace.HitPos)
-						localAng = v:WorldToLocalAngles(prevAng)
-						localPos = Vector(0, -localPos.y, localPos.z)
-						localAng = localAng + Angle(0, 180, 0)
-						
-						prevPos = otherPortal:LocalToWorld(localPos)
-						prevAng = otherPortal:LocalToWorldAngles(localAng)
-						hitPortal = false
-						passagesInfo[#passagesInfo].enterportal = v
-						exitportal = otherPortal
-						break
-					end
-				end
-			end
-		end
-		
-		passages = passages + 1
-		if passages >= LIB_APERTURE.MAX_PASSAGES then print(123) break end
-	until hitPortal
-	
-	return passagesInfo, trace
-end
-
-function LIB_APERTURE:GetAllPortalPassages(pos, dir, maxLength, ignore, ignoreEntities)
-	local angle = dir:Angle()
-	return LIB_APERTURE:GetAllPortalPassagesAng(pos, angle, maxLength, ignore, ignoreEntities)
-end
-
 hook.Add( "Initialize", "TA:Initialize", function()
 	if SERVER then
-		util.AddNetworkString("TA:NW_PaintCamera") 
+		util.AddNetworkString("TA:NW_PaintCamera")
+		util.AddNetworkString("TA:DivventFilterNetwork")
 		//util.AddNetworkString( "GASL_NW_Player_Achievements" ) 
 		//util.AddNetworkString( "GASL_LinkConnection" ) 
 		//util.AddNetworkString( "GASL_Turrets_Activation" ) 
@@ -207,7 +149,7 @@ hook.Add( "Initialize", "TA:Initialize", function()
 	
 	if CLIENT then
 	end
-end )
+end)
 
 -- if ( CLIENT ) then
 	-- function draw.Circle( x, y, radius, rad2, seg )
@@ -342,6 +284,44 @@ end )
 		
 -- end )
 
+local function HandleEntitiesInDivvent(ent, flow, inx, info)
+	if not IsValid(ent) 
+		or not IsValid(info.vent) 
+		or ent:GetMoveType() == MOVETYPE_NOCLIP then
+		LIB_APERTURE.DIVVENT_ENTITIES[ent] = nil
+		return
+	end
+
+	local flowpoint = flow[inx]
+	
+	if flowpoint != Vector() then
+		local physObj = ent:GetPhysicsObject()
+		local centerPos = ent:LocalToWorld(physObj:GetMassCenter())
+		-- remove entity from table if it too far from the point
+		if centerPos:Distance(flowpoint) > 300 then
+			LIB_APERTURE.DIVVENT_ENTITIES[ent] = nil
+			return
+		end
+		
+		local mass = physObj:GetMass()
+		local dirN = (flowpoint - centerPos):GetNormalized()
+		if ent:IsPlayer() or ent:IsNPC() then
+			local velvec = dirN * 400 - ent:GetVelocity() / 2
+			ent:SetVelocity(velvec)
+		else
+			local velvec = dirN * 100 - physObj:GetVelocity() / 10
+			physObj:AddVelocity(velvec)
+		end
+		
+		if flowpoint:Distance(centerPos) < 30 then
+			info.index = inx + 1
+			if (inx + 1) > #flow then
+				LIB_APERTURE.DIVVENT_ENTITIES[ent] = nil
+			end
+		end
+	end
+end
+
 local function HandleDissolvedEntities(ent, index)
 	-- skip if entity doesn't exist
 	if not IsValid(ent) then
@@ -374,6 +354,19 @@ hook.Add("Think", "TA:Think", function()
 	for k,v in pairs(LIB_APERTURE.DISSOLVE_ENTITIES) do
 		HandleDissolvedEntities(v, k)
 	end
+	
+	for k,v in pairs(LIB_APERTURE.DIVVENT_ENTITIES) do
+		HandleEntitiesInDivvent(k, v.flow, v.index, v)
+	end
+	
+	-- if CLIENT then
+		-- for k,v in pairs(player.GetAll()) do
+			-- if v:Alive() then
+				-- local ent = v:GetNWEntity("TA:ItemJumperBootsEntity")
+				-- if IsValid(ent) then DrawBoots(v, ent) end
+			-- end
+		-- end
+	-- end
 
 	-- Handling entities in diversity vent
 	-- for k, v in pairs( LIB_APERTURE.DIVVENT_ENTITIES ) do
@@ -421,7 +414,39 @@ end)
 
 hook.Add("PhysgunPickup", "TA:DisablePhysgunPickup", function(ply, ent)
 	if ent.TA_Untouchable then return false end
-end )
+end)
+
+hook.Add("GetFallDamage", "TA:GetFallDamage", function(ply, speed)
+	if ply:GetNWBool("TA:ItemJumperBoots") then
+		ply:EmitSound("TA:PlayerLand")
+		return 0
+	end
+	return
+end)
+
+local function ResetingFallboots(ply)
+	if ply:GetNWBool("TA:ItemJumperBoots") then
+		ply:SetNWBool("TA:ItemJumperBoots", false)
+		LIB_APERTURE:JumperBootsResizeLegs(ply, 1)
+		local boots = ply:GetNWEntity("TA:ItemJumperBootsEntity")
+		if IsValid(boots) then
+			boots:Remove()
+		end
+	end
+end
+
+hook.Add("DoPlayerDeath", "TA:DoPlayerDeath", function(ply, attacker, dmg)
+	ResetingFallboots(ply)
+end)
+
+local function Clear()
+	LIB_APERTURE.DISSOLVE_ENTITIES = {}
+	for k,v in pairs(player.GetAll()) do
+		ResetingFallboots(v)
+	end
+end
+
+hook.Add("PostCleanupMap", "TA:PostCleanupMap", Clear)
 
 -- hook.Add( "KeyPress", "GASL:HandlePlayerJump", function( ply, key )
 

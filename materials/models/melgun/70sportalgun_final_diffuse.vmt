@@ -1,0 +1,13 @@
+"VertexLitGeneric"
+{
+"$basetexture" "models/melgun/70sportalgun_Final_diffuse"
+
+$bumpmap "models/melgun/70sportalgun_Final_normal"
+envmap "env_cubemap"
+$envmapcontrast "0"
+$normalmapalphaenvmapmask "1"                           
+$phong        "1"
+$phongexponent 5
+$phongboost 1
+$phongfresnelranges	"[0.5 0.5 0.5]"
+}

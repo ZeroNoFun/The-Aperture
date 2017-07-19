@@ -18,7 +18,7 @@ function PlayerChangeOrient(ply, orientation, paintHitPos)
 	-- Handling changing orientation
 	local currentOrient = ply:GetNWVector("TA:Orientation")
 	if orientation == currentOrient then return end
-	
+
 	local playerHeight = ply:GetModelRadius()
 	local plyOrientCenter = ply:GetPos() + currentOrient * playerHeight / 2
 	local orientPlayerHeight = orientation * playerHeight
@@ -27,37 +27,29 @@ function PlayerChangeOrient(ply, orientation, paintHitPos)
 	if not paintHitPos then _, _, paintHitPos = LIB_APERTURE:GetPaintInfo(plyOrientCenter, -orientPlayerHeight * 1.5) end
 	
 	-- changing camera orientation
-	ply:SetCurrentViewOffset(Vector(orientPlayerHeight.x, orientPlayerHeight.y, 0))
-	ply:SetViewOffset(Vector(0, 0, orientPlayerHeight.z))
+	ply:SetViewOffset(Vector())
+	ply:SetViewOffsetDucked(Vector())
+	ply:SetCurrentViewOffset(orientPlayerHeight)
 	ply:SetNWVector("TA:Orientation", orientation)
 	
 	-- creating avatar if orientation is not default
+	local avatar = ply:GetNWEntity("TA:Avatar")
+	if orientation == ORIENTATION_DEFAULT then
+		if IsValid(avatar) then avatar:Remove() end
+	elseif not IsValid(avatar) then
+		local avatar = ents.Create("aperture_player_avatar")
+		if not IsValid(avatar) then return end
+		avatar:SetPlayer(ply)
+		avatar:SetPos(ply:GetPos())
+		avatar:SetAngles(orientation:Angle() + Angle(90, 0, 0))
+		avatar:Spawn()
+	end
+
+	-- Moving player to the floor
 	if not paintHitPos then return end
 	ply:SetNWVector("TA:OrientationWalk", paintHitPos)
 	ply:SetPos(paintHitPos)
 	ply:SetVelocity(-ply:GetVelocity())
-	
-	-- local avatar = ply:GetNWEntity("TA:Avatar")
-	-- if orientation == ORIENTATION_DEFAULT then
-		-- local color = ply:GetColor()
-		-- color.a = 255
-		-- ply:SetColor(color)
-		-- ply:SetRenderMode(RENDERMODE_NORMAL)
-
-		-- if IsValid(avatar) then ply:GetNWEntity("TA:Avatar"):Remove() end
-	-- elseif not IsValid(avatar) then
-		-- local color = ply:GetColor()
-		-- local avatar = ents.Create("gasl_player_avatar")
-		-- color.a = 0
-
-		-- ply:SetColor(color)
-		-- ply:SetRenderMode(RENDERMODE_TRANSALPHA)
-		-- if !IsValid(avatar) then return end
-		-- avatar:SetPlayer(ply)
-		-- avatar:SetPos(ply:GetPos())
-		-- avatar:SetAngles(orientation:Angle() + Angle(90, 0, 0))
-		-- avatar:Spawn()
-	-- end
 
 	-- cooldown for ability to change
 	timer.Create("TA:Player_Changed"..ply:EntIndex(), 1, 1, function() end)
@@ -143,11 +135,17 @@ end
 
 -- When player step out paint
 function PAINT_INFO:OnExit(ply)
+	local playerHeight = 72
 	local orientation = ply:GetNWVector("TA:Orientation")
 	if orienation != ORIENTATION_DEFAULT then
 		PlayerUnStuck(ply)
 	end
+	
 	PlayerChangeOrient(ply, ORIENTATION_DEFAULT)
+	ply:SetViewOffset(ORIENTATION_DEFAULT * playerHeight)
+	ply:SetViewOffsetDucked(ORIENTATION_DEFAULT * playerHeight / 2)
+	ply:SetCurrentViewOffset(ORIENTATION_DEFAULT * playerHeight)
+
 	ply:EmitSound("TA:PaintStickExit")
 end
 
@@ -158,11 +156,16 @@ end
 
 -- When player step from this type to other
 function PAINT_INFO:OnChangeFrom(ply, newType, normal)
+	local playerHeight = 72
 	local orientation = ply:GetNWVector("TA:Orientation")
 	if orientation != ORIENTATION_DEFAULT then
 		PlayerUnStuck(ply)
 		PlayerChangeOrient(ply, ORIENTATION_DEFAULT)
 	end
+	PlayerChangeOrient(ply, ORIENTATION_DEFAULT)
+	ply:SetViewOffset(ORIENTATION_DEFAULT * playerHeight)
+	ply:SetViewOffsetDucked(ORIENTATION_DEFAULT * playerHeight / 2)
+	ply:SetCurrentViewOffset(ORIENTATION_DEFAULT * playerHeight)
 end
 
 -- Handling orienation changes
@@ -180,9 +183,11 @@ function PAINT_INFO:Think(ply, normal, orientationMove)
 	local orientPlayerHeight = ply:KeyDown(IN_DUCK) and orientation * playerHeightFull / 2 or orientation * playerHeightFull
 	local orienationWalk = ply:GetNWVector("TA:OrientationWalk")
 	local orientationAng = orientation:Angle() + Angle(90, 0, 0)
-
-	ply:SetCurrentViewOffset(orientPlayerHeight)
 	
+	ply:SetViewOffset(Vector(0, 0, orientPlayerHeight.z))
+	ply:SetViewOffsetDucked(Vector(0, 0, orientPlayerHeight.z))
+	ply:SetCurrentViewOffset(orientPlayerHeight)
+
 	-- if player stand on sticky paint
 	if orienationWalk != Vector() and orientation != ORIENTATION_DEFAULT then
 		
@@ -261,7 +266,7 @@ function PAINT_INFO:Think(ply, normal, orientationMove)
 				if traceBack.Hit then orientationMove = orientationMove + orientationAng:Forward() * (1 - traceBack.Fraction) * plyWidth end
 				if traceRight.Hit then orientationMove = orientationMove - orientationAng:Right() * (1 - traceRight.Fraction) * plyWidth end
 				if traceLeft.Hit then orientationMove = orientationMove + orientationAng:Right() * (1 - traceLeft.Fraction) * plyWidth end
-				local walk = orienationWalk + orientationMove
+				local walk = orienationWalk + orientationMove / 1.2
 				
 				ply:SetNWVector("TA:OrientationWalk", walk)
 				ply:SetPos(walk)
@@ -307,7 +312,6 @@ hook.Add("Think", "TA:StickCamerOrient", function()
 
 	-- rotating camera by roll if player orientation is default
 	if orientation == ORIENTATION_DEFAULT then
-	
 		if math.abs(playerEyeAngle.r) > 0.1 then
 			playerEyeAngle.r = math.ApproachAngle(playerEyeAngle.r, 0, FrameTime() * math.min(playerEyeAngle.r * 10, 160))
 		elseif playerEyeAngle.r != 0 then

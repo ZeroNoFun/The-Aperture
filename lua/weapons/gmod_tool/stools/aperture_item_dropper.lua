@@ -105,7 +105,6 @@ function TOOL:UpdateGhostItemDropper(ent, ply)
 	local normal = trace.HitNormal
 	
 	if not trace.Hit or trace.Entity and trace.Entity:IsPlayer() or trace.Entity:IsNPC() then
-		print(123)
 		ent:SetNoDraw(true)
 		return
 	end
