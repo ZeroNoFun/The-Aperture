@@ -16,7 +16,7 @@ function ENT:Initialize()
 		self:PhysicsInit(SOLID_VPHYSICS)
 		self:SetMoveType(MOVETYPE_VPHYSICS)
 		self:SetSolid(SOLID_VPHYSICS)
-		self:SetCollisionGroup( COLLISION_GROUP_IN_VEHICLE )
+		self:SetCollisionGroup(COLLISION_GROUP_IN_VEHICLE)
 		self.TA_PrevPos = self:GetPos()
 		self:GetPhysicsObject():EnableCollisions(false)
 	end

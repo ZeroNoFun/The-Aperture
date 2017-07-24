@@ -6,6 +6,7 @@ TOOL.ClientConVar["keyenable"] = "45"
 TOOL.ClientConVar["startenabled"] = "0"
 TOOL.ClientConVar["model"] = "models/props/portal_emitter.mdl"
 TOOL.ClientConVar["toggle"] = "0"
+TOOL.ClientConVar["portaltype"] = "1"
 
 if CLIENT then
 	language.Add("tool.aperture_portal_frame.name", "Portal Emitter")
@@ -15,11 +16,12 @@ if CLIENT then
 	language.Add("tool.aperture_portal_frame.startenabled", "Enabled")
 	language.Add("tool.aperture_portal_frame.startenabled.help", "Portal Emitter will spawn portal when placed")
 	language.Add("tool.aperture_portal_frame.toggle", "Toggle")
+	language.Add("tool.aperture_portal_frame_model.portaltype", "Portal Type")
 end
 
 if SERVER then
 
-	function MakePortalFrame(ply, pos, ang, model, key_enable, startenabled, toggle, data)
+	function MakePortalFrame(ply, pos, ang, model, portaltype, key_enable, startenabled, toggle, data)
 		local ent = ents.Create("ent_portal_frame")
 		if not IsValid(ent) then return end
 		
@@ -32,6 +34,7 @@ if SERVER then
 		ent.Owner = ply
 		ent:SetStartEnabled(tobool(startenabled))
 		ent:SetToggle(tobool(toggle))
+		ent:SetPortalType(portaltype)
 		ent:Spawn()
 		
 		-- initializing numpad inputs
@@ -55,7 +58,7 @@ if SERVER then
 		return ent
 	end
 	
-	duplicator.RegisterEntityClass("ent_portal_frame", MakePortalFrame, "pos", "ang", "model", "key_enable", "startenabled", "toggle", "data")
+	duplicator.RegisterEntityClass("ent_portal_frame", MakePortalFrame, "pos", "ang", "model", "portaltype", "key_enable", "startenabled", "toggle", "data")
 end
 
 function TOOL:LeftClick( trace )
@@ -70,12 +73,13 @@ function TOOL:LeftClick( trace )
 	local model = self:GetClientInfo("model")
 	local key_enable = self:GetClientNumber("keyenable")
 	local startenabled = self:GetClientNumber("startenabled")
+	local portaltype = self:GetClientNumber("portaltype")
 	local toggle = self:GetClientNumber("toggle")
 	
 	local pos = trace.HitPos
 	local ang = trace.HitNormal:Angle()
 	
-	local ent = MakePortalFrame(ply, pos, ang, model, key_enable, startenabled, toggle)
+	local ent = MakePortalFrame(ply, pos, ang, model, portaltype, key_enable, startenabled, toggle)
 		
 	undo.Create("Portal Emitter")
 		undo.AddEntity(ent)
@@ -85,7 +89,7 @@ function TOOL:LeftClick( trace )
 	return true, ent
 end
 
-function TOOL:UpdateGhostWallProjector(ent, ply)
+function TOOL:UpdateGhostPortalFrame(ent, ply)
 	if not IsValid(ent) then return end
 
 	local trace = ply:GetEyeTrace()
@@ -114,20 +118,19 @@ function TOOL:Think()
 	if not IsValid(self.GhostEntity) or self.GhostEntity:GetModel() != mdl then
 		self:MakeGhostEntity(mdl, Vector(0, 0, 0), Angle(0, 0, 0))
 	end
-	
-	if IsValid(self.GhostEntity) then
-		local paintType = self:GetClientNumber("paint_type")
-		self.GhostEntity:SetSkin(paintType)
-	end
 
-	self:UpdateGhostWallProjector(self.GhostEntity, self:GetOwner())
+	self:UpdateGhostPortalFrame(self.GhostEntity, self:GetOwner())
 end
 
 local ConVarsDefault = TOOL:BuildConVarList()
 
 function TOOL.BuildCPanel( CPanel )
 	CPanel:AddControl("Header", {Description = "#tool.aperture_portal_frame.desc"})
-	CPanel:AddControl("PropSelect", {ConVar = "aperture_portal_frame_model", Models = list.Get("PortalFrameModels"), Height = 3})
+	local combobox = CPanel:ComboBox("#tool.aperture_portal_frame_model.portaltype", "aperture_portal_frame_portaltype")
+	combobox:AddChoice("Blue", 1)
+	combobox:AddChoice("Orange", 2)
+	
+	CPanel:AddControl("PropSelect", {ConVar = "aperture_portal_frame_model", Models = list.Get("PortalFrameModels"), Height = 1})
 	CPanel:AddControl("CheckBox", {Label = "#tool.aperture_portal_frame.startenabled", Command = "aperture_portal_frame_startenabled", Help = true})
 	CPanel:AddControl("Numpad", {Label = "#tool.aperture_portal_frame.enable", Command = "aperture_portal_frame_keyenable"})
 	CPanel:AddControl("CheckBox", {Label = "#tool.aperture_portal_frame.toggle", Command = "aperture_portal_frame_toggle"})

@@ -53,9 +53,7 @@ function ENT:Initialize()
 		self:PhysicsInitStatic(SOLID_VPHYSICS)
 		self:SetMoveType(MOVETYPE_VPHYSICS)
 		self:SetSolid(SOLID_VPHYSICS)
-		self:SetCollisionGroup(COLLISION_GROUP_WORLD)
 		
-		self:SetPortalType(1)
 		if self:GetStartEnabled() then self:Enable(true) end
 		if not WireAddon then return end
 		self.Inputs = Wire_CreateInputs(self, {"Enable"})
@@ -82,13 +80,14 @@ function ENT:OpenPortal(portalType)
 	local orangePortalEnt = self.Owner:GetNWEntity("Portal:Orange", nil)
 	local bluePortalEnt = self.Owner:GetNWEntity("Portal:Blue", nil)
 	local entToUse = portalType == TYPE_BLUE and bluePortalEnt or orangePortalEnt
-	local OtherEnt = portalType == TYPE_BLUE and orangePortalEnt or bluePortalEnt
-	
-	if !IsValid( entToUse ) then
-   
+	local otherEnt = portalType == TYPE_BLUE and orangePortalEnt or bluePortalEnt
+	local pos = self:LocalToWorld(Vector())
+	local ang = self:LocalToWorldAngles(Angle())
+	if not IsValid(entToUse) then
 		local portal = ents.Create("prop_portal")
-		portal:SetPos( self:LocalToWorld(Vector()))
-		portal:SetAngles( self:LocalToWorldAngles(Angle()))
+		if not IsValid(portal) then return end
+		portal:SetPos(pos)
+		portal:SetAngles(ang)
 		portal:Spawn()
 		portal:Activate()
 		portal:SetMoveType(MOVETYPE_NONE)
@@ -109,7 +108,7 @@ function ENT:OpenPortal(portalType)
 	   
 		if IsValid(otherEnt) then entToUse:LinkPortals(otherEnt) end
 	else
-		entToUse:MoveToNewPos( validpos, validnormang )
+		entToUse:MoveToNewPos(pos, ang)
 		entToUse:SuccessEffect()
 	end
 end

@@ -52,17 +52,8 @@ function ENT:EnableEX(enable)
 	if self:GetStartEnabled() then enable = !enable end
 	self:Enable(enable)
 end
-if SERVER then
 
-	function FixMinMax(min, max)
-		local smin = Vector(min)
-		local smax = Vector(max)
-		
-		if min.x > max.x then min.x = smax.x  max.x = smin.x end
-		if min.y > max.y then min.y = smax.y  max.y = smin.y end
-		if min.z > max.z then min.z = smax.z  max.z = smin.z end
-	end
-	
+if SERVER then
 	function ENT:CreateSecondEmitter()
 		local angles = self:GetAngles()
 		local trace = util.QuickTrace(self:GetPos(), -self:GetRight() * LIB_MATH_TA.HUGE, function() end)
@@ -89,7 +80,7 @@ if SERVER then
 		local dist = self:GetPos():Distance(secondEmitter:GetPos())
 		local vec1 = self:GetUp() * FIELD_MODEL_SIZE / 2 + self:GetForward() * FIELD_TRIGGER_THICK + self:GetRight() * dist
 		local vec2 = self:GetUp() * -FIELD_MODEL_SIZE / 2 - self:GetForward() * FIELD_TRIGGER_THICK
-		FixMinMax(vec1, vec2)
+		LIB_MATH_TA:FixMinMax(vec1, vec2)
 		ent:SetPos(self:GetPos())
 		ent:SetParent(self)
 		ent:SetBounds(vec1, vec2)
@@ -197,7 +188,7 @@ function ENT:Think()
 		local dist = self:GetPos():Distance(secondEmitter:GetPos())
 		local vec1 = self:GetUp() * FIELD_MODEL_SIZE / 2 + self:GetForward() * FIELD_TRIGGER_THICK - self:GetRight() * dist
 		local vec2 = self:GetUp() * -FIELD_MODEL_SIZE / 2 - self:GetForward() * FIELD_TRIGGER_THICK
-		FixMinMax(vec1, vec2)
+		LIB_MATH_TA:FixMinMax(vec1, vec2)
 		
 		triggerEnt:SetBounds(vec1, vec2)
 		triggerEnt:SetPos(self:GetPos())

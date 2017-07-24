@@ -5,17 +5,24 @@ LIB_MATH_TA.EPSILON = 0.00001
 LIB_MATH_TA.HUGE = 100000
 
 -- Converting coordinate to grid ignoring z on normal
-function LIB_MATH_TA:ConvertToGridOnSurface(pos, angle, radius, zRound)
-	local WTL = WorldToLocal(pos, Angle(), Vector(), angle)
+function LIB_MATH_TA:SnapToGridOnSurface(pos, angle, radius, zRound)
+	local localpos = WorldToLocal(pos, Angle(), Vector(), angle)
+	local lx = math.Round(localpos.x / radius) * radius
+	local ly = math.Round(localpos.y / radius) * radius
+	local lz = (not zRound or zRound == 0) and localpos.z or math.Round(localpos.z / zRound) * zRound
+	localpos = Vector(lx, ly, lz)
 	
-	if zRound == 0 then
-		WTL = Vector(math.Round(WTL.x / radius) * radius, math.Round(WTL.y / radius) * radius, WTL.z)
-	else
-		WTL = Vector(math.Round(WTL.x / radius) * radius, math.Round(WTL.y / radius) * radius, math.Round(WTL.z / zRound) * zRound)
-	end
-	pos = LocalToWorld(WTL, Angle(), Vector(), angle)
+	return LocalToWorld(localpos, Angle(), Vector(), angle)
+end
+
+-- Fixing Mins and Maxs
+function LIB_MATH_TA:FixMinMax(min, max)
+	local smin = Vector(min)
+	local smax = Vector(max)
 	
-	return pos
+	if min.x > max.x then min.x = smax.x  max.x = smin.x end
+	if min.y > max.y then min.y = smax.y  max.y = smin.y end
+	if min.z > max.z then min.z = smax.z  max.z = smin.z end
 end
 
 -- Converting vector to a grid
@@ -42,6 +49,7 @@ function LIB_MATH_TA:NormalFlipZeros(normal)
 	if math.abs(normal.z) < LIB_MATH_TA.EPSILON then normal.z = 0 end
 end
 
+-- return degreese between two vectors
 function LIB_MATH_TA:DegreeseBetween(vector1, vector2)
 	LIB_MATH_TA:NormalFlipZeros(vector1)
 	LIB_MATH_TA:NormalFlipZeros(vector2)

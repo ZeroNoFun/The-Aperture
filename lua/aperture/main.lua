@@ -92,6 +92,18 @@ LIB_APERTURE.FALL_BOOTS_LEG_SIZE = 10
 -- end
 -- hook.Add("Think", LIB_APERTURE, LIB_APERTURE.UpdateParameters)
 
+function LIB_APERTURE:GetAIDisabled()
+	local conVar = GetConVar("ai_disabled")
+	if not conVar then return false end
+	return tobool(conVar:GetInt())
+end
+
+function LIB_APERTURE:GetAIIgnorePlayers()
+	local conVar = GetConVar("ai_ignoreplayers")
+	if not conVar then return false end
+	return tobool(conVar:GetInt())
+end
+
 function LIB_APERTURE:JumperBootsResizeLegs(ply, size)
 	local ent = ply:GetNWEntity("TA:ItemJumperBootsEntity")
 	local prCalf = ply:LookupBone("ValveBiped.Bip01_R_Calf")
@@ -121,6 +133,7 @@ function LIB_APERTURE:JumperBootsResizeLegs(ply, size)
 	ent:ManipulateBoneScale(rToe0, Vector(1, 1, 1) * size)
 	ent:ManipulateBoneScale(lToe0, Vector(1, 1, 1) * size)
 end
+
 function LIB_APERTURE:DissolveEnt(ent)
 	if ent.IsDissolving then return end
 	local phys = ent:GetPhysicsObject()
@@ -135,7 +148,20 @@ function LIB_APERTURE:DissolveEnt(ent)
 	end
 	phys:EnableGravity(false)
 	ent:EmitSound("TA:FizzlerDissolve")
+	-- Calling fizzle event
+	if ent.OnFizzle then ent:OnFizzle() end
 	table.insert(LIB_APERTURE.DISSOLVE_ENTITIES, ent)
+end
+
+function LIB_APERTURE:IsValidEntity(ent)
+	if not IsValid(ent) then return false end
+	return true
+end
+
+function LIB_APERTURE:IsValidPhysicsEntity(ent)
+	if not IsValid(ent) then return false end
+	if not IsValid(ent:GetPhysicsObject()) then return false end
+	return true
 end
 
 hook.Add( "Initialize", "TA:Initialize", function()
@@ -410,6 +436,8 @@ hook.Add("PostDrawTranslucentRenderables", "TA:RenderObjects", function()
 	for k,v in pairs(ents.FindByClass("ent_wall_projector")) do v:Drawing() end
 	for k,v in pairs(ents.FindByClass("ent_portal_fizzler")) do v:Drawing() end
 	for k,v in pairs(ents.FindByClass("ent_laser_field")) do v:Drawing() end
+	for k,v in pairs(ents.FindByClass("npc_portal_turret_floor")) do v:Drawing() end
+	for k,v in pairs(ents.FindByClass("npc_portal_rocket_turret")) do v:Drawing() end
 end)
 
 hook.Add("PhysgunPickup", "TA:DisablePhysgunPickup", function(ply, ent)

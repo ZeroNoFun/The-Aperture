@@ -96,7 +96,6 @@ function TOOL:UpdateGhostLaserEmitter(ent, ply)
 	local pos = trace.HitPos
 	local ang = trace.HitNormal:Angle() + Angle(90, 0, 0)
 	local angle = ang
-	
 	if trace.HitNormal == Vector(0, 0, 1) or trace.HitNormal == Vector(0, 0, -1) then
 		_, angle = WorldToLocal(Vector(), (trace.HitPos - ply:GetPos()):Angle(), Vector(), ang)
 		angle = Angle(0, angle.y + 180, 0)

@@ -29,8 +29,7 @@ local turretDryFire =
 	sound	= { "npc/turret_defective/defect_dryfire01.wav"
 	, "npc/turret_defective/defect_dryfire02.wav"
 	, "npc/turret_defective/defect_dryfire03.wav"
-	, "npc/turret_defective/defect_dryfire04.wav"
-	, "npc/turret_defective/defect_dryfire05.wav" },
+	, "npc/turret_defective/defect_dryfire04.wav" },
 	volume	= 1.0,
 	pitch	= 100,
 }
@@ -41,12 +40,12 @@ local turretDefectiveActivateVO =
 	channel	= CHAN_VOICE,
 	name	= "TA:TurretDefectiveActivateVO",
 	level	= 70,
-	sound	= { "npc/turret_defective/glados_battle_defect_arrive01.wav"
-	, "npc/turret_defective/glados_battle_defect_arrive02.wav"
-	, "npc/turret_defective/glados_battle_defect_arrive03.wav"
-	, "npc/turret_defective/glados_battle_defect_arrive04.wav"
-	, "npc/turret_defective/glados_battle_defect_arrive05.wav"
-	, "npc/turret_defective/glados_battle_defect_arrive06.wav"	},
+	sound	= { "npc/turret_defective/defect_activate01.wav"
+	, "npc/turret_defective/defect_activate02.wav"
+	, "npc/turret_defective/defect_activate03.wav"
+	, "npc/turret_defective/defect_activate04.wav"
+	, "npc/turret_defective/defect_activate05.wav"
+	, "npc/turret_defective/defect_activate06.wav"	},
 	volume	= 1.0,
 	pitch	= 100,
 }

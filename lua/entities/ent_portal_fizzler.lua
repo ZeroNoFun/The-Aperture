@@ -5,6 +5,7 @@ local WireAddon = WireAddon or WIRE_CLIENT_INSTALLED
 
 ENT.PrintName 		= "Material Emancipation Grill"
 ENT.FieldColor 		= Color(120, 230, 255)
+ENT.InUnFizzable	= true
 
 local FIELD_HEIGHT = 120
 
@@ -124,7 +125,7 @@ if CLIENT then return end
 function ENT:HandleEntity(ent)
 	if not self:GetEnable() then return end
 
-	if ent.IsAperture then return end
+	if ent.InUnFizzable then return end
 	if ent == self:GetSecondEmitter() then return end
 
 	-- if it portal gun projectile
