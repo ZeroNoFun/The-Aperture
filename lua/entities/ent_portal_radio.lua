@@ -29,7 +29,7 @@ end
 function ENT:Initialize()
 	if CLIENT then return end
 	
-	self:SetModel("models/props/radio_reference.mdl")
+	self:SetModel("models/aperture/radio_reference.mdl")
 	self:PhysicsInit(SOLID_VPHYSICS)
 	self:SetMoveType(MOVETYPE_VPHYSICS)
 	self:SetSolid(SOLID_VPHYSICS)

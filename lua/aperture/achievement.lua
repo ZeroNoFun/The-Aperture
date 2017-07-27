@@ -31,6 +31,7 @@ LIB_APERTURE.ACHIEVEMENTS:AddAchievement("not_for_you", "This is not for You!")
 LIB_APERTURE.ACHIEVEMENTS:AddAchievement("laser_show", "Laser show", "Make a laser show")
 LIB_APERTURE.ACHIEVEMENTS:AddAchievement("firefighter", "Firefight", "Help!")
 LIB_APERTURE.ACHIEVEMENTS:AddAchievement("buttonmaniac", "Buttonmaniac", "Click, Click")
+LIB_APERTURE.ACHIEVEMENTS:AddAchievement("good_idea", "Ooh, I have an idea")
 
 local function UpdateAchievementMenu()
 	for k,v in pairs(TA_DAchivmentPanels) do

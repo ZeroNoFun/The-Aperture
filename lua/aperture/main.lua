@@ -29,6 +29,7 @@ include("aperture/portal_integration.lua")
 include("aperture/achievement.lua")
 
 -- Loading paint lib
+include("aperture/paint_lib.lua")
 include("aperture/paint.lua")
 
 -- Loading floor buttons lib

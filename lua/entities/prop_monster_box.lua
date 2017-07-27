@@ -25,10 +25,10 @@ function ENT:Draw()
 end
 
 -- no more client side
-if ( CLIENT ) then return end
+if CLIENT then return end
 
 function ENT:Initialize()
-	self:SetModel("models/npcs/monsters/monster_a.mdl")
+	self:SetModel("models/aperture/monster_cube.mdl")
 	self:PhysicsInit(SOLID_VPHYSICS)
 	self:SetMoveType(MOVETYPE_VPHYSICS)
 	self:SetSolid(SOLID_VPHYSICS)

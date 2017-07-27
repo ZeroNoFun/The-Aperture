@@ -33,7 +33,7 @@ end
 if CLIENT then return end
 
 function ENT:Initialize()
-	self:SetModel("models/npcs/potatos/world_model/potatos_wmodel.mdl")
+	self:SetModel("models/aperture/potatos_wmodel.mdl")
 	self:PhysicsInit(SOLID_VPHYSICS)
 	self:SetMoveType(MOVETYPE_VPHYSICS)
 	self:SetSolid(SOLID_VPHYSICS)

@@ -131,6 +131,9 @@ function ENT:DamageEntities()
 	local entities = ents.FindInBox(max, min)
 	for k,v in pairs(entities) do
 		if LIB_APERTURE:IsValidHealthEntity(v) then v:TakeDamage(250, self, self) end
+		if v:GetClass() == "prop_monster_box" then
+			LIB_APERTURE.ACHIEVEMENTS:AchievAchievement(self.Founder, "good_idea")
+		end
 	end
 end
 
