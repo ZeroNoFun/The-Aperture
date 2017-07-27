@@ -210,3 +210,170 @@ function LIB_APERTURE:FindClosestAliveInConeIncludingPortalPassages(startpos, di
 	local entities = LIB_APERTURE:FindInCone(startpos, dir, length, degrese)
 	return RFindClosestAliveInSphereIncludingPortalPassages(entities, startpos, length, degrese)
 end
+
+--[[------------------------------------------------------------------------
+	Overriding Portal Gun
+	yea it's baaaad
+	
+	:D
+---------------------------------------------------------------------------]]
+
+function OverridedShootPortal(self, type)
+
+	local ballSpeed = GetConVar("portal_projectile_speed")
+	local weapon = self.Weapon
+	local owner = self.Owner
+   
+	weapon:SetNextPrimaryFire( CurTime() + self.Delay )
+	weapon:SetNextSecondaryFire( CurTime() + self.Delay )
+
+	local OrangePortalEnt = owner:GetNWEntity( "Portal:Orange", nil )
+	local BluePortalEnt = owner:GetNWEntity( "Portal:Blue", nil )
+   
+	local EntToUse = type == TYPE_BLUE and BluePortalEnt or OrangePortalEnt
+	local OtherEnt = type == TYPE_BLUE and OrangePortalEnt or BluePortalEnt
+   
+	local tr = {}
+	tr.start = owner:GetShootPos()
+	tr.endpos = owner:GetShootPos() + ( owner:GetAimVector() * 2048 * 1000 )
+   
+	tr.filter = { owner, EntToUse, EntToUse.Sides }
+   
+	for k,v in pairs(ents.FindByClass( "prop_physics*" )) do
+			table.insert( tr.filter, v )
+	end
+   
+	for k,v in pairs( ents.FindByClass( "npc_turret_floor" ) ) do
+			table.insert( tr.filter, v )
+	end
+   
+	tr.mask = MASK_SHOT
+   
+	local trace = util.TraceLine( tr )
+   
+	if IsFirstTimePredicted() and owner:IsValid() then --Predict that motha' fucka'
+			
+		if SERVER then
+			--shoot a ball.
+			local ball = self:ShootBall(type,tr.start,tr.endpos,trace.Normal)
+			
+			if ( trace.Hit and (trace.HitWorld or trace.Entity and trace.Entity:GetClass() == "env_portal_wall" and trace.Entity:GetSkin() == 0) ) then
+		
+				local validpos, validnormang = self:IsPosionValid( trace.HitPos, trace.HitNormal, 2, true )
+				local cellPos = LIB_MATH_TA:ConvertToGrid(trace.HitPos, LIB_PAINT.PAINT_INFO_SIZE)
+				local cellInfo = LIB_PAINT:GetCellPaintInfo(cellPos)
+				print(cellInfo)
+				
+				if !trace.HitNoDraw and !trace.HitSky and ( trace.MatType != MAT_METAL and trace.MatType != MAT_GLASS or ( trace.MatType == MAT_CONCRETE or trace.MatType == MAT_DIRT ) ) and validpos and validnormang 
+					or cellInfo and cellInfo.paintType == PORTAL_PAINT_PORTAL or trace.Entity:GetClass() == "env_portal_wall" then
+					  --Wait until our ball lands, if it's enabled.
+					  hitDelay = ((trace.Fraction * 2048 * 1000)-100)/ballSpeed:GetInt()
+					  
+					  self:SetNextPrimaryFire(math.max(CurTime()+hitDelay+.2, CurTime() + self.Delay))
+					  self:SetNextSecondaryFire(math.max(CurTime()+hitDelay+.2, CurTime() + self.Delay))
+					  
+					  timer.Simple( hitDelay - .05, function()
+							if ball and ball:IsValid() then 
+								ball:Remove()
+								
+								local OrangePortalEnt = owner:GetNWEntity( "Portal:Orange", nil )
+								local BluePortalEnt = owner:GetNWEntity( "Portal:Blue", nil )
+								
+								local EntToUse = type == TYPE_BLUE and BluePortalEnt or OrangePortalEnt
+								local OtherEnt = type == TYPE_BLUE and OrangePortalEnt or BluePortalEnt
+								if !IsValid( EntToUse ) then
+							   
+										local Portal = ents.Create( "prop_portal" )
+										Portal:SetPos( validpos )
+										Portal:SetAngles( validnormang )
+										Portal:Spawn()
+										Portal:Activate()
+										Portal:SetMoveType( MOVETYPE_NONE )
+										Portal:SetActivatedState(true)
+										Portal:SetType( type )
+										Portal:SuccessEffect()
+									   
+										if type == TYPE_BLUE then
+									   
+												owner:SetNWEntity( "Portal:Blue", Portal )
+												Portal:SetNetworkedBool("blue",true,true)
+											   
+										else
+									   
+												owner:SetNWEntity( "Portal:Orange", Portal )
+												Portal:SetNetworkedBool("blue",false,true)
+											   
+										end
+									   
+										EntToUse = Portal
+									   
+										if IsValid( OtherEnt ) then
+									   
+												EntToUse:LinkPortals( OtherEnt )
+											   
+										end
+									   
+								else
+							   
+										EntToUse:MoveToNewPos( validpos, validnormang )
+										EntToUse:SuccessEffect()
+									   
+								end
+							end
+						end )
+				else
+			   
+						local ang = trace.HitNormal:Angle()
+			   
+						ang:RotateAroundAxis( ang:Right(), -90 )
+						ang:RotateAroundAxis( ang:Forward(), 0 )
+						ang:RotateAroundAxis( ang:Up(), 90 )
+						local ent = ents.Create( "info_particle_system" )
+						ent:SetPos( trace.HitPos + trace.HitNormal * 0.1 )
+						ent:SetAngles( ang )
+						--TODO: Different fail effects.
+						if GetConVarNumber("portal_beta_borders") >= 1 then
+						ent:SetKeyValue( "effect_name", "portal_" .. type .. "_badsurface_")
+						else
+						ent:SetKeyValue( "effect_name", "portal_" .. type .. "_badsurface")
+						end
+						ent:SetKeyValue( "start_active", "1")
+						ent:Spawn()
+						ent:Activate()
+						timer.Simple( 5, function()
+							if IsValid( ent ) then
+								ent:Remove()
+							end 
+						end )
+						
+						ent:EmitSound(Sound("weapons/portalgun/portal_invalid_surface3.wav"))
+						
+					   
+				end
+			   
+				   
+			end
+		   
+		end
+	end
+   
+end
+
+local function OverridePortalGun(weapon)
+	weapon.ShootPortal = OverridedShootPortal
+end
+
+hook.Add("Think", "TA:PortalGunOverride", function()
+	if SERVER then
+		for k,v in pairs(player.GetAll()) do
+			if IsValid(v:GetActiveWeapon()) and v:GetActiveWeapon():GetClass() == "weapon_portalgun" and TYPE_BLUE and TYPE_ORANGE then
+				OverridePortalGun(v:GetActiveWeapon())
+			end
+		end
+	end
+	
+	if CLIENT then
+		-- Removing this bother hook to prevent player view correction on the gel
+		hook.Remove("Think", "Reset Camera Roll")
+	end
+end)

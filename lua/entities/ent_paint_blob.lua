@@ -23,7 +23,7 @@ function ENT:Initialize()
 end
 
 function ENT:HandleEntities(ent)
-	if ent:GetClass() != self:GetClass() and ent:GetClass() != "prop_portal" and not ent.IsAperture and IsValid(ent:GetPhysicsObject()) then
+	if ent:GetClass() != self:GetClass() and ent:GetClass() != "prop_portal" and not ent.IsConnectable and IsValid(ent:GetPhysicsObject()) then
 		local paintType = self:GetPaintType()
 		local center = ent:LocalToWorld(ent:GetPhysicsObject():GetMassCenter())
 		local trace = util.TraceLine({
@@ -47,7 +47,11 @@ function ENT:HandleEntities(ent)
 			end
 			
 			-- extinguish if paint type is water
-			if paintType == PORTAL_PAINT_WATER and ent:IsOnFire() then ent:Extinguish() end
+			if paintType == PORTAL_PAINT_WATER and ent:IsOnFire() then
+				ent:Extinguish()
+				print(self.Owner)
+				LIB_APERTURE.ACHIEVEMENTS:AchievAchievement(self.Owner, "firefighter")
+			end
 		end
 	end
 end

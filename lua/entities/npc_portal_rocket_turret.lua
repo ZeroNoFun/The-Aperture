@@ -59,7 +59,9 @@ if SERVER then
 		if IsValid(rocket:GetPhysicsObject()) then rocket:GetPhysicsObject():SetVelocity(ang:Forward() * 600) end
 		self:EmitSound("TA:RTurretLaunch")
 		rocket.RTurret = self
+		rocket.OriginalTarget = self:GetTarget()
 		self.TurretLaunchedRocket = rocket
+		self:PlaySequence("fire", 1)
 	end
 
 	function ENT:RotateTurret(angle, speed)
@@ -71,8 +73,13 @@ if SERVER then
 	end
 
 	function ENT:RotateTurretPoint(pos, speed)
-		local center = self:LocalToWorld(Vector(0, 0, 30))
+		local center = self:LocalToWorld(Vector(0, 0, 20))
 		local dirAng = (pos - center):Angle()
+		local offset = Vector(0, 10, 0)
+		offset:Rotate(dirAng + Angle(90, 0, 0))
+		center = center + offset
+		
+		dirAng = (pos - center):Angle()
 		local angle = self:WorldToLocalAngles(dirAng)
 		self:RotateTurret(angle, speed)
 	end
@@ -161,6 +168,7 @@ function ENT:Think()
 			if not IsValid(self) then return end			
 			self:SetTurretState(TURRET_STATE_RETRACT)
 			self:EmitSound("npc/scanner/cbot_discharge1.wav")
+			self:RotateTurret(Angle(-2, 90, 0), 1)
 			timer.Simple(self:PlaySequence("close", 1), function()
 				if not IsValid(self) then return end
 				self:SetTurretState(TURRET_STATE_DISABLED)
@@ -169,7 +177,7 @@ function ENT:Think()
 	end
 	
 	if turretState == TURRET_STATE_PREPARE_RETRACT then
-		self:RotateTurret(Angle(3, 90, 0), 20)
+		self:RotateTurret(Angle(-2, 90, 0), 20)
 		self.TurretLookingPoint = nil
 	elseif turretState == TURRET_STATE_SEARCH then
 		if IsValid(target) then
@@ -214,6 +222,7 @@ function ENT:Think()
 		if not IsValid(self.TurretLaunchedRocket) then
 			self:SetTurretState(TURRET_STATE_SEARCH)
 			self:SetSkin(0)
+			self:PlaySequence("load", 1)
 			timer.Create("TA:RTurretCooldown"..self:EntIndex(), 2, 1, function() end)
 		end
 	end

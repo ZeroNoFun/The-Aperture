@@ -155,8 +155,10 @@ function ENT:HandleEntity(ent)
 		return
 	end
 	
+	if ent.UnFizzable then return end
 	if ent:IsPlayer() then return end
 	if ent:IsNPC() then return end
+	if ent:GetClass() == "prop_ragdoll" then return end
 	if not IsValid(ent:GetPhysicsObject()) then return end
 	if ent:GetModel() == "models/blackops/portal_sides.mdl" then return end
 	

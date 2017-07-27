@@ -1,5 +1,6 @@
 "UnlitGeneric"
 {
-	"$basetexture" "achievement/cake"
-	"$translucent" 1
+	$basetexture "aperture/achievement/cake"
+	$translucent 1
+	$vertexcolor 1
 }

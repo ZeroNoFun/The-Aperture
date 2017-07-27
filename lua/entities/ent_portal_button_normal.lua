@@ -2,7 +2,7 @@ AddCSLuaFile()
 DEFINE_BASECLASS("base_aperture_floor_button")
 
 ENT.PrintName		= "Wired Button (Normal)"
-ENT.Spawnable		= istable(PortalButtons)
+ENT.Spawnable		= false
 ENT.AdminOnly		= false
 ENT.Category		= "Aperture Science"
 

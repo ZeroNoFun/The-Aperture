@@ -34,7 +34,7 @@ function ENT:DropTypeToInfo()
 		[2] = {model = "models/portal_custom/underground_weighted_cube.mdl", class = "prop_physics"},
 		[3] = {model = "models/portal_custom/metal_box_custom.mdl", class = "prop_physics", skin = 1},
 		[4] = {model = "models/portal_custom/metal_ball_custom.mdl", class = "prop_physics"},
-		[5] = {model = "models/props/reflection_cube.mdl", class = "prop_physics"},
+		[5] = {model = "models/aperture/reflection_cube.mdl", class = "prop_physics"},
 		[6] = {class = "prop_monster_box"},
 		[7] = {class = "ent_portal_bomb"}
 	}

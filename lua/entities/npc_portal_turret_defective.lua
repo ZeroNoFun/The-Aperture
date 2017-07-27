@@ -40,3 +40,24 @@ end
 
 -- no more client side
 if CLIENT then return end
+
+function ENT:Think()
+	self.BaseClass.Think(self)
+	
+	self:NextThink(CurTime())
+	
+	-- Finding arount turret any entitie with ammo type, and giving turret the ability to shoot
+	if self.CantShoot then
+		local entities = ents.FindInSphere(self:GetPos(), 100)
+		for k,v in pairs(entities) do
+			local class = v:GetClass() and v:GetClass():lower() or ""
+			if string.find(class, "ammo") then
+				if IsValid(v.Player) then LIB_APERTURE.ACHIEVEMENTS:AchievAchievement(v.Player, "im_not_defective") end
+				self.CantShoot = false
+				v:Remove()
+			end
+		end
+	end
+	
+	return true
+end

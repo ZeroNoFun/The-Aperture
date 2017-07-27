@@ -391,4 +391,49 @@ end )
 
 end -- CLIENT
 
+-- Handling entity paint
+function PAINT_INFO:OnEntityPainted(ent)
+	if not IsValid(ent) then return end
+	if not IsValid(ent:GetPhysicsObject()) then return end
+	
+	local inx = ent:AddCallback("PhysicsCollide", function(ent, colData, collider)
+		if not IsValid(ent) then return end
+		if ent:IsPlayerHolding() then return end
+		if not IsValid(colData.PhysObject) then return end
+		local physObj = colData.PhysObject
+		local collider = colData.HitObject:GetEntity()
+		-- if collided with other entity
+		if colData.DeltaTime < 0.25 then return end
+		
+		if IsValid(collider) then
+			if not IsValid(constraint.Find(ent, collider, "Weld", 0, 0)) then
+				-- bypass
+				timer.Simple(0, function() constraint.Weld(ent, collider, 0, 0, 3000, 1, false) end)
+				ent:EmitSound("TA:PaintStickEnter")
+			end
+		else
+			-- bypass
+			timer.Simple(0, function() constraint.Weld(ent, Entity(0), 0, 0, 10000, 1, false) end)
+			ent:EmitSound("TA:PaintStickEnter")
+		end
+	end)
+	
+	ent.TA_SPhysCollideCallbackInxed = inx
+end
+
+-- Handling entity clear
+function PAINT_INFO:OnEntityCleared(ent)
+	if ent.TA_SPhysCollideCallbackInxed then
+		ent:RemoveCallback("PhysicsCollide", ent.TA_SPhysCollideCallbackInxed)
+	end
+end
+
+function PAINT_INFO:OnEntityChangedTo(ent, paintType)
+	PAINT_INFO:OnEntityPainted(ent)
+end
+
+function PAINT_INFO:OnEntityChangedFrom(ent, paintType)
+	PAINT_INFO:OnEntityCleared(ent)
+end
+
 LIB_APERTURE:CreateNewPaintType(PORTAL_PAINT_STICKY, PAINT_INFO)

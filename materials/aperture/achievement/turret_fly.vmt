@@ -1,6 +1,6 @@
 "UnlitGeneric"
 {
-	"$basetexture" "achievement/turret_fly"
+	"$basetexture" "aperture/achievement/turret_fly"
 	"$translucent" 1
 	"$vertexalpha" 1
 	"$vertexcolor" 1

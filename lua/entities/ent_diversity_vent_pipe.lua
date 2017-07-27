@@ -13,7 +13,7 @@ if WireAddon then
 	ENT.WireDebugName = ENT.PrintName
 end
 
-local EXIT_MODEL = "models/props_backstage/vacum_flange_a.mdl"
+local EXIT_MODEL = "models/aperture/vacum_flange_a.mdl"
 
 function ENT:GetModelConnectionData()
 	return LIB_APERTURE:GetModelConnectionData(self)

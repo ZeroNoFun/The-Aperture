@@ -50,7 +50,7 @@ function ENT:Initialize()
 	self.BaseClass.Initialize(self)
 	
 	if SERVER then
-		self:SetModel("models/props/wall_emitter.mdl")
+		self:SetModel("models/aperture/wall_emitter.mdl")
 		self:PhysicsInit(SOLID_VPHYSICS)
 		self:SetMoveType(MOVETYPE_VPHYSICS)
 		self:SetSolid(SOLID_VPHYSICS)
@@ -109,8 +109,9 @@ function ENT:Think()
 					wall:SetAngles(angles)
 					wall:SetModel("models/aperture/wall.mdl")
 					wall:Spawn()
-					wall:GetPhysicsObject():EnableMotion(false)
+					wall:PhysicsInitStatic(SOLID_VPHYSICS)
 					wall.isClone = true
+					wall.UnFizzable = true
 					table.insert(self.ProjectedWalls, wall)
 				else
 					local wall = self.ProjectedWalls[itterator]
@@ -124,25 +125,19 @@ function ENT:Think()
 			if penetrateVal < 0 then penetrateVal = penetrateVal + WALL_MODEL_SIZE end
 			
 			-- effect impact		
-			//if not timer.Exists("TA:LaserSparksEffect"..self:EntIndex()) then 
-				local effectdata = EffectData()
-				effectdata:SetOrigin(v.endpos)
-				effectdata:SetAngles(v.angles)
-				effectdata:SetRadius(30)
-				effectdata:SetEntity(v.enterportal)
+			local effectdata = EffectData()
+			effectdata:SetOrigin(v.endpos)
+			effectdata:SetAngles(v.angles)
+			effectdata:SetRadius(30)
+			effectdata:SetEntity(v.enterportal)
+			util.Effect("wall_projector_impact_effect", effectdata)
+			if IsValid(v.exitportal) then
+				effectdata:SetOrigin(v.startpos)
+				effectdata:SetEntity(v.exitportal)
+				effectdata:SetAngles(v.angles + Angle(0, 180, 0))
 				util.Effect("wall_projector_impact_effect", effectdata)
-				if IsValid(v.exitportal) then
-					effectdata:SetOrigin(v.startpos)
-					effectdata:SetEntity(v.exitportal)
-					effectdata:SetAngles(v.angles + Angle(0, 180, 0))
-					util.Effect("wall_projector_impact_effect", effectdata)
-				end
-			//end
+			end
 		end
-		
-		//if not timer.Exists("TA:LaserSparksEffect"..self:EntIndex()) then
-		//	timer.Create( "TA:LaserSparksEffect"..self:EntIndex(), 0.05, 1, function() end )
-		//end
 	end
 	
 	return true
@@ -165,75 +160,6 @@ function ENT:Drawing()
 	render.OverrideDepthEnable(false, false)
 	render.SetLightingMode(0)
 end
-
--- function ENT:Draw()
-
-	-- self:DrawModel()
-	
-	-- if ( !self:GetEnable() ) then return end
-
-	-- local BridgeDrawWidth = 35
-	-- local BorderBeamWidth = 10
-	
-	-- local MatBridge = Material( "effects/projected_wall" )
-	-- local MatBridgeBorder = Material( "effects/projected_wall_rail" )
-	-- local MatSprite = Material( "sprites/gmdm_pickups/light" )
-
-	-- local trace = util.TraceLine( {
-		-- start = self:GetPos(),
-		-- endpos = self:LocalToWorld( Vector( 10000, 0, 0 ) ),
-		-- filter = function( ent ) if ( ent == self || ent:GetClass() == "player" || ent:GetClass() == "prop_physics" ) then return false end end
-	-- } )
-	
-	-- local totalDistance = self:GetPos():Distance( trace.HitPos )
-	
-	-- if ( self.GASL_BridgeUpdate.lastPos != self:GetPos() || self.GASL_BridgeUpdate.lastAngle != self:GetAngles() ) then
-		-- self.GASL_BridgeUpdate.lastPos = self:GetPos()
-		-- self.GASL_BridgeUpdate.lastAngle = self:GetAngles()
-		
-		-- local min, max = self:GetRenderBounds() 
-		-- max = max + Vector( totalDistance, 0, 0 )
-		-- self.GASL_RenderBounds = { mins = min, maxs = max }
-		
-	-- end
-
-	-- render.SetMaterial( MatBridgeBorder )
-	-- render.DrawBeam( self:LocalToWorld( Vector( 0, BridgeDrawWidth, 0 ) ), self:LocalToWorld( Vector( totalDistance, BridgeDrawWidth, 0 ) ), BorderBeamWidth, 0, 1, Color( 100, 200, 255 ) )
-	-- render.DrawBeam( self:LocalToWorld( Vector( 0, -BridgeDrawWidth, 0 ) ), self:LocalToWorld( Vector( totalDistance, -BridgeDrawWidth, 0 ) ), BorderBeamWidth, 0, 1, Color( 100, 200, 255 ) )
-
--- end
-
--- function ENT:Think()
-	
-	-- self:NextThink(CurTime() + 0.1)
-	
-	-- self.BaseClass.Think( self )
-	
-	-- if ( CLIENT ) then return end
-	
-	-- -- Skip this tick if exursion funnel is disabled and removing effect if possible
-	-- if ( !self:GetEnable() ) then
-		
-		-- if ( self.GASL_BridgeUpdate.lastPos || self.GASL_BridgeUpdate.lastAngle ) then
-				-- self.GASL_BridgeUpdate.lastPos = nil
-				-- self.GASL_BridgeUpdate.lastAngle = nil
-			
-			-- -- Removing effects
-			-- self:ClearAllData( )
-
-		-- end
-
-		-- return
-	-- end
-	
-	-- for k, v in pairs( self.GASL_EntitiesEffects ) do
-	-- for k2, v2 in pairs( v ) do
-		-- if v2:IsValid() then v2:RemoveAllDecals() end
-	-- end
-	-- end
-	
-	-- return true
--- end
 
 -- no more client side
 if ( CLIENT ) then return end

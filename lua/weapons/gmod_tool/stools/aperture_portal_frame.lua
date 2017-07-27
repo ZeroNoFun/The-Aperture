@@ -4,7 +4,7 @@ TOOL.Name 		= "#tool.aperture_portal_frame.name"
 
 TOOL.ClientConVar["keyenable"] = "45"
 TOOL.ClientConVar["startenabled"] = "0"
-TOOL.ClientConVar["model"] = "models/props/portal_emitter.mdl"
+TOOL.ClientConVar["model"] = "models/aperture/portal_emitter.mdl"
 TOOL.ClientConVar["toggle"] = "0"
 TOOL.ClientConVar["portaltype"] = "1"
 
@@ -136,5 +136,5 @@ function TOOL.BuildCPanel( CPanel )
 	CPanel:AddControl("CheckBox", {Label = "#tool.aperture_portal_frame.toggle", Command = "aperture_portal_frame_toggle"})
 end
 
-list.Set("PortalFrameModels", "models/props/autoportal_frame/autoportal_frame.mdl", {})
-list.Set("PortalFrameModels", "models/props/portal_emitter.mdl", {})
+list.Set("PortalFrameModels", "models/aperture/autoportal_frame.mdl", {})
+list.Set("PortalFrameModels", "models/aperture/portal_emitter.mdl", {})

@@ -4,7 +4,7 @@ TOOL.Name 		= "#tool.aperture_ball_catcher.name"
 
 TOOL.ClientConVar["keygroup"] = "45"
 
-local CATCHER_MODEL = "models/props/combine_ball_catcher.mdl"
+local CATCHER_MODEL = "models/aperture/combine_ball_catcher.mdl"
 
 if CLIENT then
 	language.Add("tool.aperture_ball_catcher.name", "Hight Energy Pellet Catcher")

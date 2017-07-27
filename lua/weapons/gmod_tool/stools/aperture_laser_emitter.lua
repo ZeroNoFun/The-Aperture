@@ -2,7 +2,7 @@ TOOL.Tab 		= "Aperture"
 TOOL.Category 	= "Puzzle elements"
 TOOL.Name 		= "#tool.aperture_laser_emitter.name"
 
-TOOL.ClientConVar["model"] = "models/props/laser_emitter.mdl"
+TOOL.ClientConVar["model"] = "models/aperture/laser_emitter.mdl"
 TOOL.ClientConVar["keyenable"] = "45"
 TOOL.ClientConVar["startenabled"] = "0"
 TOOL.ClientConVar["toggle"] = "0"
@@ -31,6 +31,7 @@ if SERVER then
 		ent:SetMoveType(MOVETYPE_NONE)
 		ent:SetStartEnabled(tobool(startenabled))
 		ent:SetToggle(tobool(toggle))
+		ent.Player = ply
 		ent:Spawn()
 		
 		-- initializing numpad inputs
@@ -133,5 +134,5 @@ function TOOL.BuildCPanel( CPanel )
 	CPanel:AddControl("CheckBox", {Label = "#tool.aperture_laser_emitter.toggle", Command = "aperture_laser_emitter_toggle"})
 end
 
-list.Set("PortalLaserEmiterModels", "models/props/laser_emitter.mdl", {})
-list.Set("PortalLaserEmiterModels", "models/props/laser_emitter_center.mdl", {})
+list.Set("PortalLaserEmiterModels", "models/aperture/laser_emitter.mdl", {})
+list.Set("PortalLaserEmiterModels", "models/aperture/laser_emitter_center.mdl", {})

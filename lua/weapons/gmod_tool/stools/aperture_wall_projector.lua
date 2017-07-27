@@ -109,7 +109,7 @@ function TOOL:RightClick( trace )
 end
 
 function TOOL:Think()
-	local mdl = "models/props/wall_emitter.mdl"
+	local mdl = "models/aperture/wall_emitter.mdl"
 	if not util.IsValidModel(mdl) then self:ReleaseGhostEntity() return end
 
 	if not IsValid(self.GhostEntity) or self.GhostEntity:GetModel() != mdl then

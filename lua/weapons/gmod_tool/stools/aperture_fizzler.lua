@@ -2,7 +2,7 @@ TOOL.Tab 		= "Aperture"
 TOOL.Category 	= "Puzzle elements"
 TOOL.Name 		= "#tool.aperture_fizzler.name"
 
-TOOL.ClientConVar["model"] = "models/props/fizzler.mdl"
+TOOL.ClientConVar["model"] = "models/aperture/fizzler_emitter.mdl"
 TOOL.ClientConVar["keyenable"] = "45"
 TOOL.ClientConVar["startenabled"] = "0"
 TOOL.ClientConVar["toggle"] = "0"
@@ -136,15 +136,15 @@ function TOOL:Think()
 	self:UpdateGhostFizzler(self.GhostEntity, self:GetOwner())
 end
 
-function TOOL:DrawToolScreen(width, height)
-	surface.SetDrawColor(Color(255, 255, 255, 255))
-	surface.SetMaterial(ToolBackground)
-	surface.DrawTexturedRect(0, 0, width, height)
+-- function TOOL:DrawToolScreen(width, height)
+	-- surface.SetDrawColor(Color(255, 255, 255, 255))
+	-- surface.SetMaterial(ToolBackground)
+	-- surface.DrawTexturedRect(0, 0, width, height)
 	
-	local text = "#tool.aperture_fizzler.name"
-	local x,y = surface.GetTextSize(text) 
-	draw.SimpleText("#tool.aperture_fizzler.name", "CloseCaption_Bold", x + 20, y + 20, Color(50, 50, 50), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-end
+	-- local text = "#tool.aperture_fizzler.name"
+	-- local x,y = surface.GetTextSize(text) 
+	-- draw.SimpleText("#tool.aperture_fizzler.name", "CloseCaption_Bold", x + 20, y + 20, Color(50, 50, 50), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+-- end
 
 local ConVarsDefault = TOOL:BuildConVarList()
 
@@ -156,5 +156,4 @@ function TOOL.BuildCPanel( CPanel )
 	CPanel:AddControl("CheckBox", {Label = "#tool.aperture_fizzler.toggle", Command = "aperture_fizzler_toggle"})
 end
 
-list.Set("PortalFizzlerModels", "models/props/fizzler_dynamic.mdl", {})
-list.Set("PortalFizzlerModels", "models/aperture/underground_paintdropper.mdl", {})
+list.Set("PortalFizzlerModels", "models/aperture/fizzler_emitter.mdl", {})

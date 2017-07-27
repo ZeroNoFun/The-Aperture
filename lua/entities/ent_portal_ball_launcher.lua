@@ -46,7 +46,7 @@ function ENT:Initialize()
 	self.BaseClass.Initialize( self )
 
 	if SERVER then
-		self:SetModel("models/props/combine_ball_launcher.mdl")
+		self:SetModel("models/aperture/combine_ball_launcher.mdl")
 		self:PhysicsInit(SOLID_VPHYSICS)
 		self:SetMoveType(MOVETYPE_VPHYSICS)
 		self:SetSolid(SOLID_VPHYSICS)
@@ -94,15 +94,6 @@ function ENT:LaunchBall()
 	timer.Simple(2, function() if IsValid(self) then self:SetBusy(false) end end)
 end
 
--- function ENT:SpawnCombineBall()
-	-- local ent = ents.Create("prop_combine_ball") 
-	-- if not IsValid(ent) then return end
-	-- ent:SetPos(self:LocalToWorld(Vector(10, 0, 0)))
-	-- ent:Spawn()
-	-- ent:Activate()
-	-- ent:SetVelocity(self:GetForward() * 10)
--- end
-
 function ENT:SpawnCombineBall()
 	local ent = ents.Create("point_combine_ball_launcher") 
 	if not IsValid(ent) then return end
@@ -124,6 +115,7 @@ function ENT:SpawnCombineBall()
 		for k,v in pairs(result) do
 			if v:GetClass() == "prop_combine_ball" then
 				self.LastLaunchedBall = v
+				v.UnFizzable = true
 				timer.Simple(self:GetTime(), function() if IsValid(v) then v:Fire("Explode", "", 0) end end)
 				break
 			end

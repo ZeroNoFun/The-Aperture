@@ -7,7 +7,7 @@ TOOL.ClientConVar["startenabled"] = "0"
 TOOL.ClientConVar["toggle"] = "0"
 TOOL.ClientConVar["time"] = "1"
 
-local LAUNCHER_MODEL = "models/props/combine_ball_launcher.mdl"
+local LAUNCHER_MODEL = "models/aperture/combine_ball_launcher.mdl"
 
 if CLIENT then
 	language.Add("tool.aperture_ball_launcher.name", "Hight Energy Pellet Launcher")

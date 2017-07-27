@@ -2,7 +2,7 @@ TOOL.Tab 		= "Aperture"
 TOOL.Category 	= "Puzzle elements"
 TOOL.Name 		= "#tool.aperture_button.name"
 
-TOOL.ClientConVar["model"] = "models/props/laser_emitter.mdl"
+TOOL.ClientConVar["model"] = "models/aperture/button.mdl"
 TOOL.ClientConVar["keygroup"] = "45"
 TOOL.ClientConVar["timer"] = "1"
 
@@ -75,7 +75,7 @@ function TOOL:LeftClick( trace )
 	
 	local ent = MakePortalButton(ply, model, pos, angle, model, key_group, time)
 		
-	undo.Create("#tool.aperture_button.name")
+	undo.Create("Button")
 		undo.AddEntity(ent)
 		undo.SetPlayer(ply)
 	undo.Finish()
@@ -131,5 +131,5 @@ function TOOL.BuildCPanel( CPanel )
 	CPanel:NumSlider("#tool.aperture_button.timer", "aperture_button_timer", 1, 60)
 end
 
-list.Set("PortalButtonModels", "models/props_underground/underground_testchamber_button.mdl", {})
-list.Set("PortalButtonModels", "models/props/switch001.mdl", {})
+list.Set("PortalButtonModels", "models/aperture/button.mdl", {})
+list.Set("PortalButtonModels", "models/aperture/underground_button.mdl", {})

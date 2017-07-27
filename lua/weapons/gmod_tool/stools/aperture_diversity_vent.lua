@@ -2,7 +2,7 @@ TOOL.Tab 		= "Aperture"
 TOOL.Category 	= "Puzzle elements"
 TOOL.Name 		= "#tool.aperture_diversity_vent.name"
 
-TOOL.ClientConVar["model"] 			= "models/props_backstage/vacum_flange_a.mdl"
+TOOL.ClientConVar["model"] 			= "models/aperture/vacum_flange_a.mdl"
 TOOL.ClientConVar["ignorealive"] 	= "1"
 TOOL.ClientConVar["keyenable"] 		= "45"
 TOOL.ClientConVar["startenabled"] 	= "0"
@@ -33,6 +33,7 @@ end
 
 -- if model is filterable then return local center pos
 local function GetFilterableModelData(model)
+	-- print(model)
 	return LIB_APERTURE:GetFilterableModelData(model)
 end
 
@@ -47,20 +48,24 @@ local function GetClosestVentPoint(ply)
 	for k,v in pairs(entities) do
 		local dist = util.DistanceToLine(plyShootPos, plyEyeDir, v:GetPos())
 		local model = v:GetModel()
+		if model == "models/props_bts/vactube_90deg_06.mdl" then Entity(1):SetPos(v:GetPos()) end
 		if dist < v:GetModelRadius() * 2 then
-			for inx,coord in pairs(GetModelConnectionData(model)) do
-				local coordWorld = v:LocalToWorld(coord.pos)
-				local distToPoint = plyShootPos:Distance(coordWorld)
-				local distFromLineToPoint = util.DistanceToLine(plyShootPos, plyEyeDir, coordWorld)
-				if distFromLineToPoint < 50 and (closestPoint == -1 or distToPoint < closestPoint)
-					and not IsValid(v:GetNWEntity("TA:ConnectedPipe:"..inx)) then
-					ent = v
-					pos = coord.pos
-					ang = coord.ang
-					index = inx
-					pointType = POINT_TYPE_CONNECTION
-					
-					closestPoint = distToPoint
+			local tbl = GetModelConnectionData(model)
+			if tbl then
+				for inx,coord in pairs(tbl) do
+					local coordWorld = v:LocalToWorld(coord.pos)
+					local distToPoint = plyShootPos:Distance(coordWorld)
+					local distFromLineToPoint = util.DistanceToLine(plyShootPos, plyEyeDir, coordWorld)
+					if distFromLineToPoint < 50 and (closestPoint == -1 or distToPoint < closestPoint)
+						and not IsValid(v:GetNWEntity("TA:ConnectedPipe:"..inx)) then
+						ent = v
+						pos = coord.pos
+						ang = coord.ang
+						index = inx
+						pointType = POINT_TYPE_CONNECTION
+						
+						closestPoint = distToPoint
+					end
 				end
 			end
 		end
@@ -214,7 +219,7 @@ if SERVER then
 	end
 	
 	function CreatePipe(ply, pos, ang, model, dir, count)
-		if count > 1 and model == "models/props_bts/vactube_128_straight.mdl" then
+		if count > 1 and model == "models/aperture/vactube_128_straight.mdl" then
 			return MakePortalDiversityVentPipeArray(ply, pos, ang, model, dir, count)
 		else
 			return MakePortalDiversityVentPipe(ply, pos, ang, model)
@@ -721,7 +726,7 @@ function TOOL:UpdateGhostDiversityVent(ent, ply)
 		-- if no pipe is selected then creating diversity vent
 		local pos = trace.HitPos + trace.HitNormal * HEIGHT_FROM_FLOOR
 		local ang = trace.HitNormal:Angle() + Angle(90, 0, 90)
-		ent:SetModel("models/props_backstage/vacum_flange_a.mdl")
+		ent:SetModel("models/aperture/vacum_flange_a.mdl")
 		ent:SetPos(pos)
 		ent:SetAngles(ang)
 		
@@ -816,16 +821,19 @@ function TOOL:DrawHUD()
 		end
 
 		if vpointType != POINT_TYPE_FILTER then
-			for inx,coord in pairs(GetModelConnectionData(model)) do
-				if not IsValid(v:GetNWEntity("TA:ConnectedPipe:"..inx)) then
-					local coordWorld = v:LocalToWorld(coord.pos)
-					local color = Color(255, 0, 0)
-					if vent == v and vindex == inx then
-						color = Color(0, 255, 0)
+			local tbl = GetModelConnectionData(model)
+			if tbl then
+				for inx,coord in pairs(tbl) do
+					if not IsValid(v:GetNWEntity("TA:ConnectedPipe:"..inx)) then
+						local coordWorld = v:LocalToWorld(coord.pos)
+						local color = Color(255, 0, 0)
+						if vent == v and vindex == inx then
+							color = Color(0, 255, 0)
+						end
+						
+						render.SetMaterial(CONNTECTION_POINT_MATERIAL)
+						render.DrawSprite(coordWorld, 20, 20, color)
 					end
-					
-					render.SetMaterial(CONNTECTION_POINT_MATERIAL)
-					render.DrawSprite(coordWorld, 20, 20, color)
 				end
 			end
 		end
@@ -845,13 +853,12 @@ function TOOL.BuildCPanel(CPanel)
 	CPanel:AddControl("CheckBox", {Label = "#tool.aperture_diversity_vent.toggle", Command = "aperture_diversity_vent_toggle"})
 end
 
-list.Set("DiversityVentModels", "models/props_bts/vactube_128_straight.mdl", {})
-list.Set("DiversityVentModels", "models/props_bts/vactube_90deg_01.mdl", {})
-list.Set("DiversityVentModels", "models/props_bts/vactube_90deg_02.mdl", {})
-list.Set("DiversityVentModels", "models/props_bts/vactube_90deg_03.mdl", {})
-list.Set("DiversityVentModels", "models/props_bts/vactube_90deg_04.mdl", {})
-list.Set("DiversityVentModels", "models/props_bts/vactube_90deg_05.mdl", {})
-list.Set("DiversityVentModels", "models/props_bts/vactube_90deg_06.mdl", {})
-list.Set("DiversityVentModels", "models/props_bts/vactube_tjunction.mdl", {})
-list.Set("DiversityVentModels", "models/props_bts/vactube_crossroads.mdl", {})
-list.Set("DiversityVentModels", "models/props_bts/vactube_90deg_01.mdl", {})
+list.Set("DiversityVentModels", "models/aperture/vactube_128_straight.mdl", {})
+list.Set("DiversityVentModels", "models/aperture/vactube_90deg_01.mdl", {})
+list.Set("DiversityVentModels", "models/aperture/vactube_90deg_02.mdl", {})
+list.Set("DiversityVentModels", "models/aperture/vactube_90deg_03.mdl", {})
+list.Set("DiversityVentModels", "models/aperture/vactube_90deg_04.mdl", {})
+list.Set("DiversityVentModels", "models/aperture/vactube_90deg_05.mdl", {})
+list.Set("DiversityVentModels", "models/aperture/vactube_90deg_06.mdl", {})
+list.Set("DiversityVentModels", "models/aperture/vactube_tjunction.mdl", {})
+list.Set("DiversityVentModels", "models/aperture/vactube_crossroads.mdl", {})

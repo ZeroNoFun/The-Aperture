@@ -195,7 +195,7 @@ function ENT:Initialize()
 	self.BaseClass.Initialize(self)
 	
 	if SERVER then
-		self:SetModel("models/props_backstage/vacum_flange_a.mdl")
+		self:SetModel("models/aperture/vacum_flange_a.mdl")
 		self:PhysicsInitStatic(SOLID_VPHYSICS)
 		self:SetMoveType(MOVETYPE_VPHYSICS)
 		self:SetSolid(SOLID_VPHYSICS)

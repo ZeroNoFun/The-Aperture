@@ -3,6 +3,7 @@ TOOL.Category 	= "Puzzle elements"
 TOOL.Name 		= "#tool.aperture_arm_panel.name"
 
 TOOL.ClientConVar["keyenable"] = "45"
+TOOL.ClientConVar["startenabled"] = "0"
 TOOL.ClientConVar["toggle"] = "0"
 TOOL.ClientConVar["localx"] = "0"
 TOOL.ClientConVar["localz"] = "0"
@@ -24,7 +25,7 @@ if CLIENT then
 	language.Add("tool.aperture_arm_panel.0", "Left click to place")
 	language.Add("tool.aperture_arm_panel.enable", "Enable")
 	language.Add("tool.aperture_arm_panel.startenabled", "Enabled")
-	language.Add("tool.aperture_arm_panel.startenabled.help", "Portal Emitter will spawn portal when placed")
+	language.Add("tool.aperture_arm_panel.startenabled.help", "Arm Panel will be deployed on start")
 	language.Add("tool.aperture_arm_panel.localx", "Forward Offset")
 	language.Add("tool.aperture_arm_panel.localz", "Up Offset")
 	language.Add("tool.aperture_arm_panel.countx", "Copy Back")
@@ -77,11 +78,11 @@ local function MakeArmPanel(ply, pos, ang, localx, localz, lpitch, key_enable, s
 	ent:SetAngles(ang)
 	ent:SetMoveType(MOVETYPE_NONE)
 	ent:SetPlayer(ply)
+	ent:SetArmPosition(Vector(localx, 0, localz))
+	ent:SetArmAngle(Angle(lpitch, 0, 0))
 	ent:SetStartEnabled(tobool(startenabled))
 	ent:SetToggle(tobool(toggle))
 	ent:Spawn()
-	ent:SetArmPosition(Vector(localx, 0, localz))
-	ent:SetArmAngle(Angle(lpitch, 0, 0))
 	
 	-- initializing numpad inputs
 	ent.NumDown = numpad.OnDown(ply, key_enable, "PortalArmPanel_Enable", ent, true)
@@ -109,7 +110,7 @@ local function MakeArmPanel(ply, pos, ang, localx, localz, lpitch, key_enable, s
 end
 
 if SERVER then
-	duplicator.RegisterEntityClass("ent_portal_frame", MakePortalFrame, "pos", "ang", "localx", "localz", "lpitch", "key_enable", "startenabled", "toggle", "data")
+	duplicator.RegisterEntityClass("ent_arm_panel", MakeArmPanel, "pos", "ang", "localx", "localz", "lpitch", "key_enable", "startenabled", "toggle", "data")
 end
 
 function TOOL:LeftClick(trace)
@@ -299,6 +300,7 @@ end
 
 function TOOL:Think()
 	if SERVER then return true end
+	if self.HolserTime and CurTime() < (self.HolserTime + 0.1) then return end
 	local countx = self:GetClientNumber("countx")
 	local county = self:GetClientNumber("county")
 	local amount = countx * county
@@ -337,6 +339,7 @@ end
 
 function TOOL:Holster()
 	if SERVER then return true end
+	self.HolserTime = CurTime()
 	self:ClearGhostEntities()
 	self.LastPanelAmount = 0
 	return true

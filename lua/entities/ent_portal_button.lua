@@ -13,8 +13,8 @@ end
 if SERVER then
 	function ENT:ModelToInfo()
 		local modelToInfo = {
-			["models/props/switch001.mdl"] = {sounddown = "TA:ButtonClick", soundup = "TA:ButtonUp", animdown = "down", animup = "up"},
-			["models/props_underground/underground_testchamber_button.mdl"] = {sounddown = "TA:UndergroundButtonClick", soundup = "TA:UndergroundButtonUp", animdown = "press", animup = "release"}
+			["models/aperture/button.mdl"] = {sounddown = "TA:ButtonClick", soundup = "TA:ButtonUp", animdown = "down", animup = "up"},
+			["models/aperture/underground_button.mdl"] = {sounddown = "TA:OldButtonClick", soundup = "TA:OldButtonUp", animdown = "press", animup = "release"}
 		}
 		return modelToInfo[self:GetModel()]
 	end
@@ -26,7 +26,7 @@ function ENT:SetupDataTables()
 	self:NetworkVar("Int", 2, "Timer")
 end
 
-function ENT:Press(on)
+function ENT:Press(on, ply)
 	local info = self:ModelToInfo()
 	if self:GetOn() != on then
 		if on then
@@ -44,6 +44,19 @@ function ENT:Press(on)
 		end
 		
 		self:SetOn(on)
+	end
+	
+	if IsValid(ply) and ply:IsPlayer() then
+		if not ply.PressedButtonCount or CurTime() > (ply.LastPressedButton + 2) then
+			ply.LastPressedButton = CurTime()
+			ply.PressedButtonCount = 1
+		else
+			ply.PressedButtonCount = ply.PressedButtonCount + 1
+		end
+		
+		if ply.PressedButtonCount > 5 then
+			LIB_APERTURE.ACHIEVEMENTS:AchievAchievement(ply, "buttonmaniac")
+		end
 	end
 end
 
@@ -72,14 +85,13 @@ end
 if CLIENT then return end
 
 function ENT:Use(activator, caller, usetype, val)
-
 	if not IsValid(caller) then return end
 	if timer.Exists("TA:Button_Block"..self:EntIndex()) then return end
 	
 	timer.Create("TA:Button_Block"..self:EntIndex(), 1, 1, function() end)
 	
 	if not timer.Exists("TA:Button_Timer"..self:EntIndex()) then
-		self:Press(true)
+		self:Press(true, caller)
 	end
 	
 	timer.Create("TA:Button_Timer"..self:EntIndex(), self:GetTimer(), 1, function()

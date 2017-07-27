@@ -67,9 +67,10 @@ end
 function ENT:ClearPortal()
 	local portal = self:GetNWEntity("PortalEntity")
 	if not IsValid(portal) then return end
-	portal:GetNWEntity("Potal:Other"):SetNWEntity("Potal:Other", nil)
-	portal:GetNWEntity("Potal:Other"):SetNWBool("Potal:Linked", false)
 	portal:Remove()
+	if not IsValid(portal:GetOther()) then return end
+	portal:GetOther():SetNWEntity("Potal:Other", nil)
+	portal:GetOther():SetNWBool("Potal:Linked", false)
 end
 
 function ENT:OpenPortal(portalType)
@@ -108,6 +109,7 @@ function ENT:OpenPortal(portalType)
 	   
 		if IsValid(otherEnt) then entToUse:LinkPortals(otherEnt) end
 	else
+		self:SetNWEntity("PortalEntity", entToUse)
 		entToUse:MoveToNewPos(pos, ang)
 		entToUse:SuccessEffect()
 	end

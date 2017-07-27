@@ -1,6 +1,6 @@
 "UnlitGeneric"
 {
-	"$basetexture" "achievement/radio"
+	"$basetexture" "aperture/achievement/radio"
 	"$translucent" 1
 	"$vertexalpha" 1
 	"$vertexcolor" 1

@@ -11,7 +11,7 @@ local buttonClick =
 	channel	= CHAN_WEAPON,
 	name	= "TA:ButtonClick",
 	level	= 70,
-	sound	= "buttons/button_synth_positive_01.wav",
+	sound	= "buttons/button_press.wav",
 	volume	= 1.0,
 	pitch	= 100,
 }
@@ -22,7 +22,7 @@ local buttonUp =
 	channel	= CHAN_WEAPON,
 	name	= "TA:ButtonUp",
 	level	= 70,
-	sound	= "buttons/button_synth_negative_02.wav",
+	sound	= "buttons/button_release.wav",
 	volume	= 1.0,
 	pitch	= 100,
 }
@@ -33,7 +33,7 @@ local oldButtonClick =
 	channel	= CHAN_WEAPON,
 	name	= "TA:OldButtonClick",
 	level	= 70,
-	sound	= "buttons/og_switch_press_01.wav",
+	sound	= "buttons/old_button_press.wav",
 	volume	= 1.0,
 	pitch	= 100,
 }
@@ -44,7 +44,7 @@ local oldButtonUp =
 	channel	= CHAN_WEAPON,
 	name	= "TA:OldButtonUp",
 	level	= 70,
-	sound	= "buttons/og_switch_release_01.wav",
+	sound	= "buttons/old_button_release.wav",
 	volume	= 1.0,
 	pitch	= 100,
 }

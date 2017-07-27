@@ -2,7 +2,7 @@ TOOL.Tab 		= "Aperture"
 TOOL.Category 	= "Puzzle elements"
 TOOL.Name 		= "#tool.aperture_laser_field.name"
 
-TOOL.ClientConVar["model"] = "models/props/fizzler_dynamic.mdl"
+TOOL.ClientConVar["model"] = "models/aperture/fizzler_emitter.mdl"
 TOOL.ClientConVar["keyenable"] = "45"
 TOOL.ClientConVar["startenabled"] = "0"
 TOOL.ClientConVar["toggle"] = "0"
@@ -156,5 +156,4 @@ function TOOL.BuildCPanel( CPanel )
 	CPanel:AddControl("CheckBox", {Label = "#tool.aperture_laser_field.toggle", Command = "aperture_laser_field_toggle"})
 end
 
-list.Set("PortalFizzlerModels", "models/props/fizzler_dynamic.mdl", {})
-list.Set("PortalFizzlerModels", "models/aperture/underground_paintdropper.mdl", {})
+list.Set("PortalFizzlerModels", "models/aperture/fizzler_emitter.mdl", {})

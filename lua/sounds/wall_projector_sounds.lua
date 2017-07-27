@@ -32,7 +32,7 @@ local wallEmiterEnabledNoises =
 	channel	= CHAN_WEAPON,
 	name	= "TA:WallEmiterEnabledNoises",
 	level	= 70,
-	sound	= "vfx/bridge_glow_lp_01.wav",
+	sound	= "bridge/bridge_glow_lp_01.wav",
 	volume	= 1.0,
 	pitch	= 100,
 }

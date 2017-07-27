@@ -36,6 +36,7 @@ function ENT:PlaySequence(seq, rate)
 	self:ResetSequence(sequence)
 	self:SetPlaybackRate(rate)
 	self:SetSequence(sequence)
+	self:ResetSequence(sequence)
 	return self:SequenceDuration(sequence)
 end
 

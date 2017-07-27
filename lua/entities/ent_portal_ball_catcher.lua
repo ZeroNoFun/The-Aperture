@@ -36,11 +36,12 @@ function ENT:Initialize()
 	self.BaseClass.Initialize(self)
 
 	if SERVER then
-		self:SetModel("models/props/combine_ball_catcher.mdl")
+		self:SetModel("models/aperture/combine_ball_catcher.mdl")
 		self:PhysicsInit(SOLID_VPHYSICS)
 		self:SetMoveType(MOVETYPE_VPHYSICS)
 		self:SetSolid(SOLID_VPHYSICS)
 		self:SetActive(false)
+		self:GetPhysicsObject():EnableMotion(false)
 		
 		self:CreateTrigger()
 		

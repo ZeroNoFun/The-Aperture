@@ -11,12 +11,12 @@ local paintSplat =
 	channel	= CHAN_WEAPON,
 	name	= "TA:PaintSplat",
 	level	= 75,
-	sound	= { "physics/paint/paint_blob_splat_01.wav"
-		, "physics/paint/paint_blob_splat_02.wav"
-		, "physics/paint/paint_blob_splat_03.wav"
-		, "physics/paint/paint_blob_splat_04.wav"
-		, "physics/paint/paint_blob_splat_05.wav"
-		, "physics/paint/paint_blob_splat_06.wav"
+	sound	= { "paint/paint_blob_splat_01.wav"
+		, "paint/paint_blob_splat_02.wav"
+		, "paint/paint_blob_splat_03.wav"
+		, "paint/paint_blob_splat_04.wav"
+		, "paint/paint_blob_splat_05.wav"
+		, "paint/paint_blob_splat_06.wav"
 	},
 	volume	= 1.0,
 	pitch	= 100,
@@ -28,7 +28,7 @@ local paintSplatBig =
 	channel	= CHAN_WEAPON,
 	name	= "TA:PaintSplatBig",
 	level	= 75,
-	sound	= "physics/paint/phys_paint_bomb_01.wav",
+	sound	= "paint/phys_paint_bomb_01.wav",
 	volume	= 1.0,
 	pitch	= { 80, 120 },
 }
@@ -39,10 +39,10 @@ local bounceProp =
 	channel	= CHAN_WEAPON,
 	name	= "TA:BounceProp",
 	level	= 75,
-	sound	= { "physics/paint/phys_bouncy_cube_lg_01.wav"
-		, "physics/paint/phys_bouncy_cube_lg_02.wav"
-		, "physics/paint/phys_bouncy_cube_lg_03.wav"
-		, "physics/paint/phys_bouncy_cube_lg_04.wav"
+	sound	= { "paint/phys_bouncy_cube_lg_01.wav"
+		, "paint/phys_bouncy_cube_lg_02.wav"
+		, "paint/phys_bouncy_cube_lg_03.wav"
+		, "paint/phys_bouncy_cube_lg_04.wav"
 	},
 	volume	= 1.0,
 	pitch	= 100,
@@ -54,9 +54,9 @@ local playerBounce =
 	channel	= CHAN_WEAPON,
 	name	= "TA:PlayerBounce",
 	level	= 75,
-	sound	= { "player/paint/player_bounce_jump_paint_01.wav"
-		, "player/paint/player_bounce_jump_paint_02.wav"
-		, "player/paint/player_bounce_jump_paint_03.wav"
+	sound	= { "paint/player_bounce_jump_paint_01.wav"
+		, "paint/player_bounce_jump_paint_02.wav"
+		, "paint/player_bounce_jump_paint_03.wav"
 	},
 	volume	= 1.0,
 	pitch	= 100,
@@ -169,7 +169,7 @@ local paintFlow =
 	channel	= CHAN_AUTO,
 	name	= "TA:PaintFlow",
 	level	= 70,
-	sound	= "physics/paint/paint_nozzle_waterfall_lp.wav",
+	sound	= "paint/paint_nozzle_waterfall_lp.wav",
 	volume	= 1.0,
 	pitch	= 100,
 }

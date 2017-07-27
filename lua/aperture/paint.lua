@@ -117,11 +117,11 @@ net.Receive("TA:NW_PaintCamera", function()
 	local ply = LocalPlayer()
 	if not PLAYER_PAINT_CAMERA[ply] then PLAYER_PAINT_CAMERA[ply] = {} end
 	
-	for i = 1, 4 do
+	for i = 1, 2 do
 		local pos = Vector(ScrW(), ScrH()) * Vector(math.Rand(0, 1), math.Rand(0, 1))
 		
 		-- removing paint from screen if it too much
-		if #PLAYER_PAINT_CAMERA[ply] > 30 then
+		if #PLAYER_PAINT_CAMERA[ply] > 10 then
 			table.remove(PLAYER_PAINT_CAMERA[ply], 1)
 		else
 			table.insert(PLAYER_PAINT_CAMERA[ply], {
@@ -144,7 +144,7 @@ hook.Add("HUDPaint", "TA:PaintHUDPaint", function()
 		local pos = v.pos
 		local paintType = v.paintType
 		local clr = LIB_APERTURE:PaintTypeToColor(paintType)
-		local rad = math.min(50, v.radius) * 20
+		local rad = math.min(50, v.radius) * 30
 		local time = math.max(0, math.min(1, v.time))
 		local color = Color(clr.r, clr.g, clr.b, math.min(150, math.max(0, 200 - time * 200)))
 		local paintInfo = LIB_APERTURE:PaintTypeToInfo(paintType)
@@ -152,7 +152,7 @@ hook.Add("HUDPaint", "TA:PaintHUDPaint", function()
 		if paintInfo.SCREEN_PAINT_MATERIAL then
 			surface.SetMaterial(paintInfo.SCREEN_PAINT_MATERIAL)
 		else
-			surface.SetMaterial(Material("effects/splash4"))
+			surface.SetMaterial(Material("aperture/paint/screen_paint"))
 		end
 		surface.DrawTexturedRect(
 			pos.x - rad / 2,
@@ -226,6 +226,7 @@ function LIB_APERTURE:ClearPaintedEntity(ent)
 	
 	LIB_APERTURE.GELLED_ENTITIES[ent] = nil
 	paint_model:Remove()
+	ent:SetNWInt("TA:PaintType", 0)
 end
 
 function LIB_APERTURE:MakePaintBlob(paintType, pos, velocity, radius)

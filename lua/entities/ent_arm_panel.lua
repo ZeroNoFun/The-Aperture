@@ -112,8 +112,6 @@ function ENT:CleatePlate()
 	ent:DeleteOnRemove(self)
 	self:SetNWEntity("TA:PhysPannel", ent)
 	self:GetPhysicsObject():EnableMotion(false)
-	constraint.NoCollide(ent, self, 0, 0) 
-	if self:GetStartEnabled() then self:Enable(true) end
 end
 
 function ENT:Initialize()
@@ -126,7 +124,8 @@ function ENT:Initialize()
 		self:SetMoveType(MOVETYPE_VPHYSICS)
 		self:SetSolid(SOLID_VPHYSICS)
 		self:SetSkin(0)
-		
+		if self:GetStartEnabled() then self:Enable(true) end
+
 		self:CleatePlate()
 		self.LocalArmPosSmooth = Vector()
 		self.LocalArmAngSmooth = Angle()
@@ -147,7 +146,11 @@ function ENT:MovePanel(pos, ang)
 	self:SetArmAng(ang)
 
 	if not timer.Exists("TA:Timer_ArmPanel"..self:EntIndex()) then
-		self:EmitSound( "world/interior_robot_arm/interior_arm_platform_open_01.wav" )
+		if pos == Vector() and ang == Angle() then
+			self:EmitSound("TA:ArmPanelClose")
+		else
+			self:EmitSound("TA:ArmPanelOpen")
+		end
 	end
 	
 	timer.Create("TA:Timer_ArmPanel"..self:EntIndex(), 1, 1, function() end)
@@ -197,12 +200,9 @@ function ENT:TriggerInput(iname, value)
 	if iname == "Arm Position" then self:MovePanel(Vector(value[1], value[2], value[3]), self:GetArmAng()) end
 	if iname == "Arm Angle" then self:MovePanel(self:GetArmPos(), Angle(value[1], value[2], value[3])) end
 end
+
 numpad.Register("PortalArmPanel_Enable", function(pl, ent, keydown)
 	if not IsValid(ent) then return false end
 	ent:EnableEX(keydown)
 	return true
 end)
-
-function ENT:OnRemove()
-	
-end

@@ -59,4 +59,7 @@ function ENT:HandleEntity(ent)
 	if ent:GetModel() == "models/blackops/portal_sides.mdl" then return end
 	
 	ent:TakeDamage(ent:Health(), self, self)
+	if ent:IsPlayer() and ent:Alive() then
+		LIB_APERTURE.ACHIEVEMENTS:AchievAchievement(self.Owner, "chromium")
+	end
 end

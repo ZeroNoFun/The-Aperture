@@ -89,6 +89,51 @@ function PAINT_INFO:OnButtonPressed(ply, normal, key)
 	if key == IN_JUMP then Bounce(ply, normal) end
 end
 
+-- Handling entity paint
+function PAINT_INFO:OnEntityPainted(ent)
+	if not IsValid(ent) then return end
+	if not IsValid(ent:GetPhysicsObject()) then return end
+	
+	local inx = ent:AddCallback("PhysicsCollide", function(ent, colData, collider)
+		if not IsValid(ent) then return end
+		if not IsValid(colData.PhysObject) then return end
+		if colData.DeltaTime < 0.1 then return end
+		local physObj = colData.PhysObject
+		local vel = colData.OurOldVelocity
+		local normal = -colData.HitNormal
+		
+		local worldVelToLocalPaint = WorldToLocal(vel, Angle(), Vector(), normal:Angle() + Angle(90, 0, 0))
+		worldVelToLocalPaint.z = math.max(math.abs(worldVelToLocalPaint.z), 400)
+		local velocity = LocalToWorld(worldVelToLocalPaint, Angle(), Vector(), normal:Angle() + Angle(90, 0, 0))
+		
+		-- adding random to prop bounce
+		local velLength = velocity:Length()
+		velocity:Normalize()
+		velocity = velocity * 3 + VectorRand()
+		velocity:Normalize()
+		velocity = velocity * velLength
+		
+		physObj:SetVelocity(velocity)
+		ent:EmitSound("TA:BounceProp")
+	end)
+	ent.TA_BPhysCollideCallbackInxed = inx
+end
+
+-- Handling entity clear
+function PAINT_INFO:OnEntityCleared(ent)
+	if ent.TA_BPhysCollideCallbackInxed then
+		ent:RemoveCallback("PhysicsCollide", ent.TA_BPhysCollideCallbackInxed)
+	end
+end
+
+function PAINT_INFO:OnEntityChangedTo(ent, paintType)
+	PAINT_INFO:OnEntityPainted(ent)
+end
+
+function PAINT_INFO:OnEntityChangedFrom(ent, paintType)
+	PAINT_INFO:OnEntityCleared(ent)
+end
+
 -- Handling painted entity
 function PAINT_INFO:EntityThink(ent)
 end

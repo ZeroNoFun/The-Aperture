@@ -1,29 +1,29 @@
--- --[[
+--[[
 
-	-- Radio SOUNDS
+	Radio SOUNDS
 	
--- ]]
+]]
 
--- AddCSLuaFile()
+AddCSLuaFile()
 
--- APERTURESCIENCE.RadioLoop =
--- {
-	-- channel	= CHAN_VOICE,
-	-- name	= "GASL.RadioLoop",
-	-- level	= 60,
-	-- sound	= "music/looping_radio_mix.wav",
-	-- volume	= 1.0,
-	-- pitch	= 100,
--- }
--- sound.Add( APERTURESCIENCE.RadioLoop )
+local radioLoop =
+{
+	channel	= CHAN_VOICE,
+	name	= "TA:RadioLoop",
+	level	= 60,
+	sound	= "music/looping_radio_mix.wav",
+	volume	= 1.0,
+	pitch	= 100,
+}
+sound.Add(radioLoop)
 
--- APERTURESCIENCE.RadioStrangeNoice =
--- {
-	-- channel	= CHAN_VOICE,
-	-- name	= "GASL.RadioStrangeNoice",
-	-- level	= 60,
-	-- sound	= "music/vsc_radio5.wav",
-	-- volume	= 1.0,
-	-- pitch	= 100,
--- }
--- sound.Add( APERTURESCIENCE.RadioStrangeNoice )
+local radioStrangeNoice =
+{
+	channel	= CHAN_VOICE,
+	name	= "TA:RadioStrangeNoice",
+	level	= 60,
+	sound	= "music/radio_strange_channel.wav",
+	volume	= 1.0,
+	pitch	= 100,
+}
+sound.Add(radioStrangeNoice)

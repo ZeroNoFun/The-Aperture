@@ -2,7 +2,7 @@ TOOL.Tab 		= "Aperture"
 TOOL.Category 	= "Puzzle elements"
 TOOL.Name 		= "#tool.aperture_laser_catcher.name"
 
-TOOL.ClientConVar["model"] 		= "models/props/laser_emitter.mdl"
+TOOL.ClientConVar["model"] 		= "models/aperture/laser_emitter.mdl"
 TOOL.ClientConVar["keygroup"] 	= "45"
 TOOL.ClientConVar["timer"] 		= "1"
 
@@ -17,8 +17,8 @@ end
 
 function TOOL:ModelToOffsets(model)
 	local modelToOffsets = {
-		["models/props/laser_catcher.mdl"] = {z = -12, ang = Angle()},
-		["models/props/laser_catcher_center.mdl"] = {z = -11.5, ang = Angle()},
+		["models/aperture/laser_catcher.mdl"] = {z = -12, ang = Angle()},
+		["models/aperture/laser_catcher_center.mdl"] = {z = -11.5, ang = Angle()},
 		["models/aperture/laser_receptacle.mdl"] = {z = 3.5, ang = Angle(90, 0, 0)},
 	}
 	return modelToOffsets[model]
@@ -122,6 +122,6 @@ function TOOL.BuildCPanel(CPanel)
 	CPanel:AddControl("Numpad", {Label = "#tool.aperture_laser_catcher.enable", Command = "aperture_laser_catcher_keygroup"})
 end
 
-list.Set("PortalLaserCatcherModels", "models/props/laser_catcher.mdl", {})
-list.Set("PortalLaserCatcherModels", "models/props/laser_catcher_center.mdl", {})
+list.Set("PortalLaserCatcherModels", "models/aperture/laser_catcher.mdl", {})
+list.Set("PortalLaserCatcherModels", "models/aperture/laser_catcher_center.mdl", {})
 list.Set("PortalLaserCatcherModels", "models/aperture/laser_receptacle.mdl", {})

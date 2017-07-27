@@ -22,8 +22,8 @@ end
 
 function ENT:ModelToStartCoord()
 	local modelToStartCoord = {
-		["models/props/laser_emitter_center.mdl"] = Vector(30, 0, 0),
-		["models/props/laser_emitter.mdl"] = Vector(30, 0, -14)
+		["models/aperture/laser_emitter_center.mdl"] = Vector(30, 0, 0),
+		["models/aperture/laser_emitter.mdl"] = Vector(30, 0, -14)
 	}
 	return modelToStartCoord[self:GetModel()]
 end
@@ -129,7 +129,10 @@ function ENT:DoLaser(startpos, ang, ignore)
 
 	self.TA_PassagesCount = self.TA_PassagesCount + 1
 	if self.TA_PassagesCount >= self.MAX_REFLECTIONS then return end
-	
+	if self.TA_PassagesCount > 50 and SERVER then
+		LIB_APERTURE.ACHIEVEMENTS:AchievAchievement(self.Player, "laser_show")
+	end
+
 	local drawEndEffect = true
 	local filter = {ignore, "models/aperture/laser_receptacle.mdl"}
 	local points, trace = LIB_APERTURE:GetAllPortalPassagesAng(startpos, ang, nil, filter)
@@ -172,8 +175,9 @@ function ENT:DoLaser(startpos, ang, ignore)
 	
 	local cellPos = LIB_MATH_TA:ConvertToGrid(trace.HitPos, LIB_PAINT.PAINT_INFO_SIZE)
 	local paintInfo = LIB_PAINT:GetCellPaintInfo(cellPos)
-	
-	if paintInfo and paintInfo.paintType == PORTAL_PAINT_REFLECTION then
+	local ent = trace.Entity
+	if (paintInfo and paintInfo.paintType == PORTAL_PAINT_REFLECTION)
+		or IsValid(ent) and IsValid(ent) and ent:GetNWInt("TA:PaintType") and ent:GetNWInt("TA:PaintType") == PORTAL_PAINT_REFLECTION then
 		
 		local normal = trace.HitNormal
 		local lastPointInfo = points[#points]
@@ -186,10 +190,8 @@ function ENT:DoLaser(startpos, ang, ignore)
 		end
 	end
 
-	if trace.Entity then
-		local ent = trace.Entity
-		-- if reflection cube
-		if ent:GetModel() == "models/props/reflection_cube.mdl" and not ent.isClone and not self.TA_FilterEntities[ent] then
+	if IsValid(trace.Entity) then
+		if ent:GetModel() == "models/aperture/reflection_cube.mdl" and not ent.isClone and not self.TA_FilterEntities[ent] then
 			if CLIENT then
 				self:DrawMuzzleEffect(ent:GetPos(), ent:GetForward())
 			end

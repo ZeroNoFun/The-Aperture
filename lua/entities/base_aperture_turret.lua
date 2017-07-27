@@ -5,7 +5,6 @@ local WireAddon = WireAddon or WIRE_CLIENT_INSTALLED
 
 ENT.PrintName 		= "Base Aperture Turret"
 ENT.IsAperture 		= true
-ENT.IsConnectable 	= true
 
 ENT.TurretSoundFound 			= ""
 ENT.TurretSoundSearch 			= ""
@@ -24,6 +23,7 @@ local TURRET_STATE_PREPARE_RETRACT 	= 6
 local TURRET_STATE_RETRACT 			= 7
 local TURRET_STATE_PANIC 			= 8
 local TURRET_STATE_PANIC_LIGHTER 	= 9
+local TURRET_STATE_EXPLODE		 	= 10
 
 local TURRET_TARGET_DEGRESE	= 60
 
@@ -99,6 +99,8 @@ function ENT:Drawing()
 	if not LIB_APERTURE then return end
 	if not self:GetEnable() then return end
 	if not self.TurretDrawLaserbeam then return end
+	if self:GetNWBool("TA:TurretDifferent") then return end
+	
 	local angles = self:GetTurretAngles()
 	local wangles = self:LocalToWorldAngles(angles)
 	local eyePos = self:LocalToWorld(self.TurretEyePos)
@@ -212,16 +214,16 @@ function ENT:Think()
 
 	-- SERVER side
 	local turretState = self:GetTurretState()
-	local turretState = self:GetTurretState()
 	local eyePos = self:LocalToWorld(self.TurretEyePos)
 	local target, center
 	if self:GetEnable() then target, center = LIB_APERTURE:FindClosestAliveInConeIncludingPortalPassages(eyePos, self:GetForward(), 2000, TURRET_TARGET_DEGRESE) end
 	if IsValid(target) then
 		local _, trace = LIB_APERTURE:GetAllPortalPassages(eyePos, (center - eyePos), nil, self)
 		if not IsValid(trace.Entity) or trace.Entity != target then target = nil end
+		if self.TurretDifferent then target = nil end
 	end
 	
-	if not self:GetEnable() and not self:IsTurretKnockout() and turretState == TURRET_STATE_SEARCH then
+	if (not self:GetEnable() and not self:IsTurretKnockout() or self.TurretDifferent) and turretState == TURRET_STATE_SEARCH then
 		-- Retracting turret
 		self:SetTurretState(TURRET_STATE_PREPARE_RETRACT)
 	end
@@ -241,6 +243,11 @@ function ENT:Think()
 			if turretState != TURRET_STATE_PANIC_LIGHTER and turretState != TURRET_STATE_SHOOT then
 				self:SetTurretState(TURRET_STATE_PANIC_LIGHTER)
 				if self.TurretSoundPickup then self:EmitSound(self.TurretSoundPickup) end
+				timer.Remove("TA:StopSearching"..self:EntIndex())
+				timer.Remove("TA:KnockoutTime"..self:EntIndex())
+				timer.Remove("TA:PrepareDeploy"..self:EntIndex())
+				timer.Remove("TA:TurretReleaseTarget"..self:EntIndex())
+				timer.Remove("TA:TurretActivatePing"..self:EntIndex())
 			end
 		elseif turretState == TURRET_STATE_PANIC_LIGHTER then
 			self:SetTurretState(TURRET_STATE_SEARCH)
@@ -256,13 +263,18 @@ function ENT:Think()
 					self:Enable(false)
 					self:EmitSound("TA:TurretDie")
 				end)
+				
+				timer.Remove("TA:StopSearching"..self:EntIndex())
+				timer.Remove("TA:PrepareDeploy"..self:EntIndex())
+				timer.Remove("TA:TurretReleaseTarget"..self:EntIndex())
+				timer.Remove("TA:TurretActivatePing"..self:EntIndex())
 			end
 		elseif turretState == TURRET_STATE_PANIC then
 			self:SetTurretState(TURRET_STATE_SEARCH)
 			timer.Remove("TA:KnockoutTime"..self:EntIndex())
 		end
 	end
-	-- print(turretState)
+	
 	if turretState == TURRET_STATE_PREPARE_DEPLOY then
 		if not timer.Exists("TA:PrepareDeploy"..self:EntIndex()) then
 			timer.Create("TA:PrepareDeploy"..self:EntIndex(), 1, 1, function()
@@ -290,6 +302,7 @@ function ENT:Think()
 				timer.Simple(1, function()
 					if not IsValid(self) then return end
 					self:SetTurretState(TURRET_STATE_IDLE)
+					timer.Remove("TA:StopSearching"..self:EntIndex())
 					timer.Create("TA:TurretAutoSearch"..self:EntIndex(), 3, 1, function()
 						if not IsValid(self) then return end
 						if self.TurretSoundAutoSearch != "" then self:EmitSound(self.TurretSoundAutoSearch) end
@@ -385,6 +398,21 @@ function ENT:Think()
 	elseif turretState == TURRET_STATE_RETRACT then
 		local turretOpen = self:GetTurretOpen()
 		if turretOpen > 0 then self:SetTurretOpen(turretOpen - 2 * FrameTime()) else self:SetTurretOpen(0) end
+	end
+	
+	if self:IsOnFire() and turretState != TURRET_STATE_EXPLODE then
+		self:SetTurretState(TURRET_STATE_EXPLODE)
+		if self.TurretDisabled then self:EmitSound(self.TurretDisabled) end
+		timer.Simple(3, function()
+			if not IsValid(self) then return end
+			local effectdata = EffectData()
+			effectdata:SetOrigin(self:GetPos())
+			effectdata:SetNormal(Vector(0, 0, 1))
+			util.Effect("Explosion", effectdata)
+
+			util.BlastDamage(self, self, self:GetPos(), 150, 100) 
+			self:Remove()
+		end)
 	end
 	
 	return true
