@@ -67,9 +67,14 @@ local SwayDelta = Angle()
 
 function SWEP:CreateFakeViewModel()
 	-- Creating fake viewmodel
+	if IsValid(self.PaintGunViewModel) then
+		self.PaintGunViewModel:SetNoDraw(false)
+		return
+	end
 	local vm = ClientsideModel(self.ViewModel, RENDERGROUP_OPAQUE)
 	vm:SetPos(EyePos() - LocalPlayer():GetForward() * (self.ViewModelFOV / 5))
 	vm:SetAngles(EyeAngles())
+	vm:SetNoDraw(true)
 	vm.AutomaticFrameAdvance = true
 	self.PaintGunViewModel = vm
 	
@@ -206,7 +211,7 @@ end
 function SWEP:Initialize()
 	if CLIENT then
 		self:CreateFakeViewModel()
-		self.CursorEnabled = false		
+		self.CursorEnabled = false
 		return
 	end
 
