@@ -451,7 +451,7 @@ hook.Add("Think", "TA:HandlingPaint", function()
 end)
 
 hook.Add("PlayerFootstep", "TA:Paint_Footsteps", function(ply, pos, foot, lsound, volume)
-	if not ply.TA_LastPaintType then return ply, pos, foot, lsound, volume end
+	if not ply.TA_LastPaintType then return end
 	local orientation 	= ply:GetNWVector("TA:Orientation")
 	local playerHeight 	= ply:GetModelRadius()
 	
